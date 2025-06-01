@@ -338,103 +338,101 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         </div>
       )}
 
-      {/* Enhanced Route Info Overlay */}
+      {/* Compact Route Info Overlay */}
       {routeData && !isSearching && (
-        <div className="absolute top-4 left-4 bg-white rounded-2xl shadow-xl p-6 max-w-sm border border-gray-100">
-          {/* Safety Score Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              <span className="text-lg font-semibold text-gray-900">{t.safetyScore}</span>
+        <div className="absolute top-3 left-3 bg-white rounded-lg shadow-lg p-3 max-w-xs border border-gray-100">
+          {/* Safety Score Header - Compact */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-1">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-semibold text-gray-900">{t.safetyScore}</span>
             </div>
-            <div className={`px-4 py-2 rounded-full text-2xl font-bold ${getSafetyScoreColor(routeData.safetyScore)}`}>
+            <div className={`px-3 py-1 rounded-full text-lg font-bold ${getSafetyScoreColor(routeData.safetyScore)}`}>
               {routeData.safetyScore}%
             </div>
           </div>
 
-          {/* Data Source Indicator */}
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl mb-4">
-            <span className="text-sm font-medium text-blue-800">
+          {/* Data Source Indicator - Compact */}
+          <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg mb-2">
+            <span className="text-xs font-medium text-blue-800">
               {routeData.realRoute ? t.realTimeData : t.fallbackData}
             </span>
-            <div className={`w-3 h-3 rounded-full ${routeData.realRoute ? 'bg-green-500' : 'bg-orange-500'}`} />
+            <div className={`w-2 h-2 rounded-full ${routeData.realRoute ? 'bg-green-500' : 'bg-orange-500'}`} />
           </div>
 
-          {/* Route Details */}
-          <div className="mb-4">
-            <h4 className="text-lg font-semibold text-gray-900 mb-3">{t.routeDetails}</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-xs text-gray-600 mb-1">{t.distance}</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {routeData.distanceFormatted || `${routeData.distance} km`}
-                </div>
+          {/* Route Details - Grid Layout */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="bg-gray-50 p-2 rounded text-center">
+              <div className="text-xs text-gray-600">{t.distance}</div>
+              <div className="text-sm font-bold text-gray-900">
+                {routeData.distanceFormatted || `${routeData.distance} km`}
               </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-xs text-gray-600 mb-1">{t.duration}</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {routeData.durationFormatted || `${routeData.duration}h`}
-                </div>
+            </div>
+            <div className="bg-gray-50 p-2 rounded text-center">
+              <div className="text-xs text-gray-600">{t.duration}</div>
+              <div className="text-sm font-bold text-gray-900">
+                {routeData.durationFormatted || `${routeData.duration}h`}
               </div>
             </div>
           </div>
 
-          {/* Transport Mode */}
+          {/* Transport Mode - Compact */}
           {routeData.transportMode && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-900">{t.transportMode}</span>
+            <div className="flex items-center justify-between p-2 bg-gray-50 rounded mb-2">
+              <div className="flex items-center space-x-1">
+                <Clock className="w-3 h-3 text-gray-600" />
+                <span className="text-xs font-medium text-gray-900">{t.transportMode}</span>
               </div>
-              <span className="text-sm font-medium text-gray-700 capitalize">
+              <span className="text-xs font-medium text-gray-700">
                 {t.transportModes[routeData.transportMode] || routeData.transportMode}
               </span>
             </div>
           )}
 
-          {/* Weather Conditions */}
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl mb-3">
-            <div className="flex items-center space-x-2">
-              <Cloud className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-900">{t.weather}</span>
+          {/* Weather & Risk - Stacked */}
+          <div className="space-y-1 mb-2">
+            <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+              <div className="flex items-center space-x-1">
+                <Cloud className="w-3 h-3 text-blue-600" />
+                <span className="text-xs font-medium">{t.weather}</span>
+              </div>
+              <span className="text-xs text-blue-700">
+                {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
+              </span>
             </div>
-            <span className="text-sm font-medium text-blue-700 capitalize">
-              {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
-            </span>
+
+            <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
+              <div className="flex items-center space-x-1">
+                <AlertTriangle className="w-3 h-3 text-yellow-600" />
+                <span className="text-xs font-medium">{t.conflictRisk}</span>
+              </div>
+              <span className={`text-xs font-medium ${getRiskColor(routeData.conflictRisk)}`}>
+                {t.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
+              </span>
+            </div>
           </div>
 
-          {/* Conflict Risk */}
-          <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl mb-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm font-medium text-gray-900">{t.conflictRisk}</span>
-            </div>
-            <span className={`text-sm font-medium capitalize ${getRiskColor(routeData.conflictRisk)}`}>
-              {t.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
-            </span>
-          </div>
-
-          {/* Alternative Suggestion */}
+          {/* Alternative Suggestion - Compact */}
           {routeData.alternativeSuggestion && (
-            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-              <div className="flex items-start space-x-2">
-                <Star className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+            <div className="p-2 bg-green-50 rounded border border-green-200 mb-2">
+              <div className="flex items-start space-x-1">
+                <Star className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <div className="text-sm font-medium text-green-800 mb-1">{t.alternativeSuggestion}</div>
-                  <div className="text-sm text-green-700">{routeData.alternativeSuggestion}</div>
+                  <div className="text-xs font-medium text-green-800">{t.alternativeSuggestion}</div>
+                  <div className="text-xs text-green-700">{routeData.alternativeSuggestion}</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Error Message */}
+          {/* Error Message - Compact */}
           {routeData.error && (
-            <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 mt-3">
-              <div className="flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5" />
+            <div className="p-2 bg-orange-50 rounded border border-orange-200">
+              <div className="flex items-start space-x-1">
+                <AlertTriangle className="w-3 h-3 text-orange-600 mt-0.5" />
                 <div>
-                  <div className="text-sm font-medium text-orange-800">API Notice</div>
-                  <div className="text-sm text-orange-700">{routeData.error}</div>
+                  <div className="text-xs font-medium text-orange-800">API Notice</div>
+                  <div className="text-xs text-orange-700">{routeData.error}</div>
                 </div>
               </div>
             </div>
