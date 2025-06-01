@@ -3,7 +3,7 @@ import React from 'react';
 import { MapPin, Shield, Cloud, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RouteData, RouteInputTranslations } from '@/types/route';
-import { doesAlertMatchCity, findOblastForCity } from '@/utils/cityOblastMapping';
+import { doesAlertMatchCity } from '@/utils/alertMatcher';
 
 interface RouteDetailsProps {
   routeData: RouteData;
@@ -31,75 +31,117 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Enhanced threat detection logic
-  console.log('🎯 RouteDetails - Analyzing threats for route:', {
+  // Enhanced threat detection logic with better debugging
+  console.log('🎯 RouteDetails - Enhanced threat analysis:', {
     startCity: routeData.startCity,
     endCity: routeData.endCity,
-    totalAlerts: routeData.safetyAlerts?.length || 0
+    totalAlerts: routeData.safetyAlerts?.length || 0,
+    alerts: routeData.safetyAlerts?.map(alert => ({
+      id: alert.id,
+      location: alert.location_name,
+      oblast: alert.location_oblast,
+      type: alert.alert_type,
+      severity: alert.severity
+    })) || []
   });
 
   const relevantAlerts = routeData.safetyAlerts || [];
-  console.log('📊 All alerts for analysis:', relevantAlerts.map(alert => ({
-    id: alert.id,
-    location: alert.location_name,
-    oblast: alert.location_oblast,
-    type: alert.alert_type,
-    severity: alert.severity
-  })));
-
-  // Check for threats that affect the destination city specifically
+  
+  // Check specifically for destination threats with enhanced matching
   const destinationThreats = relevantAlerts.filter(alert => {
-    const endCity = routeData.endCity || '';
+    const endCity = routeData.endCity?.toLowerCase() || '';
+    const alertLocation = (alert.location_name || '').toLowerCase();
+    const alertOblast = (alert.location_oblast || '').toLowerCase();
     
-    console.log('🔍 Checking destination threat for:', endCity, 'against alert:', {
-      alertId: alert.id,
-      alertLocation: alert.location_name,
-      alertOblast: alert.location_oblast
+    console.log('🔍 Checking destination threat:', {
+      endCity,
+      alertLocation,
+      alertOblast,
+      alertId: alert.id
     });
     
-    const matchesDestination = doesAlertMatchCity(
-      alert.location_name || '', 
-      alert.location_oblast || '', 
-      endCity
-    );
-    
-    if (matchesDestination) {
-      console.log('✅ Destination threat found:', {
-        endCity,
-        alertLocation: alert.location_name,
-        alertOblast: alert.location_oblast,
-        severity: alert.severity
-      });
+    // Direct city name check
+    if (alertLocation.includes(endCity)) {
+      console.log('✅ Direct city match found');
+      return true;
     }
     
-    return matchesDestination;
+    // Enhanced oblast-level matching for major cities
+    const cityOblastMap = {
+      'dnipro': ['дніпропетровська область', 'dnipropetrovska oblast', 'дніпропетровська', 'dnipropetrovska'],
+      'kyiv': ['київська область', 'kyivska oblast', 'київська', 'kyivska', 'м. київ'],
+      'kharkiv': ['харківська область', 'kharkivska oblast', 'харківська', 'kharkivska'],
+      'odesa': ['одеська область', 'odeska oblast', 'одеська', 'odeska'],
+      'lviv': ['львівська область', 'lvivska oblast', 'львівська', 'lvivska']
+    };
+    
+    const oblastVariations = cityOblastMap[endCity] || [];
+    const matchesOblast = oblastVariations.some(variation => 
+      alertOblast.includes(variation) || alertLocation.includes(variation)
+    );
+    
+    if (matchesOblast) {
+      console.log('✅ Oblast-level match found:', {
+        endCity,
+        matchedVariation: oblastVariations.find(v => alertOblast.includes(v) || alertLocation.includes(v))
+      });
+      return true;
+    }
+    
+    // Use the existing alert matcher as fallback
+    const fallbackMatch = doesAlertMatchCity(
+      alert.location_name || '', 
+      alert.location_oblast || '', 
+      routeData.endCity || ''
+    );
+    
+    if (fallbackMatch) {
+      console.log('✅ Fallback matcher found match');
+    }
+    
+    return fallbackMatch;
   });
 
-  // Check for threats that affect either start or end city (route threats)
+  // Check for any route threats (start or end city)
   const routeThreats = relevantAlerts.filter(alert => {
-    const startCity = routeData.startCity || '';
-    const endCity = routeData.endCity || '';
+    const startCity = routeData.startCity?.toLowerCase() || '';
+    const endCity = routeData.endCity?.toLowerCase() || '';
+    const alertLocation = (alert.location_name || '').toLowerCase();
+    const alertOblast = (alert.location_oblast || '').toLowerCase();
     
-    const matchesStart = doesAlertMatchCity(
-      alert.location_name || '', 
-      alert.location_oblast || '', 
-      startCity
+    // Quick check for either city
+    if (alertLocation.includes(startCity) || alertLocation.includes(endCity)) {
+      return true;
+    }
+    
+    // Oblast-level check for both cities
+    const cityOblastMap = {
+      'dnipro': ['дніпропетровська'],
+      'kyiv': ['київська', 'м. київ'],
+      'kharkiv': ['харківська'],
+      'odesa': ['одеська'],
+      'lviv': ['львівська']
+    };
+    
+    const startOblasts = cityOblastMap[startCity] || [];
+    const endOblasts = cityOblastMap[endCity] || [];
+    
+    const matchesStartOblast = startOblasts.some(oblast => 
+      alertOblast.includes(oblast) || alertLocation.includes(oblast)
     );
     
-    const matchesEnd = doesAlertMatchCity(
-      alert.location_name || '', 
-      alert.location_oblast || '', 
-      endCity
+    const matchesEndOblast = endOblasts.some(oblast => 
+      alertOblast.includes(oblast) || alertLocation.includes(oblast)
     );
     
-    return matchesStart || matchesEnd;
+    return matchesStartOblast || matchesEndOblast;
   });
 
   const hasDestinationThreats = destinationThreats.length > 0;
   const hasRouteThreats = routeThreats.length > 0;
   const finalHasThreats = hasDestinationThreats || hasRouteThreats;
   
-  console.log('🎯 Final threat analysis result:', {
+  console.log('🎯 Final enhanced threat analysis result:', {
     endCity: routeData.endCity,
     destinationThreatsCount: destinationThreats.length,
     routeThreatsCount: routeThreats.length,
@@ -107,11 +149,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     hasRouteThreats,
     finalHasThreats,
     destinationThreatDetails: destinationThreats.map(alert => ({
-      location: alert.location_name,
-      oblast: alert.location_oblast,
-      severity: alert.severity
-    })),
-    routeThreatDetails: routeThreats.map(alert => ({
+      id: alert.id,
       location: alert.location_name,
       oblast: alert.location_oblast,
       severity: alert.severity
