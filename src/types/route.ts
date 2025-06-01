@@ -6,6 +6,7 @@ export interface AlertData {
   start_time: string;
   end_time?: string;
   location_name: string;
+  location_oblast: string;
   coordinates?: [number, number];
   severity: 'low' | 'moderate' | 'high' | 'critical';
 }
