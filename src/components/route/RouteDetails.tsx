@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { MapPin, Shield, Cloud, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RouteData, RouteInputTranslations } from '@/types/route';
-import { doesAlertMatchCity } from '@/utils/cityOblastMapping';
+import { doesAlertMatchCity, findOblastForCity } from '@/utils/cityOblastMapping';
 
 interface RouteDetailsProps {
   routeData: RouteData;
@@ -31,10 +30,10 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Enhanced threat detection with better logging and matching
+  // Enhanced threat detection with improved oblast matching
   const hasActiveThreats = routeData.safetyAlerts && routeData.safetyAlerts.length > 0;
   
-  // Enhanced city threat detection using our improved mapping utility
+  // Enhanced city threat detection using improved matching logic
   const routeCityAlerts = routeData.safetyAlerts ? routeData.safetyAlerts.filter(alert => {
     const startCity = routeData.startCity || '';
     const endCity = routeData.endCity || '';
@@ -46,27 +45,56 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       endCity
     });
     
-    // Use our improved matching logic
+    // Check if alert matches start city
     const matchesStart = doesAlertMatchCity(
       alert.location_name || '', 
       alert.location_oblast || '', 
       startCity
     );
     
+    // Check if alert matches end city
     const matchesEnd = doesAlertMatchCity(
       alert.location_name || '', 
       alert.location_oblast || '', 
       endCity
     );
     
-    if (matchesStart || matchesEnd) {
-      console.log('🚨 RouteDetails: Alert matches route cities:', {
+    // Additional oblast-level matching for major cities
+    let matchesStartOblast = false;
+    let matchesEndOblast = false;
+    
+    if (!matchesStart && !matchesEnd) {
+      // Get oblast info for start and end cities
+      const startOblastInfo = findOblastForCity(startCity);
+      const endOblastInfo = findOblastForCity(endCity);
+      
+      if (startOblastInfo) {
+        matchesStartOblast = alert.location_oblast?.includes(startOblastInfo.oblastUA) || 
+                            alert.location_oblast?.includes(startOblastInfo.oblastEN) ||
+                            alert.location_name?.includes(startOblastInfo.oblastUA) ||
+                            alert.location_name?.includes(startOblastInfo.oblastEN);
+      }
+      
+      if (endOblastInfo) {
+        matchesEndOblast = alert.location_oblast?.includes(endOblastInfo.oblastUA) || 
+                          alert.location_oblast?.includes(endOblastInfo.oblastEN) ||
+                          alert.location_name?.includes(endOblastInfo.oblastUA) ||
+                          alert.location_name?.includes(endOblastInfo.oblastEN);
+      }
+    }
+    
+    const hasMatch = matchesStart || matchesEnd || matchesStartOblast || matchesEndOblast;
+    
+    if (hasMatch) {
+      console.log('🚨 RouteDetails: Alert matches route:', {
         alertLocation: alert.location_name,
         alertOblast: alert.location_oblast,
         startCity,
         endCity,
         matchesStart,
-        matchesEnd
+        matchesEnd,
+        matchesStartOblast,
+        matchesEndOblast
       });
       return true;
     }
