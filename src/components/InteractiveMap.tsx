@@ -484,19 +484,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <strong>Oblast:</strong> ${alert.location_oblast}
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Since:</strong> ${new Date(alert.started_at).toLocaleString()}
+                <strong>Active Alerts:</strong> ${recentAlerts.length}
               </div>
-              <div class="text-xs text-orange-400 font-medium">
-                Active for ${Math.floor((Date.now() - new Date(alert.started_at).getTime()) / (1000 * 60 * 60))}h
+              <div class="text-xs text-gray-400">
+                <strong>Latest:</strong> ${new Date(alert.started_at).toLocaleString()}
               </div>
-              ${recentAlerts.length > 1 ? `
-                <div class="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
-                  <strong>Recent attacks (last 5 days):</strong> ${recentAlerts.length} alerts
-                  <div class="mt-1">
-                    Latest: ${new Date(recentAlerts[0].started_at).toLocaleDateString()}
-                  </div>
-                </div>
-              ` : ''}
             </div>
           `)
         )
