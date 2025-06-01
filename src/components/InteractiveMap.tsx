@@ -21,6 +21,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [isLoadingToken, setIsLoadingToken] = useState(true);
+  const [tokenError, setTokenError] = useState(false);
 
   const translations = {
     en: {
@@ -59,19 +60,27 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   useEffect(() => {
     const fetchMapboxToken = async () => {
       try {
+        console.log('Fetching Mapbox token from Supabase...');
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
         if (error) {
           console.error('Error fetching Mapbox token:', error);
+          setTokenError(true);
           setIsLoadingToken(false);
           return;
         }
         
         if (data?.token) {
+          console.log('Successfully received Mapbox token');
           setMapboxToken(data.token);
+          setTokenError(false);
+        } else {
+          console.error('No token in response:', data);
+          setTokenError(true);
         }
       } catch (error) {
         console.error('Error fetching Mapbox token:', error);
+        setTokenError(true);
       } finally {
         setIsLoadingToken(false);
       }
@@ -81,9 +90,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+    if (!mapContainer.current || !mapboxToken || tokenError) return;
 
     try {
+      console.log('Initializing Mapbox with token...');
       mapboxgl.accessToken = mapboxToken;
       
       map.current = new mapboxgl.Map({
@@ -95,13 +105,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
+      console.log('Map initialized successfully');
+
       return () => {
         map.current?.remove();
       };
     } catch (error) {
       console.error('Error initializing map:', error);
+      setTokenError(true);
     }
-  }, [mapboxToken]);
+  }, [mapboxToken, tokenError]);
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -114,7 +127,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   if (isLoadingToken) {
     return (
-      <div className="relative w-full h-full bg-gray-100 flex items-center justify-center">
+      <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-lg">
           <div className="flex items-center space-x-3">
             <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -125,24 +138,24 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     );
   }
 
-  if (!mapboxToken) {
+  if (tokenError || !mapboxToken) {
     return (
-      <div className="relative w-full h-full bg-gray-100 flex items-center justify-center">
+      <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-4">
           <h3 className="text-lg font-semibold mb-4 text-red-600">{t.mapError}</h3>
-          <p className="text-sm text-gray-600">Mapbox token configuration issue</p>
+          <p className="text-sm text-gray-600">Mapbox token configuration issue. Please check the console for more details.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full">
-      <div ref={mapContainer} className="absolute inset-0" />
+    <div className="absolute inset-0">
+      <div ref={mapContainer} className="w-full h-full" />
       
-      {/* Compact Route Info Panel */}
+      {/* Route Info Panel - Only show when route exists */}
       {routeData && (
-        <div className="absolute top-4 left-4 right-4 max-w-sm">
+        <div className="absolute bottom-6 left-4 right-4 max-w-sm">
           <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
@@ -158,7 +171,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               </Badge>
             </div>
 
-            {/* Main Stats */}
+            {/* Route Summary */}
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="text-center">
                 <div className="text-xs text-blue-600 font-medium mb-1">{t.distance}</div>
@@ -174,7 +187,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               </div>
             </div>
 
-            {/* Compact Status Row */}
+            {/* Status Row */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center space-x-1">
                 <Shield className="w-3 h-3 text-amber-500" />
@@ -197,7 +210,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         </div>
       )}
 
-      {/* Loading overlay */}
+      {/* Loading overlay for search */}
       {isSearching && (
         <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
           <div className="bg-white rounded-lg p-4 shadow-lg">
