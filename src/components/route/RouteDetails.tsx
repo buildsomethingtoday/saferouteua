@@ -46,31 +46,31 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             <MapPin className="w-3 h-3 text-white" />
           </div>
           <span className="text-sm font-medium text-gray-300 mr-2">Route Information</span>
-          <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-black' : 'bg-blue-600'} text-white`}>
-            <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
-              {routeData.realRoute && (
-                <>
-                  <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
-                  <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                </>
-              )}
-            </div>
-            {routeData.realRoute ? 'Live Data' : translations.estimated}
-          </Badge>
         </div>
+        <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-black' : 'bg-blue-600'} text-white`}>
+          <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
+            {routeData.realRoute && (
+              <>
+                <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
+                <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              </>
+            )}
+          </div>
+          {routeData.realRoute ? 'Live Data' : translations.estimated}
+        </Badge>
       </div>
 
       {/* Distance and Duration Grid */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="text-center p-4 bg-gray-800 rounded-xl">
           <div className="text-sm font-medium text-blue-400 mb-1">{translations.distance}</div>
-          <div className="text-2xl font-bold text-blue-400">
+          <div className="text-2xl font-semibold text-blue-400">
             {routeData.distanceFormatted || `${routeData.distance} km`}
           </div>
         </div>
         <div className="text-center p-4 bg-gray-800 rounded-xl">
           <div className="text-sm font-medium text-blue-400 mb-1">{translations.duration}</div>
-          <div className="text-2xl font-bold text-blue-400">
+          <div className="text-2xl font-semibold text-blue-400">
             {routeData.durationFormatted || `${routeData.duration}h`}
           </div>
         </div>
