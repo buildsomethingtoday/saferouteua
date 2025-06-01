@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
-import { RouteInputTranslations } from '@/types/route';
 import CityAutocomplete from '../CityAutocomplete';
+import { RouteInputTranslations } from '@/types/route';
 
 interface CityInputFormProps {
   startCity: string;
@@ -21,39 +20,47 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
   onStartCityChange,
   onEndCityChange
 }) => {
+  // Handle start city change and clear end city if it's the same
+  const handleStartCityChange = (city: string) => {
+    onStartCityChange(city);
+    if (city === endCity) {
+      onEndCityChange('');
+    }
+  };
+
+  // Handle end city change and clear start city if it's the same
+  const handleEndCityChange = (city: string) => {
+    onEndCityChange(city);
+    if (city === startCity) {
+      onStartCityChange('');
+    }
+  };
+
   return (
-    <div className="flex items-center space-x-3">
-      <div className="flex-1">
-        <label className="block text-xs font-medium text-gray-700 mb-1">
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           {translations.startCity}
         </label>
         <CityAutocomplete
-          value={startCity}
-          onChange={(value) => {
-            console.log('🏙️ Start city changed to:', value);
-            onStartCityChange(value);
-          }}
-          placeholder={translations.startPlaceholder}
           language={language}
+          placeholder={translations.startPlaceholder}
+          onCitySelect={handleStartCityChange}
+          selectedCity={startCity}
+          excludeCity={endCity} // Exclude the end city from start city options
         />
       </div>
       
-      <div className="flex items-center justify-center mt-5">
-        <ArrowRight className="w-4 h-4 text-gray-400" />
-      </div>
-      
-      <div className="flex-1">
-        <label className="block text-xs font-medium text-gray-700 mb-1">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           {translations.endCity}
         </label>
         <CityAutocomplete
-          value={endCity}
-          onChange={(value) => {
-            console.log('🏙️ End city changed to:', value);
-            onEndCityChange(value);
-          }}
-          placeholder={translations.endPlaceholder}
           language={language}
+          placeholder={translations.endPlaceholder}
+          onCitySelect={handleEndCityChange}
+          selectedCity={endCity}
+          excludeCity={startCity} // Exclude the start city from end city options
         />
       </div>
     </div>
