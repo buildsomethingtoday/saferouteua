@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { getMapboxService } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
@@ -120,20 +119,46 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         hasGeometry: !!route.geometry
       });
       
-      // Step 5: Fetch safety alerts data
+      // Step 5: Fetch safety alerts data using BOTH coordinate-based AND city-based methods
       console.log('🚨 Step 5: Fetching safety alerts data...');
       let routeAlerts = [];
       let alertsSafetyScore = 75;
       
       try {
         const alertsService = getAlertsService();
-        routeAlerts = await alertsService.getAlertsForRoute(startCoords, endCoords);
-        alertsSafetyScore = alertsService.calculateRouteSafetyScore(routeAlerts);
-        console.log('✅ Safety alerts retrieved:', {
-          alertsCount: routeAlerts.length,
-          safetyScore: alertsSafetyScore,
-          alerts: routeAlerts.map(a => ({ severity: a.severity, location: a.location_name }))
+        
+        // Get alerts using city names (primary method)
+        const cityBasedAlerts = await alertsService.getAlertsForCities(startCity, endCity);
+        console.log('✅ City-based alerts retrieved:', {
+          alertsCount: cityBasedAlerts.length,
+          alerts: cityBasedAlerts.map(a => ({ 
+            severity: a.severity, 
+            location: a.location_name,
+            oblast: a.location_oblast 
+          }))
         });
+        
+        // Get alerts using coordinates (backup method)
+        const coordBasedAlerts = await alertsService.getAlertsForRoute(startCoords, endCoords);
+        console.log('✅ Coordinate-based alerts retrieved:', coordBasedAlerts.length);
+        
+        // Combine and deduplicate alerts
+        const allAlerts = [...cityBasedAlerts, ...coordBasedAlerts];
+        const uniqueAlerts = allAlerts.filter((alert, index, self) => 
+          index === self.findIndex(a => a.id === alert.id)
+        );
+        
+        routeAlerts = uniqueAlerts;
+        alertsSafetyScore = alertsService.calculateRouteSafetyScore(routeAlerts);
+        
+        console.log('✅ Final safety alerts summary:', {
+          totalAlerts: routeAlerts.length,
+          cityBasedCount: cityBasedAlerts.length,
+          coordBasedCount: coordBasedAlerts.length,
+          uniqueCount: uniqueAlerts.length,
+          safetyScore: alertsSafetyScore
+        });
+        
       } catch (alertsError) {
         console.warn('⚠️ Alerts API failed, using defaults:', alertsError);
         // Continue with default values

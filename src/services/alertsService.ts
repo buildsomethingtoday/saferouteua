@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { findOblastForCity, doesAlertMatchCity } from '@/utils/cityOblastMapping';
 
 export interface AlertData {
   id: string;
@@ -77,6 +77,53 @@ export class AlertsService {
       const distanceToEnd = this.calculateDistance(endCoords, alert.coordinates);
       return distanceToStart <= 25 || distanceToEnd <= 25;
     });
+  }
+
+  async getAlertsForCities(startCity: string, endCity: string): Promise<AlertData[]> {
+    console.log('🔍 Getting alerts for cities:', { startCity, endCity });
+    
+    const allAlerts = await this.getActiveAlerts();
+    console.log('📊 Total active alerts found:', allAlerts.length);
+    
+    // Filter to only active alerts from the last 72 hours
+    const now = new Date();
+    const seventyTwoHoursAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+    
+    const recentAlerts = allAlerts.filter(alert => {
+      const alertDate = new Date(alert.start_time);
+      return !alert.end_time && alertDate >= seventyTwoHoursAgo;
+    });
+    
+    console.log('📊 Recent active alerts (72h):', recentAlerts.length);
+    
+    const routeAlerts = recentAlerts.filter(alert => {
+      const alertLocation = alert.location_name?.toLowerCase() || '';
+      const alertOblast = alert.location_oblast?.toLowerCase() || '';
+      
+      // Check if alert matches start city
+      const matchesStartCity = doesAlertMatchCity(alertLocation, alert.location_oblast || '', startCity);
+      
+      // Check if alert matches end city  
+      const matchesEndCity = doesAlertMatchCity(alertLocation, alert.location_oblast || '', endCity);
+      
+      if (matchesStartCity || matchesEndCity) {
+        console.log('✅ Alert matches route:', {
+          alertLocation: alert.location_name,
+          alertOblast: alert.location_oblast,
+          startCity,
+          endCity,
+          matchesStart: matchesStartCity,
+          matchesEnd: matchesEndCity
+        });
+        return true;
+      }
+      
+      return false;
+    });
+    
+    console.log('📊 Route-specific alerts found:', routeAlerts.length);
+    
+    return routeAlerts;
   }
 
   calculateRouteSafetyScore(alerts: AlertData[]): number {

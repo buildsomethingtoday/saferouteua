@@ -3,6 +3,7 @@ import React from 'react';
 import { MapPin, Shield, Cloud, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RouteData, RouteInputTranslations } from '@/types/route';
+import { doesAlertMatchCity } from '@/utils/cityOblastMapping';
 
 interface RouteDetailsProps {
   routeData: RouteData;
@@ -30,30 +31,56 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Enhanced logic to check for active threats in route cities
+  // Improved logic to check for active threats in route cities
   const hasActiveThreats = routeData.safetyAlerts && routeData.safetyAlerts.length > 0;
   
-  // Also check if start or end cities have alerts by name matching
+  // Enhanced city threat detection using our new mapping utility
   const hasCityThreats = routeData.safetyAlerts && routeData.safetyAlerts.some(alert => {
-    const alertLocation = alert.location_name?.toLowerCase() || '';
-    const alertOblast = alert.location_oblast?.toLowerCase() || '';
-    const startCity = routeData.startCity?.toLowerCase() || '';
-    const endCity = routeData.endCity?.toLowerCase() || '';
+    const startCity = routeData.startCity || '';
+    const endCity = routeData.endCity || '';
     
-    // Check if the alert location includes the city names or if the oblast matches
-    return alertLocation.includes(startCity) || 
-           alertLocation.includes(endCity) ||
-           alertLocation.includes(startCity.split(',')[0]) || 
-           alertLocation.includes(endCity.split(',')[0]) ||
-           alertOblast.includes(startCity) ||
-           alertOblast.includes(endCity) ||
-           alertOblast.includes(startCity.split(',')[0]) ||
-           alertOblast.includes(endCity.split(',')[0]) ||
-           startCity.includes(alertLocation.split(',')[0]) ||
-           endCity.includes(alertLocation.split(',')[0]);
+    // Use our improved matching logic
+    const matchesStart = doesAlertMatchCity(
+      alert.location_name || '', 
+      alert.location_oblast || '', 
+      startCity
+    );
+    
+    const matchesEnd = doesAlertMatchCity(
+      alert.location_name || '', 
+      alert.location_oblast || '', 
+      endCity
+    );
+    
+    if (matchesStart || matchesEnd) {
+      console.log('🚨 RouteDetails: Alert matches route cities:', {
+        alertLocation: alert.location_name,
+        alertOblast: alert.location_oblast,
+        startCity,
+        endCity,
+        matchesStart,
+        matchesEnd
+      });
+    }
+    
+    return matchesStart || matchesEnd;
   });
 
   const finalHasThreats = hasActiveThreats || hasCityThreats;
+  
+  console.log('🔍 RouteDetails threat detection:', {
+    startCity: routeData.startCity,
+    endCity: routeData.endCity,
+    totalAlerts: routeData.safetyAlerts?.length || 0,
+    hasActiveThreats,
+    hasCityThreats,
+    finalHasThreats,
+    alertDetails: routeData.safetyAlerts?.map(alert => ({
+      location: alert.location_name,
+      oblast: alert.location_oblast,
+      severity: alert.severity
+    }))
+  });
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-700">
@@ -128,7 +155,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
       {/* Status Information */}
       <div className="space-y-3">
-        {/* Active Threats Status - always show this */}
+        {/* Active Threats Status - enhanced with better detection */}
         <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
