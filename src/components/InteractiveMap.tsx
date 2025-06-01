@@ -2,7 +2,8 @@
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Clock, Cloud, AlertTriangle, MapPin, Gauge } from 'lucide-react';
+import { Clock, Cloud, AlertTriangle, MapPin, Gauge, Navigation, Zap, Shield } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '../hooks/use-mobile';
 
 interface InteractiveMapProps {
@@ -28,7 +29,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       transportMode: 'Transport Mode',
       weather: 'Weather',
       temperature: 'Temperature',
-      conflictRisk: 'Conflict Risk',
+      conflictRisk: 'Safety Risk',
       trafficLevel: 'Traffic Level',
       roadQuality: 'Road Quality',
       estimatedDelay: 'Traffic Delay',
@@ -149,30 +150,21 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     }
   };
 
-  const getTrafficColor = (level: string) => {
+  const getTrafficBadgeVariant = (level: string) => {
     switch (level) {
-      case 'light': return 'text-green-700';
-      case 'moderate': return 'text-yellow-700';
-      case 'heavy': return 'text-red-700';
-      default: return 'text-gray-700';
+      case 'light': return 'default';
+      case 'moderate': return 'secondary';
+      case 'heavy': return 'destructive';
+      default: return 'outline';
     }
   };
 
-  const getRoadQualityColor = (quality: string) => {
-    switch (quality) {
-      case 'excellent': return 'text-green-700';
-      case 'good': return 'text-blue-700';
-      case 'fair': return 'text-orange-700';
-      default: return 'text-gray-700';
-    }
-  };
-
-  const getRiskColor = (risk: string) => {
+  const getRiskBadgeVariant = (risk: string) => {
     switch (risk) {
-      case 'low': return 'text-green-700';
-      case 'moderate': return 'text-yellow-700';
-      case 'high': return 'text-red-700';
-      default: return 'text-gray-700';
+      case 'low': return 'default';
+      case 'moderate': return 'secondary';
+      case 'high': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -370,143 +362,147 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         </div>
       )}
 
-      {/* Desktop Route Info Overlay - hide on mobile */}
+      {/* Amazing Desktop Route Info Overlay - hide on mobile */}
       {routeData && !isSearching && !isMobile && (
-        <div className="absolute top-3 left-3 bg-white rounded-lg shadow-lg p-3 max-w-xs border border-gray-100">
-          {/* Route Header */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-1">
-              <MapPin className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-semibold text-gray-900">{t.routeDetails}</span>
-            </div>
-          </div>
-
-          {/* Data Source Indicator - Compact */}
-          <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg mb-2">
-            <span className="text-xs font-medium text-blue-800">
-              {routeData.realRoute ? t.realTimeData : t.fallbackData}
-            </span>
-            <div className={`w-2 h-2 rounded-full ${routeData.realRoute ? 'bg-green-500' : 'bg-orange-500'}`} />
-          </div>
-
-          {/* Route Details - Grid Layout */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <div className="bg-gray-50 p-2 rounded text-center">
-              <div className="text-xs text-gray-600">{t.distance}</div>
-              <div className="text-sm font-bold text-gray-900">
-                {routeData.distanceFormatted || `${routeData.distance} km`}
-              </div>
-            </div>
-            <div className="bg-gray-50 p-2 rounded text-center">
-              <div className="text-xs text-gray-600">{t.duration}</div>
-              <div className="text-sm font-bold text-gray-900">
-                {routeData.durationFormatted || `${routeData.duration}h`}
-              </div>
-            </div>
-          </div>
-
-          {/* Transport Mode - Compact */}
-          {routeData.transportMode && (
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded mb-2">
-              <div className="flex items-center space-x-1">
-                <Clock className="w-3 h-3 text-gray-600" />
-                <span className="text-xs font-medium text-gray-900">{t.transportMode}</span>
-              </div>
-              <span className="text-xs font-medium text-gray-700">
-                {t.transportModes[routeData.transportMode] || routeData.transportMode}
-              </span>
-            </div>
-          )}
-
-          {/* Enhanced Route Analysis */}
-          <div className="space-y-1 mb-2">
-            {/* Traffic Level */}
-            {routeData.trafficLevel && (
-              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
-                <div className="flex items-center space-x-1">
-                  <Gauge className="w-3 h-3 text-yellow-600" />
-                  <span className="text-xs font-medium">{t.trafficLevel}</span>
+        <div className="absolute top-4 left-4 w-80">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+            {/* Gradient Header */}
+            <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 p-6 text-white">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                  <Navigation className="w-6 h-6" />
                 </div>
-                <span className={`text-xs font-medium ${getTrafficColor(routeData.trafficLevel)}`}>
-                  {t.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
-                </span>
-              </div>
-            )}
-
-            {/* Road Quality */}
-            {routeData.roadQuality && (
-              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                <div className="flex items-center space-x-1">
-                  <MapPin className="w-3 h-3 text-blue-600" />
-                  <span className="text-xs font-medium">{t.roadQuality}</span>
-                </div>
-                <span className={`text-xs font-medium ${getRoadQualityColor(routeData.roadQuality)}`}>
-                  {t.roadQualities[routeData.roadQuality] || routeData.roadQuality}
-                </span>
-              </div>
-            )}
-
-            {/* Traffic Delay */}
-            {routeData.estimatedDelay !== undefined && routeData.estimatedDelay > 0 && (
-              <div className="flex items-center justify-between p-2 bg-orange-50 rounded">
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-3 h-3 text-orange-600" />
-                  <span className="text-xs font-medium">{t.estimatedDelay}</span>
-                </div>
-                <span className="text-xs text-orange-700">
-                  +{routeData.estimatedDelay} min
-                </span>
-              </div>
-            )}
-
-            {/* Weather */}
-            <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-              <div className="flex items-center space-x-1">
-                <Cloud className="w-3 h-3 text-blue-600" />
-                <span className="text-xs font-medium">{t.weather}</span>
-              </div>
-              <span className="text-xs text-blue-700">
-                {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
-              </span>
-            </div>
-
-            {/* Temperature */}
-            {routeData.temperature !== undefined && (
-              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 text-blue-600 font-bold text-xs">°C</div>
-                  <span className="text-xs font-medium">{t.temperature}</span>
-                </div>
-                <span className="text-xs text-blue-700 font-medium">
-                  {routeData.temperature}°C
-                </span>
-              </div>
-            )}
-
-            {/* Conflict Risk */}
-            <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
-              <div className="flex items-center space-x-1">
-                <AlertTriangle className="w-3 h-3 text-yellow-600" />
-                <span className="text-xs font-medium">{t.conflictRisk}</span>
-              </div>
-              <span className={`text-xs font-medium ${getRiskColor(routeData.conflictRisk)}`}>
-                {t.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
-              </span>
-            </div>
-          </div>
-
-          {/* Error Message - Compact */}
-          {routeData.error && (
-            <div className="p-2 bg-orange-50 rounded border border-orange-200">
-              <div className="flex items-start space-x-1">
-                <AlertTriangle className="w-3 h-3 text-orange-600 mt-0.5" />
                 <div>
-                  <div className="text-xs font-medium text-orange-800">API Notice</div>
-                  <div className="text-xs text-orange-700">{routeData.error}</div>
+                  <h3 className="text-xl font-bold">{t.routeDetails}</h3>
+                  <p className="text-blue-100 text-sm">Live route analysis</p>
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Data Source Badge */}
+            <div className="px-6 pt-4">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-2xl border border-emerald-200/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-800">
+                    {routeData.realRoute ? t.realTimeData : t.fallbackData}
+                  </span>
+                </div>
+                <Badge variant={routeData.realRoute ? "default" : "secondary"} className="px-3 py-1 text-xs font-medium">
+                  <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400 animate-pulse' : 'bg-orange-400'}`} />
+                  {routeData.realRoute ? 'Live' : 'Est.'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Main Stats */}
+            <div className="px-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-2xl border border-blue-200/50">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <MapPin className="w-3 h-3 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{t.distance}</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {routeData.distanceFormatted || `${routeData.distance} km`}
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-2xl border border-purple-200/50">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <Clock className="w-3 h-3 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-purple-700 uppercase tracking-wide">{t.duration}</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {routeData.durationFormatted || `${routeData.duration}h`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Conditions */}
+            <div className="px-6 pb-6 space-y-3">
+              {/* Traffic Level */}
+              {routeData.trafficLevel && (
+                <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                      <Gauge className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="font-semibold text-gray-800">{t.trafficLevel}</span>
+                  </div>
+                  <Badge variant={getTrafficBadgeVariant(routeData.trafficLevel)} className="px-3 py-1 font-medium">
+                    {t.trafficLevels[routeData.trafficLevel]}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Safety Risk */}
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-semibold text-gray-800">{t.conflictRisk}</span>
+                </div>
+                <Badge variant={getRiskBadgeVariant(routeData.conflictRisk)} className="px-3 py-1 font-medium">
+                  {t.riskLevels[routeData.conflictRisk]}
+                </Badge>
+              </div>
+
+              {/* Weather */}
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center">
+                    <Cloud className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-semibold text-gray-800">{t.weather}</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-gray-800">
+                    {t.weatherConditions[routeData.weatherCondition]}
+                  </div>
+                  {routeData.temperature !== undefined && (
+                    <div className="text-sm text-gray-600 font-medium">{routeData.temperature}°C</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Traffic Delay Alert */}
+              {routeData.estimatedDelay !== undefined && routeData.estimatedDelay > 0 && (
+                <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border border-orange-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-orange-800">{t.estimatedDelay}</div>
+                      <div className="text-sm text-orange-700 font-medium">+{routeData.estimatedDelay} minutes due to traffic</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {routeData.error && (
+                <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-amber-800">API Notice</div>
+                      <div className="text-amber-700 text-sm">{routeData.error}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
