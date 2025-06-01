@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Shield, Cloud, Gauge, AlertTriangle } from 'lucide-react';
+import { MapPin, Shield, Cloud, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
@@ -13,34 +13,6 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   routeData,
   translations
 }) => {
-  const getRiskColor = (status: string) => {
-    switch (status) {
-      case 'SAFE': return 'text-green-400';
-      case 'MODERATE': return 'text-blue-400';
-      case 'CAUTION': return 'text-yellow-400';
-      case 'DANGER': return 'text-orange-400';
-      case 'CRITICAL': return 'text-red-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getBadgeStyle = (status: string) => {
-    switch (status) {
-      case 'SAFE':
-        return 'bg-green-600 text-white border-none';
-      case 'MODERATE': 
-        return 'bg-blue-600 text-white border-none';
-      case 'CAUTION': 
-        return 'bg-yellow-600 text-white border-none';
-      case 'DANGER':
-        return 'bg-orange-600 text-white border-none';
-      case 'CRITICAL':
-        return 'bg-red-600 text-white border-none';
-      default: 
-        return 'bg-gray-600 text-white border-none';
-    }
-  };
-
   const getStatusBadgeStyle = (level: string) => {
     switch (level) {
       case 'low':
@@ -57,6 +29,9 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         return 'bg-gray-600 text-white border-none';
     }
   };
+
+  // Check if there are any safety alerts (active threats)
+  const hasActiveThreats = routeData.safetyAlerts && routeData.safetyAlerts.length > 0;
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-700">
@@ -98,7 +73,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       </div>
 
       {/* Safety Alerts Section */}
-      {routeData.safetyAlerts && routeData.safetyAlerts.length > 0 && (
+      {hasActiveThreats && (
         <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -131,43 +106,20 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
       {/* Status Information */}
       <div className="space-y-3">
-        {/* Safety Risk */}
+        {/* Active Threats Status */}
         <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-medium text-white">{translations.conflictRisk}</span>
+            <span className="text-sm font-medium text-white">Active Threats (72h)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="text-right">
-              <div className={`text-sm font-semibold ${getRiskColor(routeData.safetyStatus?.status || '')}`}>
-                {routeData.safetyStatus?.status || 'UNKNOWN'}
-              </div>
-              <div className="text-xs text-gray-400">
-                {routeData.safetyStatus?.description || 'No data available'}
-              </div>
-            </div>
-            <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.safetyStatus?.status || '')}`}>
-              {routeData.safetyScore || 0}/100
+            <Badge className={`text-sm font-semibold ${hasActiveThreats ? 'bg-red-600 text-white border-none' : 'bg-green-600 text-white border-none'}`}>
+              {hasActiveThreats ? 'YES' : 'NO'}
             </Badge>
           </div>
         </div>
-        
-        {/* Traffic Level */}
-        {routeData.trafficLevel && (
-          <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                <Gauge className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-medium text-white">{translations.trafficLevel}</span>
-            </div>
-            <Badge className={`text-sm font-semibold ${getStatusBadgeStyle(routeData.trafficLevel)}`}>
-              {translations.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
-            </Badge>
-          </div>
-        )}
         
         {/* Weather */}
         {routeData.weatherCondition && (
@@ -188,25 +140,9 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             </div>
           </div>
         )}
-        
-        {/* Estimated Delay */}
-        {routeData.estimatedDelay > 0 && (
-          <div className="flex items-center justify-between p-3 bg-orange-900 rounded-xl">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-medium text-white">Delay</span>
-            </div>
-            <span className="text-sm font-semibold text-orange-400">
-              +{routeData.estimatedDelay}min
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
 export default RouteDetails;
-
