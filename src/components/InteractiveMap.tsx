@@ -1,8 +1,6 @@
-
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Card } from '@/components/ui/card';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -181,28 +179,26 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
   };
 
   return (
-    <Card className="h-[600px] shadow-xl bg-white border-0 overflow-hidden">
-      <div className="relative h-full">
-        <div ref={mapContainer} className="absolute inset-0" />
-        
-        {isSearching && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">{t.analyzing}</p>
-            </div>
+    <div className="absolute inset-0 bg-white">
+      <div ref={mapContainer} className="absolute inset-0" />
+      
+      {isSearching && (
+        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">{t.analyzing}</p>
           </div>
-        )}
+        </div>
+      )}
 
-        {!routeData && !isSearching && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <p>{t.noRoute}</p>
-            </div>
+      {!routeData && !isSearching && (
+        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <p>{t.noRoute}</p>
           </div>
-        )}
-      </div>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 };
 

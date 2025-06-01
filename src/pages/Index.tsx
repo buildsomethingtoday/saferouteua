@@ -4,7 +4,7 @@ import RouteInput from '../components/RouteInput';
 import InteractiveMap from '../components/InteractiveMap';
 import SafetyPanel from '../components/SafetyPanel';
 import LanguageToggle from '../components/LanguageToggle';
-import { MapPin, Shield, Navigation } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 const Index = () => {
   const [language, setLanguage] = useState<'en' | 'ua'>('en');
@@ -14,65 +14,39 @@ const Index = () => {
   const translations = {
     en: {
       title: 'SafeRoute UA',
-      subtitle: 'Navigate Ukraine safely with real-time risk assessment',
-      tagline: 'Your trusted travel companion for safer journeys'
+      subtitle: 'Navigate Ukraine safely'
     },
     ua: {
       title: 'SafeRoute UA',
-      subtitle: 'Безпечна навігація Україною з оцінкою ризиків у реальному часі',
-      tagline: 'Ваш надійний супутник для безпечних подорожей'
+      subtitle: 'Безпечна навігація Україною'
     }
   };
 
   const t = translations[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">{t.title}</h1>
-                <p className="text-sm text-gray-600 hidden sm:block">{t.tagline}</p>
-              </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Compact Header */}
+      <header className="bg-white border-b border-gray-200 flex-shrink-0 z-50">
+        <div className="flex items-center justify-between h-14 px-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
             </div>
-            <LanguageToggle language={language} onLanguageChange={setLanguage} />
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">{t.title}</h1>
+              <p className="text-xs text-gray-600">{t.subtitle}</p>
+            </div>
           </div>
+          <LanguageToggle language={language} onLanguageChange={setLanguage} />
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            {t.subtitle}
-          </h2>
-          <div className="flex items-center justify-center space-x-8 mt-8">
-            <div className="flex items-center space-x-2 text-gray-600">
-              <MapPin className="w-5 h-5 text-blue-500" />
-              <span className="text-sm">Real-time routing</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Shield className="w-5 h-5 text-green-500" />
-              <span className="text-sm">Safety analysis</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Navigation className="w-5 h-5 text-purple-500" />
-              <span className="text-sm">Weather aware</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Route Input Panel */}
-          <div className="lg:col-span-1">
+      {/* Main Layout - Sidebar + Map */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar */}
+        <div className="w-96 bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <RouteInput 
               language={language}
               onRouteRequest={setRouteData}
@@ -80,22 +54,20 @@ const Index = () => {
               setIsSearching={setIsSearching}
             />
             {routeData && (
-              <div className="mt-6">
-                <SafetyPanel language={language} routeData={routeData} />
-              </div>
+              <SafetyPanel language={language} routeData={routeData} />
             )}
           </div>
-
-          {/* Interactive Map Display */}
-          <div className="lg:col-span-2">
-            <InteractiveMap 
-              language={language}
-              routeData={routeData}
-              isSearching={isSearching}
-            />
-          </div>
         </div>
-      </main>
+
+        {/* Map Area */}
+        <div className="flex-1 relative">
+          <InteractiveMap 
+            language={language}
+            routeData={routeData}
+            isSearching={isSearching}
+          />
+        </div>
+      </div>
     </div>
   );
 };
