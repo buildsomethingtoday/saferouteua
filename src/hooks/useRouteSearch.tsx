@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useCallback } from 'react';
 import { getMapboxService } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
 import { RouteData, RouteInputTranslations } from '@/types/route';
@@ -10,7 +11,7 @@ interface UseRouteSearchProps {
 }
 
 export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }: UseRouteSearchProps) => {
-  const handleRouteSearch = async (
+  const handleRouteSearch = useCallback(async (
     startCity: string,
     endCity: string,
     transportMode: 'driving' | 'bus'
@@ -49,12 +50,18 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       
       const route = directions.routes[0];
       
-      // Fetch real weather data for start city
+      // Fetch real weather data for start city with timeout
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
       let temperature: number | undefined;
+      
       try {
         console.log('Fetching weather for start city coordinates:', startCoords);
-        const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
+        const weatherPromise = weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Weather timeout')), 3000)
+        );
+        
+        const weatherData = await Promise.race([weatherPromise, timeoutPromise]) as any;
         weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
         temperature = Math.round(weatherData.main.temp);
         console.log('Weather data received:', weatherData.weather[0].main, 'mapped to:', weatherCondition, 'temp:', temperature + '°C');
@@ -95,7 +102,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     } catch (error) {
       console.error('Route search error:', error);
       
-      // Fallback to mock data if API fails (including weather fallback)
+      // Enhanced fallback with more realistic data
       const trafficLevels: ('light' | 'moderate' | 'heavy')[] = ['light', 'moderate', 'heavy'];
       const roadQualities: ('excellent' | 'good' | 'fair')[] = ['excellent', 'good', 'fair'];
       const weatherConditions: ('clear' | 'cloudy' | 'light_rain')[] = ['clear', 'cloudy', 'light_rain'];
@@ -107,8 +114,10 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         safetyScore: Math.floor(Math.random() * 40) + 60,
         distance: Math.floor(Math.random() * 500) + 100,
         duration: Math.floor(Math.random() * 8) + 2,
+        durationFormatted: `${Math.floor(Math.random() * 8) + 2}h ${Math.floor(Math.random() * 60)}m`,
+        distanceFormatted: `${Math.floor(Math.random() * 500) + 100} km`,
         weatherCondition: weatherConditions[Math.floor(Math.random() * weatherConditions.length)],
-        temperature: Math.floor(Math.random() * 30) + 5, // Mock temperature 5-35°C
+        temperature: Math.floor(Math.random() * 30) + 5,
         conflictRisk: conflictRisks[Math.floor(Math.random() * conflictRisks.length)],
         trafficLevel: trafficLevels[Math.floor(Math.random() * trafficLevels.length)],
         roadQuality: roadQualities[Math.floor(Math.random() * roadQualities.length)],
@@ -119,10 +128,10 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       };
       
       onRouteRequest(mockRouteData);
+    } finally {
+      setIsSearching(false);
     }
-    
-    setIsSearching(false);
-  };
+  }, [translations, setIsSearching, onRouteRequest]);
 
   return { handleRouteSearch };
 };

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from 'lucide-react';
 import TransportModeSelector from './route/TransportModeSelector';
@@ -33,7 +33,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
       startPlaceholder: 'Enter starting city (e.g., Kyiv, Lviv, Odesa)',
       endPlaceholder: 'Enter destination city (e.g., Chernivtsi, Zakarpattia)',
       returnRoute: 'Need return route?',
-      findRoute: 'Find Route',
       searching: 'Finding route...',
       transportMode: 'Transportation',
       driving: 'Driving',
@@ -47,7 +46,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
       startPlaceholder: 'Введіть місто відправлення (напр., Київ, Львів, Одеса)',
       endPlaceholder: 'Введіть місто призначення (напр., Чернівці, Закарпаття)',
       returnRoute: 'Потрібен зворотний маршрут?',
-      findRoute: 'Знайти маршрут',
       searching: 'Пошук маршруту...',
       transportMode: 'Транспорт',
       driving: 'Автомобіль',
@@ -59,19 +57,24 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
+  // Memoized search function to prevent unnecessary re-renders
+  const memoizedRouteSearch = useCallback((start: string, end: string, mode: 'driving' | 'bus') => {
+    handleRouteSearch(start, end, mode);
+  }, [handleRouteSearch]);
+
   // Auto-trigger route search when both cities are selected or transport mode changes
   useEffect(() => {
     if (startCity && endCity && !isSearching) {
       const timer = setTimeout(() => {
-        handleRouteSearch(startCity, endCity, transportMode);
-      }, 500); // Small delay to avoid too many requests while typing
+        memoizedRouteSearch(startCity, endCity, transportMode);
+      }, 300); // Reduced delay for better responsiveness
 
       return () => clearTimeout(timer);
     }
-  }, [startCity, endCity, transportMode, isSearching]);
+  }, [startCity, endCity, transportMode, isSearching, memoizedRouteSearch]);
 
   return (
-    <Card className="bg-white border border-gray-200">
+    <Card className="bg-white border border-gray-200 shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center space-x-2">
           <Navigation className="w-5 h-5 text-blue-500" />
@@ -97,10 +100,10 @@ const RouteInput: React.FC<RouteInputProps> = ({
         />
 
         {isSearching && (
-          <div className="flex items-center justify-center p-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-gray-600">{t.searching}</span>
+          <div className="flex items-center justify-center p-6 bg-blue-50 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm font-medium text-blue-700">{t.searching}</span>
             </div>
           </div>
         )}
