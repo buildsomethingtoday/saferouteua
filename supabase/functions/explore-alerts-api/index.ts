@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const alertsApiKey = Deno.env.get('ALERTS_IN_UA_API_KEY');
+const alertsApiKey = '5f3057f3a4497052ef3a0e0d2f12be79270c923fab2203';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
