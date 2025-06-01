@@ -1,4 +1,3 @@
-
 interface DirectionsResponse {
   routes: {
     geometry: any; // GeoJSON geometry object
@@ -69,73 +68,109 @@ class MapboxService {
 
   async getDirections(
     coordinates: Array<[number, number]>,
-    profile: 'driving' | 'driving-traffic' | 'walking' | 'cycling' = 'driving-traffic',
+    profile: 'driving' | 'driving-traffic' | 'walking' | 'cycling' = 'driving',
     alternatives: boolean = true
   ): Promise<DirectionsResponse> {
     const coordinatesString = coordinates.map(coord => coord.join(',')).join(';');
-    const params = new URLSearchParams({
-      geometries: 'geojson',
-      overview: 'full',
-      steps: 'true',
-      access_token: this.accessToken
-    });
-
-    if (alternatives) {
-      params.append('alternatives', 'true');
-      params.append('max_alternatives', '2');
-    }
-
-    // Simplified annotations - only use basic ones that are widely supported
-    if (profile === 'driving' || profile === 'driving-traffic') {
-      params.append('annotations', 'duration,distance');
-    }
-
-    const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?${params}`;
-
-    console.log('🛣️ Mapbox Directions API call:', {
-      profile,
-      coordinates: coordinates.length,
-      url: url.replace(this.accessToken, 'TOKEN_HIDDEN')
-    });
-
-    try {
-      const response = await fetch(url);
-      
-      console.log('📡 Mapbox Directions response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Mapbox Directions API HTTP Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
+    
+    // Try driving-traffic first, then fallback to driving if it fails
+    const profilesToTry = profile === 'driving-traffic' ? ['driving-traffic', 'driving'] : [profile];
+    
+    for (const currentProfile of profilesToTry) {
+      try {
+        console.log(`🛣️ Trying Mapbox Directions with profile: ${currentProfile}`);
+        
+        const params = new URLSearchParams({
+          geometries: 'geojson',
+          overview: 'full',
+          access_token: this.accessToken
         });
-        throw new Error(`Mapbox Directions API HTTP ${response.status}: ${errorText}`);
-      }
 
-      const data = await response.json();
-      console.log('✅ Mapbox Directions response received:', {
-        code: data.code,
-        routes: data.routes?.length || 0,
-        message: data.message
-      });
-      
-      if (data.code !== 'Ok') {
-        console.error('❌ Mapbox Directions API error:', {
+        // Only add steps for non-traffic profiles to avoid parameter conflicts
+        if (currentProfile !== 'driving-traffic') {
+          params.append('steps', 'true');
+        }
+
+        // Only add alternatives for driving profiles
+        if (alternatives && (currentProfile === 'driving' || currentProfile === 'driving-traffic')) {
+          params.append('alternatives', 'true');
+          params.append('max_alternatives', '2');
+        }
+
+        const url = `${this.baseUrl}/directions/v5/mapbox/${currentProfile}/${coordinatesString}?${params}`;
+
+        console.log('🛣️ Mapbox Directions API call:', {
+          profile: currentProfile,
+          coordinates: coordinates.length,
+          url: url.replace(this.accessToken, 'TOKEN_HIDDEN')
+        });
+
+        const response = await fetch(url);
+        
+        console.log('📡 Mapbox Directions response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ Mapbox Directions API HTTP Error for ${currentProfile}:`, {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          
+          // If this is not the last profile to try, continue to next
+          if (currentProfile !== profilesToTry[profilesToTry.length - 1]) {
+            console.log(`⚠️ Trying fallback profile...`);
+            continue;
+          }
+          
+          throw new Error(`Mapbox Directions API HTTP ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Mapbox Directions response received:', {
+          profile: currentProfile,
           code: data.code,
+          routes: data.routes?.length || 0,
           message: data.message
         });
-        throw new Error(`Mapbox Directions API error: ${data.code} - ${data.message || 'Unknown API error'}`);
+        
+        if (data.code !== 'Ok') {
+          console.error(`❌ Mapbox Directions API error for ${currentProfile}:`, {
+            code: data.code,
+            message: data.message
+          });
+          
+          // If this is not the last profile to try, continue to next
+          if (currentProfile !== profilesToTry[profilesToTry.length - 1]) {
+            console.log(`⚠️ Trying fallback profile...`);
+            continue;
+          }
+          
+          throw new Error(`Mapbox Directions API error: ${data.code} - ${data.message || 'Unknown API error'}`);
+        }
+        
+        // Success! Return the data
+        return data;
+        
+      } catch (error) {
+        console.error(`❌ Mapbox Directions fetch error for ${currentProfile}:`, error);
+        
+        // If this is not the last profile to try, continue to next
+        if (currentProfile !== profilesToTry[profilesToTry.length - 1]) {
+          console.log(`⚠️ Trying fallback profile due to error...`);
+          continue;
+        }
+        
+        // This was the last attempt, throw the error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw new Error('Network error: Unable to connect to Mapbox Directions API. Please check your internet connection.');
+        }
+        throw error;
       }
-      
-      return data;
-    } catch (error) {
-      console.error('❌ Mapbox Directions fetch error:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Unable to connect to Mapbox Directions API. Please check your internet connection.');
-      }
-      throw error;
     }
+    
+    // This should never be reached, but just in case
+    throw new Error('All direction profile attempts failed');
   }
 
   async geocodeForward(query: string, proximity?: [number, number]): Promise<GeocodingResponse> {
@@ -257,17 +292,7 @@ class MapboxService {
   calculateTrafficBasedSafetyScore(route: any): number {
     let baseScore = 75;
     
-    if (route.legs && route.legs[0]?.annotation?.congestion) {
-      const congestionData = route.legs[0].annotation.congestion;
-      const totalSegments = congestionData.length;
-      const heavyTrafficSegments = congestionData.filter((level: string) => 
-        level === 'heavy' || level === 'severe'
-      ).length;
-      
-      const trafficPenalty = (heavyTrafficSegments / totalSegments) * 15;
-      baseScore -= trafficPenalty;
-    }
-    
+    // Simplified scoring since we may not have all traffic data
     if (route.distance) {
       const distancePenalty = Math.min(route.distance / 1000 * 0.05, 8);
       baseScore -= distancePenalty;
@@ -290,33 +315,28 @@ class MapboxService {
     roadQuality: 'excellent' | 'good' | 'fair';
     estimatedDelay: number;
   } {
-    let trafficLevel: 'light' | 'moderate' | 'heavy' = 'light';
+    let trafficLevel: 'light' | 'moderate' | 'heavy' = 'moderate';
     let roadQuality: 'excellent' | 'good' | 'fair' = 'good';
     let estimatedDelay = 0;
 
-    if (route.legs && route.legs[0]?.annotation?.congestion) {
-      const congestionData = route.legs[0].annotation.congestion;
-      const heavyCount = congestionData.filter((level: string) => level === 'heavy' || level === 'severe').length;
-      const moderateCount = congestionData.filter((level: string) => level === 'moderate').length;
-      
-      if (heavyCount > congestionData.length * 0.3) {
+    // Simplified analysis for basic routing
+    if (route.duration_traffic && route.duration) {
+      estimatedDelay = Math.round((route.duration_traffic - route.duration) / 60);
+      if (estimatedDelay > 30) {
         trafficLevel = 'heavy';
-      } else if (moderateCount > congestionData.length * 0.4) {
+      } else if (estimatedDelay > 10) {
         trafficLevel = 'moderate';
+      } else {
+        trafficLevel = 'light';
       }
     }
 
-    if (route.duration_traffic && route.duration) {
-      estimatedDelay = Math.round((route.duration_traffic - route.duration) / 60);
-    }
-
-    if (route.legs && route.legs[0]?.annotation?.maxspeed) {
-      const speeds = route.legs[0].annotation.maxspeed;
-      const avgSpeed = speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length;
-      
-      if (avgSpeed >= 80) {
+    // Basic road quality estimation based on distance vs duration
+    if (route.distance && route.duration) {
+      const avgSpeed = (route.distance / 1000) / (route.duration / 3600); // km/h
+      if (avgSpeed >= 60) {
         roadQuality = 'excellent';
-      } else if (avgSpeed >= 50) {
+      } else if (avgSpeed >= 40) {
         roadQuality = 'good';
       } else {
         roadQuality = 'fair';
