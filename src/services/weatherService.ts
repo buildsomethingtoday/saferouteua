@@ -71,8 +71,21 @@ export class WeatherService {
   }
 }
 
-export const getWeatherService = () => {
-  // Using the existing API key for now - in production this should be moved to Supabase secrets
-  const apiKey = '621ef155aee944e52067333d22d9968a';
-  return new WeatherService(apiKey);
+export const getWeatherService = async (): Promise<WeatherService> => {
+  try {
+    console.log('🔄 Fetching OpenWeather API key from Supabase...');
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase.functions.invoke('get-weather-key');
+    
+    if (error || !data?.key) {
+      console.warn('⚠️ Could not fetch OpenWeather API key from Supabase, error:', error);
+      throw new Error('Failed to get OpenWeather API key from Supabase');
+    } else {
+      console.log('✅ Successfully retrieved OpenWeather API key from Supabase');
+      return new WeatherService(data.key);
+    }
+  } catch (error) {
+    console.error('❌ Error fetching OpenWeather API key from Supabase:', error);
+    throw new Error(`Failed to initialize Weather service: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };

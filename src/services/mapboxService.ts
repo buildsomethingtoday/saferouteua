@@ -283,7 +283,6 @@ export const getMapboxService = async (): Promise<MapboxService> => {
   if (!mapboxService) {
     try {
       console.log('🔄 Fetching Mapbox token from Supabase...');
-      // Try to get token from Supabase function
       const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
@@ -298,16 +297,6 @@ export const getMapboxService = async (): Promise<MapboxService> => {
       console.error('❌ Error fetching token from Supabase:', error);
       throw new Error(`Failed to initialize Mapbox service: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-  return mapboxService;
-};
-
-// Keep the synchronous version for backward compatibility with fallback
-export const getMapboxServiceSync = (): MapboxService => {
-  if (!mapboxService) {
-    console.warn('⚠️ Using fallback token - this should only be used as a last resort');
-    const accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
-    mapboxService = new MapboxService(accessToken);
   }
   return mapboxService;
 };

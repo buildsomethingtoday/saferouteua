@@ -25,12 +25,11 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     setIsSearching(true);
     
     try {
-      // Get the async Mapbox service to ensure proper token handling
-      console.log('📡 Initializing Mapbox service...');
+      // Get the async services to ensure proper token handling
+      console.log('📡 Initializing services...');
       const mapboxService = await getMapboxService();
-      console.log('✅ Mapbox service initialized successfully');
-      
-      const weatherService = getWeatherService();
+      const weatherService = await getWeatherService();
+      console.log('✅ Services initialized successfully');
       
       // Geocode both cities with more specific queries
       console.log('🌍 Geocoding start city:', startCity);
@@ -124,7 +123,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     } catch (error) {
       console.error('❌ Route search error:', error);
       
-      // Show the actual error instead of fallback data
+      // Show the actual error
       const errorRouteData: RouteData = {
         startCity,
         endCity,
