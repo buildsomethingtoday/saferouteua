@@ -33,7 +33,7 @@ serve(async (req) => {
     const { endpoint = 'regions' } = requestBody;
     
     // Base URL for Alerts.in.ua API based on documentation
-    const baseUrl = 'https://api.alerts.in.ua/v2';
+    const baseUrl = 'https://api.alerts.in.ua/v1';
     
     // Available endpoints based on official documentation
     const endpoints = {
@@ -43,14 +43,15 @@ serve(async (req) => {
       history: `${baseUrl}/alerts/history.json`,
     };
 
-    const targetUrl = endpoints[endpoint] || endpoints.regions;
-    console.log('📡 Fetching from:', targetUrl);
+    const baseEndpointUrl = endpoints[endpoint] || endpoints.regions;
+    // Add token as query parameter as shown in documentation
+    const targetUrl = `${baseEndpointUrl}?token=${alertsApiKey}`;
+    console.log('📡 Fetching from:', targetUrl.replace(alertsApiKey, '[REDACTED]'));
 
-    // Use X-API-Key header as shown in documentation
+    // Use query parameter authentication as shown in documentation
     const response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
-        'X-API-Key': alertsApiKey,
         'Content-Type': 'application/json',
         'User-Agent': 'SafeRoute-UA/1.0',
       },
@@ -67,7 +68,7 @@ serve(async (req) => {
         status: response.status,
         statusText: response.statusText,
         details: errorText,
-        url: targetUrl
+        url: baseEndpointUrl
       }), {
         status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -75,13 +76,13 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('✅ Success with X-API-Key method');
+    console.log('✅ Success with query parameter method');
     console.log('📋 Data received:', JSON.stringify(data, null, 2));
 
     return new Response(JSON.stringify({
       success: true,
       endpoint: endpoint,
-      authMethod: 'x-api-key',
+      authMethod: 'query-parameter',
       data: data,
       dataStructure: analyzeDataStructure(data)
     }), {
