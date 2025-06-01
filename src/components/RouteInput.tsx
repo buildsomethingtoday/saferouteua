@@ -57,21 +57,17 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
-  // Memoized search function to prevent unnecessary re-renders
-  const memoizedRouteSearch = useCallback((start: string, end: string, mode: 'driving' | 'bus') => {
-    handleRouteSearch(start, end, mode);
-  }, [handleRouteSearch]);
-
   // Auto-trigger route search when both cities are selected or transport mode changes
   useEffect(() => {
     if (startCity && endCity && !isSearching) {
+      console.log('Triggering route search for:', startCity, 'to', endCity, 'via', transportMode);
       const timer = setTimeout(() => {
-        memoizedRouteSearch(startCity, endCity, transportMode);
-      }, 300); // Reduced delay for better responsiveness
+        handleRouteSearch(startCity, endCity, transportMode);
+      }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [startCity, endCity, transportMode, isSearching, memoizedRouteSearch]);
+  }, [startCity, endCity, transportMode]); // Removed isSearching and memoizedRouteSearch from dependencies
 
   return (
     <Card className="bg-white border border-gray-200 shadow-sm">

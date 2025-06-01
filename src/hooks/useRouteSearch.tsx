@@ -18,6 +18,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
   ) => {
     if (!startCity || !endCity) return;
     
+    console.log('Starting route search for:', startCity, 'to', endCity);
     setIsSearching(true);
     
     try {
