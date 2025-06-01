@@ -26,7 +26,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     
     try {
       // Get the async services to ensure proper token handling
-      console.log('📡 Initializing services...');
+      console.log('📡 Initializing Mapbox service...');
       const mapboxService = await getMapboxService();
       console.log('✅ Mapbox service initialized successfully');
       
@@ -47,8 +47,8 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         throw new Error(`Could not find end city: ${endCity}`);
       }
       
-      const startCoords = startGeocode.features[0].center;
-      const endCoords = endGeocode.features[0].center;
+      const startCoords: [number, number] = startGeocode.features[0].center;
+      const endCoords: [number, number] = endGeocode.features[0].center;
       
       console.log('📍 Start coordinates:', startCoords);
       console.log('📍 End coordinates:', endCoords);
@@ -69,8 +69,6 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       
       const route = directions.routes[0];
       console.log('✅ Selected route:', route);
-      console.log('🗺️ Route geometry type:', route.geometry?.type);
-      console.log('🗺️ Route geometry coordinates length:', route.geometry?.coordinates?.length);
       
       // Fetch weather data with better error handling
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
@@ -96,6 +94,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('📊 Safety score:', safetyScore);
       console.log('📊 Route quality:', routeQuality);
       
+      // Create a clean route data object
       const routeData: RouteData = {
         startCity,
         endCity,
@@ -106,7 +105,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         duration: Math.round(route.duration / 3600),
         durationFormatted: mapboxService.formatDuration(route.duration),
         distanceFormatted: mapboxService.formatDistance(route.distance),
-        geometry: route.geometry, // This is crucial for map display
+        geometry: route.geometry,
         transportMode: 'driving',
         trafficLevel: routeQuality.trafficLevel,
         roadQuality: routeQuality.roadQuality,
@@ -118,13 +117,14 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         realRoute: true
       };
       
-      console.log('✅ Final route data prepared:', routeData);
+      console.log('✅ Final route data prepared, calling onRouteRequest...');
       onRouteRequest(routeData);
+      console.log('✅ Route request completed successfully');
       
     } catch (error) {
       console.error('❌ Route search error:', error);
       
-      // Show the actual error
+      // Create a proper error route data object
       const errorRouteData: RouteData = {
         startCity,
         endCity,
@@ -136,6 +136,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('❌ Sending error route data:', errorRouteData);
       onRouteRequest(errorRouteData);
     } finally {
+      console.log('🔄 Setting isSearching to false');
       setIsSearching(false);
     }
   }, [translations, setIsSearching, onRouteRequest]);

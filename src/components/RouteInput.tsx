@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation, ArrowRight, Shield, MapPin, Clock, Cloud } from 'lucide-react';
@@ -105,22 +104,34 @@ const RouteInput: React.FC<RouteInputProps> = ({
   // Auto-trigger route search when both cities are selected (only once)
   useEffect(() => {
     if (startCity && endCity && !isSearching && !hasTriggeredSearch) {
-      console.log('🎯 Triggering route search for:', startCity, 'to', endCity);
+      console.log('🎯 Auto-triggering route search for:', startCity, 'to', endCity);
       setHasTriggeredSearch(true);
       const timer = setTimeout(() => {
+        console.log('🚀 Executing route search...');
         handleRouteSearch(startCity, endCity, 'driving');
       }, 500);
 
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('🔄 Clearing route search timer');
+        clearTimeout(timer);
+      };
     }
   }, [startCity, endCity, isSearching, hasTriggeredSearch, handleRouteSearch]);
 
   // Reset search trigger when cities are cleared
   useEffect(() => {
     if (!startCity || !endCity) {
+      console.log('🔄 Resetting search trigger - cities cleared');
       setHasTriggeredSearch(false);
     }
   }, [startCity, endCity]);
+
+  // Debug route data changes
+  useEffect(() => {
+    if (routeData) {
+      console.log('📊 RouteInput received new route data:', routeData);
+    }
+  }, [routeData]);
 
   // Ukraine flag emoji component
   const UkraineFlag = () => (
@@ -179,7 +190,10 @@ const RouteInput: React.FC<RouteInputProps> = ({
             </label>
             <CityAutocomplete
               value={startCity}
-              onChange={setStartCity}
+              onChange={(value) => {
+                console.log('🏙️ Start city changed to:', value);
+                setStartCity(value);
+              }}
               placeholder={t.startPlaceholder}
               language={language}
             />
@@ -195,7 +209,10 @@ const RouteInput: React.FC<RouteInputProps> = ({
             </label>
             <CityAutocomplete
               value={endCity}
-              onChange={setEndCity}
+              onChange={(value) => {
+                console.log('🏙️ End city changed to:', value);
+                setEndCity(value);
+              }}
               placeholder={t.endPlaceholder}
               language={language}
             />
