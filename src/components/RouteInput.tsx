@@ -1,13 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navigation, ArrowRight, Shield, MapPin, Clock, Cloud } from 'lucide-react';
+import { Navigation, ArrowRight, Shield, MapPin, Cloud, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 import CityAutocomplete from './CityAutocomplete';
+import LanguageToggle from './LanguageToggle';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
+  onLanguageChange: (language: 'en' | 'ua') => void;
   onRouteRequest: (data: RouteData) => void;
   isSearching: boolean;
   setIsSearching: (searching: boolean) => void;
@@ -15,7 +18,8 @@ interface RouteInputProps {
 }
 
 const RouteInput: React.FC<RouteInputProps> = ({ 
-  language, 
+  language,
+  onLanguageChange,
   onRouteRequest, 
   isSearching, 
   setIsSearching,
@@ -133,7 +137,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
         hasError: !!routeData.error,
         realRoute: routeData.realRoute,
         startCity: routeData.startCity,
-        endCity: routeData.endCity
+        endCity: routeData.endCity,
+        error: routeData.error
       });
     }
   }, [routeData]);
@@ -163,7 +168,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
 
   return (
     <Card className="bg-white/95 backdrop-blur-sm border border-gray-200 shadow-xl">
-      {/* Header with SafeRoute UA branding */}
+      {/* Header with SafeRoute UA branding and Language Toggle */}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
@@ -177,6 +182,12 @@ const RouteInput: React.FC<RouteInputProps> = ({
               </div>
               <p className="text-xs text-gray-600">{t.appSubtitle}</p>
             </div>
+          </div>
+          
+          {/* Language Toggle in Header */}
+          <div className="flex items-center space-x-2">
+            <Globe className="w-4 h-4 text-gray-500" />
+            <LanguageToggle language={language} onLanguageChange={onLanguageChange} />
           </div>
         </div>
         
@@ -234,7 +245,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
           </div>
         )}
 
-        {/* Error State */}
+        {/* Error State with Detailed Information */}
         {routeData?.error && !isSearching && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
@@ -243,10 +254,13 @@ const RouteInput: React.FC<RouteInputProps> = ({
               </div>
               <span className="text-sm font-medium text-red-700">Route Error</span>
             </div>
-            <p className="text-sm text-red-600">{routeData.error}</p>
-            <p className="text-xs text-red-500 mt-1">
-              Please check your internet connection and try again, or try different city names.
-            </p>
+            <p className="text-sm text-red-600 mb-2">{routeData.error}</p>
+            <div className="text-xs text-red-500 space-y-1">
+              <p>• Check your internet connection</p>
+              <p>• Try more specific city names (e.g., "Kyiv, Ukraine")</p>
+              <p>• Ensure city names are spelled correctly</p>
+              <p>• Try different nearby cities if the exact location isn't found</p>
+            </div>
           </div>
         )}
 
@@ -324,7 +338,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
               {routeData.estimatedDelay > 0 && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1">
-                    <Clock className="w-3 h-3 text-orange-500" />
+                    <MapPin className="w-3 h-3 text-orange-500" />
                     <span className="text-gray-600">Delay</span>
                   </div>
                   <span className="text-orange-600 font-medium">
