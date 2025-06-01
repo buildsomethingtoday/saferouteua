@@ -8,6 +8,7 @@ export interface AlertData {
   start_time: string;
   end_time?: string;
   location_name: string;
+  location_oblast: string;
   coordinates?: [number, number];
   severity: 'low' | 'moderate' | 'high' | 'critical';
 }
@@ -171,6 +172,7 @@ export class AlertsService {
       start_time: alert.start_time || alert.startTime || new Date().toISOString(),
       end_time: alert.end_time || alert.endTime,
       location_name: alert.location || alert.location_name || 'Unknown Location',
+      location_oblast: alert.oblast || alert.location_oblast || alert.region_name || '',
       coordinates: this.extractCoordinates(alert),
       severity: this.mapSeverity(alert.severity || alert.level)
     }));
