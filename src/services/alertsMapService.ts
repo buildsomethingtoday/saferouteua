@@ -1,4 +1,3 @@
-
 export interface AlertMapData {
   id: number;
   location_title: string;
@@ -116,6 +115,54 @@ export class AlertsMapService {
     if (highCount > 2) return 'danger';
     if (alerts.length > 1) return 'caution';
     return 'safe';
+  }
+
+  calculateRouteSafetyScore(alerts: AlertMapData[]): number {
+    if (alerts.length === 0) return 95;
+
+    let score = 100;
+    alerts.forEach(alert => {
+      // Heavier penalties for artillery and air raids
+      switch (alert.alert_type) {
+        case 'air_raid':
+          score -= 40; // Increased from 30
+          break;
+        case 'artillery_shelling':
+          score -= 35; // Increased from 20
+          break;
+        case 'urban_fights':
+          score -= 25; // Increased from 10
+          break;
+        case 'chemical':
+          score -= 45;
+          break;
+        case 'nuclear':
+          score -= 50;
+          break;
+        default:
+          score -= 10;
+          break;
+      }
+
+      // Additional penalties based on alert age (more recent = more dangerous)
+      const alertAge = Date.now() - new Date(alert.started_at).getTime();
+      const hoursOld = alertAge / (1000 * 60 * 60);
+      
+      if (hoursOld < 1) {
+        score -= 15; // Very recent alert
+      } else if (hoursOld < 6) {
+        score -= 10; // Recent alert
+      } else if (hoursOld < 24) {
+        score -= 5; // Somewhat recent alert
+      }
+    });
+
+    // Multiple alerts in same area compound the danger
+    if (alerts.length > 1) {
+      score -= alerts.length * 5;
+    }
+
+    return Math.max(score, 5); // Minimum score of 5
   }
 }
 

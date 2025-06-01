@@ -182,6 +182,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       map.current.on('load', () => {
         console.log('Map loaded successfully');
         addUkraineRegions();
+        addRegionColoring();
       });
 
       map.current.on('error', (e) => {
@@ -205,6 +206,123 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const clearAlertMarkers = () => {
     alertMarkers.current.forEach(marker => marker.remove());
     alertMarkers.current = [];
+  };
+
+  // Add region coloring based on alert types
+  const addRegionColoring = () => {
+    if (!map.current || !alertsData) return;
+
+    // Create a region alert mapping
+    const regionAlerts = {};
+    alertsData.forEach((alert: any) => {
+      const oblast = alert.location_oblast;
+      if (!regionAlerts[oblast]) {
+        regionAlerts[oblast] = [];
+      }
+      regionAlerts[oblast].push(alert);
+    });
+
+    // Add region polygons with color coding
+    Object.entries(regionAlerts).forEach(([oblast, alerts]: [string, any[]]) => {
+      const hasAirRaid = alerts.some(alert => alert.alert_type === 'air_raid');
+      const hasArtillery = alerts.some(alert => alert.alert_type === 'artillery_shelling');
+      const hasUrbanFights = alerts.some(alert => alert.alert_type === 'urban_fights');
+
+      let fillColor = '#10B981'; // Green for safe
+      let fillOpacity = 0.1;
+
+      if (hasAirRaid) {
+        fillColor = '#DC2626'; // Red for air raids
+        fillOpacity = 0.3;
+      } else if (hasArtillery) {
+        fillColor = '#EA580C'; // Orange for artillery
+        fillOpacity = 0.25;
+      } else if (hasUrbanFights) {
+        fillColor = '#9333EA'; // Purple for urban fights
+        fillOpacity = 0.2;
+      }
+
+      // Get oblast center for approximate region highlighting
+      const oblastCenters = {
+        'Київська область': [30.5234, 50.4501],
+        'Харківська область': [36.2310, 49.9935],
+        'Дніпропетровська область': [35.0462, 48.4647],
+        'Луганська область': [38.5045, 48.5740],
+        'Донецька область': [37.8036, 48.0159],
+        'Запорізька область': [35.1396, 47.8388],
+        'Херсонська область': [32.6178, 46.6554],
+        'Миколаївська область': [31.9946, 46.9750],
+        'Одеська область': [30.7326, 46.4825],
+        'Вінницька область': [28.4682, 49.2331],
+        'Житомирська область': [28.6587, 50.2547],
+        'Закарпатська область': [22.7183, 48.6208],
+        'Івано-Франківська область': [24.7111, 48.9226],
+        'Кіровоградська область': [32.2623, 48.5132],
+        'Львівська область': [24.0232, 49.8397],
+        'Полтавська область': [34.5514, 49.5883],
+        'Рівненська область': [26.2518, 50.6199],
+        'Сумська область': [34.8000, 50.9077],
+        'Тернопільська область': [25.5948, 49.5535],
+        'Хмельницька область': [26.9871, 49.4229],
+        'Черкаська область': [32.0617, 49.4444],
+        'Чернівецька область': [25.9358, 48.2920],
+        'Чернігівська область': [31.2893, 51.4982],
+        'Автономна Республіка Крим': [34.1018, 44.9480],
+      };
+
+      const center = oblastCenters[oblast];
+      if (center) {
+        // Create a circle to represent the region
+        const radius = 0.8; // Approximate radius in degrees
+        const circle = {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [createCircle(center, radius)]
+          },
+          properties: {
+            oblast: oblast,
+            alertCount: alerts.length,
+            fillColor: fillColor
+          }
+        };
+
+        const sourceId = `region-${oblast.replace(/\s+/g, '-')}`;
+        const layerId = `region-layer-${oblast.replace(/\s+/g, '-')}`;
+
+        if (!map.current.getSource(sourceId)) {
+          map.current.addSource(sourceId, {
+            type: 'geojson',
+            data: circle
+          });
+
+          map.current.addLayer({
+            id: layerId,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+              'fill-color': fillColor,
+              'fill-opacity': fillOpacity,
+              'fill-outline-color': fillColor
+            }
+          });
+        }
+      }
+    });
+  };
+
+  // Helper function to create a circle polygon
+  const createCircle = (center: [number, number], radius: number) => {
+    const points = 64;
+    const coordinates = [];
+    for (let i = 0; i < points; i++) {
+      const angle = (i / points) * 2 * Math.PI;
+      const x = center[0] + radius * Math.cos(angle);
+      const y = center[1] + radius * Math.sin(angle);
+      coordinates.push([x, y]);
+    }
+    coordinates.push(coordinates[0]); // Close the polygon
+    return coordinates;
   };
 
   // Add Ukraine regions and alert overlays
@@ -398,6 +516,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   useEffect(() => {
     if (map.current && map.current.loaded() && alertsData) {
       updateAlertMarkers();
+      addRegionColoring();
     }
   }, [alertsData]);
 

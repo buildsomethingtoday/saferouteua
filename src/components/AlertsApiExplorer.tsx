@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X } from 'lucide-react';
+import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AlertsApiExplorerProps {
@@ -34,6 +35,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
   const [apiData, setApiData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [selectedAlertTypes, setSelectedAlertTypes] = useState<string[]>([]);
 
   const translations = {
     en: {
@@ -49,6 +51,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       allRegions: 'All regions',
       autoRefresh: 'Auto-refresh',
       clearFilter: 'Clear filter',
+      filterByType: 'Filter by type',
+      showAll: 'Show all',
       alertTypes: {
         air_raid: 'Air Raid',
         artillery_shelling: 'Artillery',
@@ -79,6 +83,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       allRegions: 'Всі регіони',
       autoRefresh: 'Авто-оновлення',
       clearFilter: 'Очистити фільтр',
+      filterByType: 'Фільтр за типом',
+      showAll: 'Показати всі',
       alertTypes: {
         air_raid: 'Повітряна тривога',
         artillery_shelling: 'Артилерія',
@@ -141,18 +147,40 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     if (!alerts) return alerts;
     
     // Filter to only active alerts (finished_at is null)
-    const activeAlerts = alerts.filter(alert => !alert.finished_at);
+    let activeAlerts = alerts.filter(alert => !alert.finished_at);
     
-    if (!selectedRegion) return activeAlerts;
+    // Filter by selected alert types
+    if (selectedAlertTypes.length > 0) {
+      activeAlerts = activeAlerts.filter(alert => 
+        selectedAlertTypes.includes(alert.alert_type)
+      );
+    }
     
-    const filtered = activeAlerts.filter(alert => 
-      alert.location_oblast.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-      alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-      (alert.location_raion && alert.location_raion.toLowerCase().includes(selectedRegion.toLowerCase()))
-    );
+    // Filter by region
+    if (selectedRegion) {
+      activeAlerts = activeAlerts.filter(alert => 
+        alert.location_oblast.toLowerCase().includes(selectedRegion.toLowerCase()) ||
+        alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase()) ||
+        (alert.location_raion && alert.location_raion.toLowerCase().includes(selectedRegion.toLowerCase()))
+      );
+    }
     
-    console.log(`Filtering alerts for region "${selectedRegion}": ${filtered.length} out of ${activeAlerts.length} active alerts`);
-    return filtered;
+    console.log(`Filtering alerts: ${activeAlerts.length} out of ${alerts.filter(alert => !alert.finished_at).length} active alerts`);
+    return activeAlerts;
+  };
+
+  const handleAlertTypeFilter = (alertType: string) => {
+    setSelectedAlertTypes(prev => {
+      if (prev.includes(alertType)) {
+        return prev.filter(type => type !== alertType);
+      } else {
+        return [...prev, alertType];
+      }
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSelectedAlertTypes([]);
   };
 
   const handleAlertClick = (alert: AlertItem) => {
@@ -213,7 +241,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         <div className="text-center py-8 text-gray-400">
           <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
           <p className="mb-2">{t.noAlerts}</p>
-          {selectedRegion && (
+          {(selectedRegion || selectedAlertTypes.length > 0) && (
             <p className="text-xs text-gray-500">{t.clickMapHint}</p>
           )}
         </div>
@@ -225,8 +253,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     );
 
     return (
-      <div className="space-y-3">
-        {sortedAlerts.slice(0, compact ? 5 : 15).map((alert) => (
+      <div className={`space-y-3 ${compact ? 'max-h-80' : 'max-h-96'} overflow-y-auto pr-2`}>
+        {sortedAlerts.slice(0, compact ? 5 : 20).map((alert) => (
           <Card 
             key={alert.id} 
             className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors cursor-pointer"
@@ -267,9 +295,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
           </Card>
         ))}
         
-        {filteredAlerts.length > (compact ? 5 : 15) && (
+        {filteredAlerts.length > (compact ? 5 : 20) && (
           <p className="text-xs text-gray-500 text-center py-2">
-            {compact ? 'Switch to full view to see all alerts' : `Showing ${compact ? 5 : 15} of ${filteredAlerts.length} alerts`}
+            {compact ? 'Switch to full view to see all alerts' : `Showing ${compact ? 5 : 20} of ${filteredAlerts.length} alerts`}
           </p>
         )}
       </div>
@@ -302,6 +330,51 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
             </Button>
           </div>
         )}
+
+        {/* Alert Type Filters */}
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2 text-sm">
+            <Filter className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-400">{t.filterByType}:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={selectedAlertTypes.length === 0 ? "default" : "outline"}
+              size="sm"
+              className="text-xs"
+              onClick={clearAllFilters}
+            >
+              {t.showAll}
+            </Button>
+            <Button
+              variant={selectedAlertTypes.includes('air_raid') ? "default" : "outline"}
+              size="sm"
+              className="text-xs"
+              onClick={() => handleAlertTypeFilter('air_raid')}
+            >
+              <Plane className="w-3 h-3 mr-1" />
+              {t.alertTypes.air_raid}
+            </Button>
+            <Button
+              variant={selectedAlertTypes.includes('artillery_shelling') ? "default" : "outline"}
+              size="sm"
+              className="text-xs"
+              onClick={() => handleAlertTypeFilter('artillery_shelling')}
+            >
+              <Zap className="w-3 h-3 mr-1" />
+              {t.alertTypes.artillery_shelling}
+            </Button>
+            <Button
+              variant={selectedAlertTypes.includes('urban_fights') ? "default" : "outline"}
+              size="sm"
+              className="text-xs"
+              onClick={() => handleAlertTypeFilter('urban_fights')}
+            >
+              <Swords className="w-3 h-3 mr-1" />
+              {t.alertTypes.urban_fights}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-4">
