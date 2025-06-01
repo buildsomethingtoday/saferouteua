@@ -4,15 +4,26 @@ interface DirectionsResponse {
     geometry: string;
     duration: number;
     distance: number;
+    duration_traffic?: number;
     legs: Array<{
       duration: number;
       distance: number;
+      annotation?: {
+        congestion?: string[];
+        maxspeed?: number[];
+      };
       steps: Array<{
         instruction: string;
         duration: number;
         distance: number;
+        maneuver: {
+          type: string;
+          modifier?: string;
+        };
       }>;
     }>;
+    weight?: number;
+    weight_name?: string;
   }[];
   waypoints: Array<{
     location: [number, number];
@@ -57,10 +68,30 @@ class MapboxService {
 
   async getDirections(
     coordinates: Array<[number, number]>,
-    profile: 'driving' | 'driving-traffic' | 'walking' | 'cycling' = 'driving-traffic'
+    profile: 'driving' | 'driving-traffic' | 'walking' | 'cycling' | 'bus' = 'driving-traffic',
+    alternatives: boolean = true
   ): Promise<DirectionsResponse> {
+    // For bus, use walking profile as Mapbox doesn't have dedicated transit routing
+    const mapboxProfile = profile === 'bus' ? 'walking' : profile;
+    
     const coordinatesString = coordinates.map(coord => coord.join(',')).join(';');
-    const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?geometries=geojson&overview=full&steps=true&access_token=${this.accessToken}`;
+    const params = new URLSearchParams({
+      geometries: 'geojson',
+      overview: 'full',
+      steps: 'true',
+      access_token: this.accessToken
+    });
+
+    if (alternatives) {
+      params.append('alternatives', 'true');
+    }
+
+    // Add traffic annotations for driving profiles
+    if (profile === 'driving' || profile === 'driving-traffic') {
+      params.append('annotations', 'congestion,maxspeed');
+    }
+
+    const url = `${this.baseUrl}/directions/v5/mapbox/${mapboxProfile}/${coordinatesString}?${params}`;
 
     console.log('Fetching directions from:', url);
 
@@ -77,7 +108,7 @@ class MapboxService {
   async geocodeForward(query: string, proximity?: [number, number]): Promise<GeocodingResponse> {
     const params = new URLSearchParams({
       access_token: this.accessToken,
-      country: 'ua', // Focus on Ukraine
+      country: 'ua',
       limit: '5',
       types: 'place,locality,neighborhood,address'
     });
@@ -113,10 +144,11 @@ class MapboxService {
 
   async getMatrix(
     coordinates: Array<[number, number]>,
-    profile: 'driving' | 'walking' | 'cycling' = 'driving'
+    profile: 'driving' | 'walking' | 'cycling' | 'bus' = 'driving'
   ): Promise<MatrixResponse> {
+    const mapboxProfile = profile === 'bus' ? 'walking' : profile;
     const coordinatesString = coordinates.map(coord => coord.join(',')).join(';');
-    const url = `${this.baseUrl}/directions-matrix/v1/mapbox/${profile}/${coordinatesString}?access_token=${this.accessToken}`;
+    const url = `${this.baseUrl}/directions-matrix/v1/mapbox/${mapboxProfile}/${coordinatesString}?access_token=${this.accessToken}`;
 
     console.log('Fetching matrix from:', url);
 
@@ -130,14 +162,82 @@ class MapboxService {
     return data;
   }
 
-  calculateSafetyScore(route: any, conflictZones: Array<[number, number]>): number {
-    // Basic safety scoring algorithm
-    // In a real implementation, this would use actual conflict data
-    const baseScore = 85;
-    const distancePenalty = Math.min(route.distance / 1000 * 0.1, 10);
-    const randomVariation = Math.random() * 20 - 10;
+  calculateTrafficBasedSafetyScore(route: any): number {
+    let baseScore = 75;
     
-    return Math.max(60, Math.min(95, baseScore - distancePenalty + randomVariation));
+    // Use real traffic data if available
+    if (route.legs && route.legs[0]?.annotation?.congestion) {
+      const congestionData = route.legs[0].annotation.congestion;
+      const totalSegments = congestionData.length;
+      const heavyTrafficSegments = congestionData.filter((level: string) => 
+        level === 'heavy' || level === 'severe'
+      ).length;
+      
+      // Lower score for heavy traffic areas
+      const trafficPenalty = (heavyTrafficSegments / totalSegments) * 15;
+      baseScore -= trafficPenalty;
+    }
+    
+    // Consider route distance (longer routes may be less safe)
+    if (route.distance) {
+      const distancePenalty = Math.min(route.distance / 1000 * 0.05, 8);
+      baseScore -= distancePenalty;
+    }
+    
+    // Use traffic duration vs normal duration
+    if (route.duration_traffic && route.duration) {
+      const trafficDelay = (route.duration_traffic - route.duration) / route.duration;
+      if (trafficDelay > 0.2) { // More than 20% delay
+        baseScore -= trafficDelay * 10;
+      }
+    }
+    
+    // Add some realistic variation
+    const variation = (Math.random() - 0.5) * 10;
+    
+    return Math.max(60, Math.min(95, Math.round(baseScore + variation)));
+  }
+
+  analyzeRouteQuality(route: any): {
+    trafficLevel: 'light' | 'moderate' | 'heavy';
+    roadQuality: 'excellent' | 'good' | 'fair';
+    estimatedDelay: number;
+  } {
+    let trafficLevel: 'light' | 'moderate' | 'heavy' = 'light';
+    let roadQuality: 'excellent' | 'good' | 'fair' = 'good';
+    let estimatedDelay = 0;
+
+    if (route.legs && route.legs[0]?.annotation?.congestion) {
+      const congestionData = route.legs[0].annotation.congestion;
+      const heavyCount = congestionData.filter((level: string) => level === 'heavy' || level === 'severe').length;
+      const moderateCount = congestionData.filter((level: string) => level === 'moderate').length;
+      
+      if (heavyCount > congestionData.length * 0.3) {
+        trafficLevel = 'heavy';
+      } else if (moderateCount > congestionData.length * 0.4) {
+        trafficLevel = 'moderate';
+      }
+    }
+
+    if (route.duration_traffic && route.duration) {
+      estimatedDelay = Math.round((route.duration_traffic - route.duration) / 60); // in minutes
+    }
+
+    // Analyze road quality based on speed limits
+    if (route.legs && route.legs[0]?.annotation?.maxspeed) {
+      const speeds = route.legs[0].annotation.maxspeed;
+      const avgSpeed = speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length;
+      
+      if (avgSpeed >= 80) {
+        roadQuality = 'excellent';
+      } else if (avgSpeed >= 50) {
+        roadQuality = 'good';
+      } else {
+        roadQuality = 'fair';
+      }
+    }
+
+    return { trafficLevel, roadQuality, estimatedDelay };
   }
 
   formatDuration(seconds: number): string {

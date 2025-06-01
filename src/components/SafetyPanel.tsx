@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Cloud, Clock, AlertTriangle, Share, Bookmark, Star, Car, MapPin } from 'lucide-react';
+import { Cloud, Clock, AlertTriangle, Share, Bookmark, Car, MapPin, Bus, Gauge } from 'lucide-react';
 
 interface SafetyPanelProps {
   language: 'en' | 'ua';
@@ -12,15 +12,16 @@ interface SafetyPanelProps {
 const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
   const translations = {
     en: {
-      safetyScore: 'Safety Score',
       routeDetails: 'Route Details',
       distance: 'Distance',
       duration: 'Duration',
       weather: 'Weather',
       conflictRisk: 'Conflict Risk',
+      trafficLevel: 'Traffic Level',
+      roadQuality: 'Road Quality',
+      estimatedDelay: 'Traffic Delay',
       shareRoute: 'Share Route',
       saveRoute: 'Save Route',
-      alternative: 'Alternative Suggestion',
       transportMode: 'Transport Mode',
       realTimeData: 'Real-time Data',
       fallbackData: 'Estimated Data',
@@ -36,20 +37,30 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
       },
       transportModes: {
         driving: 'Driving',
-        walking: 'Walking',
-        cycling: 'Cycling'
+        bus: 'Bus'
+      },
+      trafficLevels: {
+        light: 'Light traffic',
+        moderate: 'Moderate traffic',
+        heavy: 'Heavy traffic'
+      },
+      roadQualities: {
+        excellent: 'Excellent roads',
+        good: 'Good roads',
+        fair: 'Fair roads'
       }
     },
     ua: {
-      safetyScore: 'Оцінка безпеки',
       routeDetails: 'Деталі маршруту',
       distance: 'Відстань',
       duration: 'Тривалість',
       weather: 'Погода',
       conflictRisk: 'Ризик конфлікту',
+      trafficLevel: 'Рівень трафіку',
+      roadQuality: 'Якість доріг',
+      estimatedDelay: 'Затримка через трафік',
       shareRoute: 'Поділитися маршрутом',
       saveRoute: 'Зберегти маршрут',
-      alternative: 'Альтернативна пропозиція',
       transportMode: 'Вид транспорту',
       realTimeData: 'Дані в реальному часі',
       fallbackData: 'Оціночні дані',
@@ -65,46 +76,55 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
       },
       transportModes: {
         driving: 'Автомобіль',
-        walking: 'Пішки',
-        cycling: 'Велосипед'
+        bus: 'Автобус'
+      },
+      trafficLevels: {
+        light: 'Легкий трафік',
+        moderate: 'Помірний трафік',
+        heavy: 'Важкий трафік'
+      },
+      roadQualities: {
+        excellent: 'Відмінні дороги',
+        good: 'Хороші дороги',
+        fair: 'Задовільні дороги'
       }
     }
   };
 
   const t = translations[language];
 
-  const getSafetyColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
-
-  const getSafetyIcon = (score: number) => {
-    if (score >= 80) return <Shield className="w-5 h-5 text-green-600" />;
-    if (score >= 60) return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
-    return <AlertTriangle className="w-5 h-5 text-red-600" />;
-  };
-
   const getTransportIcon = (mode: string) => {
     switch (mode) {
       case 'driving': return <Car className="w-4 h-4" />;
-      case 'walking': return <MapPin className="w-4 h-4" />;
-      case 'cycling': return <Clock className="w-4 h-4" />;
+      case 'bus': return <Bus className="w-4 h-4" />;
       default: return <Car className="w-4 h-4" />;
+    }
+  };
+
+  const getTrafficColor = (level: string) => {
+    switch (level) {
+      case 'light': return 'text-green-700 bg-green-50';
+      case 'moderate': return 'text-yellow-700 bg-yellow-50';
+      case 'heavy': return 'text-red-700 bg-red-50';
+      default: return 'text-gray-700 bg-gray-50';
+    }
+  };
+
+  const getRoadQualityColor = (quality: string) => {
+    switch (quality) {
+      case 'excellent': return 'text-green-700 bg-green-50';
+      case 'good': return 'text-blue-700 bg-blue-50';
+      case 'fair': return 'text-orange-700 bg-orange-50';
+      default: return 'text-gray-700 bg-gray-50';
     }
   };
 
   return (
     <Card className="shadow-lg bg-white border-0">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {getSafetyIcon(routeData.safetyScore)}
-            <span>{t.safetyScore}</span>
-          </div>
-          <div className={`px-3 py-1 rounded-full text-lg font-bold ${getSafetyColor(routeData.safetyScore)}`}>
-            {routeData.safetyScore}%
-          </div>
+        <CardTitle className="flex items-center space-x-2">
+          <MapPin className="w-5 h-5 text-blue-500" />
+          <span>{t.routeDetails}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -118,7 +138,6 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
 
         {/* Route Summary */}
         <div className="space-y-3">
-          <h4 className="font-medium text-gray-900">{t.routeDetails}</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 p-3 rounded-lg">
               <div className="text-xs text-gray-600">{t.distance}</div>
@@ -148,41 +167,69 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
           </div>
         )}
 
-        {/* Conditions */}
+        {/* Enhanced Route Analysis */}
         <div className="space-y-3">
+          {/* Traffic Level */}
+          {routeData.trafficLevel && (
+            <div className={`flex items-center justify-between p-3 rounded-lg ${getTrafficColor(routeData.trafficLevel)}`}>
+              <div className="flex items-center space-x-2">
+                <Gauge className="w-4 h-4" />
+                <span className="text-sm font-medium">{t.trafficLevel}</span>
+              </div>
+              <span className="text-sm font-medium">
+                {t.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
+              </span>
+            </div>
+          )}
+
+          {/* Road Quality */}
+          {routeData.roadQuality && (
+            <div className={`flex items-center justify-between p-3 rounded-lg ${getRoadQualityColor(routeData.roadQuality)}`}>
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4" />
+                <span className="text-sm font-medium">{t.roadQuality}</span>
+              </div>
+              <span className="text-sm font-medium">
+                {t.roadQualities[routeData.roadQuality] || routeData.roadQuality}
+              </span>
+            </div>
+          )}
+
+          {/* Traffic Delay */}
+          {routeData.estimatedDelay !== undefined && routeData.estimatedDelay > 0 && (
+            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-orange-600" />
+                <span className="text-sm font-medium text-orange-800">{t.estimatedDelay}</span>
+              </div>
+              <span className="text-sm text-orange-700">
+                +{routeData.estimatedDelay} min
+              </span>
+            </div>
+          )}
+
+          {/* Weather */}
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center space-x-2">
               <Cloud className="w-4 h-4 text-blue-600" />
               <span className="text-sm font-medium">{t.weather}</span>
             </div>
             <span className="text-sm text-blue-700">
-              {t.weatherConditions[routeData.weatherCondition]}
+              {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
             </span>
           </div>
 
+          {/* Conflict Risk */}
           <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
             <div className="flex items-center space-x-2">
               <AlertTriangle className="w-4 h-4 text-yellow-600" />
               <span className="text-sm font-medium">{t.conflictRisk}</span>
             </div>
             <span className="text-sm text-yellow-700">
-              {t.riskLevels[routeData.conflictRisk]}
+              {t.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
             </span>
           </div>
         </div>
-
-        {/* Alternative Suggestion */}
-        {routeData.alternativeSuggestion && (
-          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-start space-x-2">
-              <Star className="w-4 h-4 text-green-600 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-green-800">{t.alternative}</div>
-                <div className="text-sm text-green-700">{routeData.alternativeSuggestion}</div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Error Message */}
         {routeData.error && (
@@ -216,6 +263,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
             <div>• Keep emergency contacts accessible</div>
             <div>• Monitor weather updates during travel</div>
             {routeData.realRoute && <div>• Route uses real-time traffic data</div>}
+            {routeData.estimatedDelay > 15 && <div>• Consider departure time due to traffic</div>}
           </div>
         </div>
       </CardContent>

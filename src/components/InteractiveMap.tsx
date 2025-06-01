@@ -1,7 +1,8 @@
+
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Clock, Cloud, AlertTriangle, Star } from 'lucide-react';
+import { Clock, Cloud, AlertTriangle, MapPin, Gauge } from 'lucide-react';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -17,22 +18,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
   const translations = {
     en: {
       mapTitle: 'Interactive Route Map',
-      noRoute: 'Enter your route to see safety analysis on the map',
-      analyzing: 'Analyzing route safety and weather conditions...',
-      safetyScore: 'Safety Score',
+      noRoute: 'Enter your route to see detailed analysis on the map',
+      analyzing: 'Analyzing route and traffic conditions...',
       routeDetails: 'Route Details',
       distance: 'Distance',
       duration: 'Duration',
       transportMode: 'Transport Mode',
       weather: 'Weather',
       conflictRisk: 'Conflict Risk',
-      alternativeSuggestion: 'Alternative Suggestion',
+      trafficLevel: 'Traffic Level',
+      roadQuality: 'Road Quality',
+      estimatedDelay: 'Traffic Delay',
       realTimeData: 'Real-time Data',
       fallbackData: 'Estimated Data',
       transportModes: {
         driving: 'Driving',
-        walking: 'Walking',
-        cycling: 'Cycling'
+        bus: 'Bus'
       },
       weatherConditions: {
         clear: 'Clear skies',
@@ -43,26 +44,36 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         low: 'Low risk',
         moderate: 'Moderate risk',
         high: 'High risk'
+      },
+      trafficLevels: {
+        light: 'Light traffic',
+        moderate: 'Moderate traffic',
+        heavy: 'Heavy traffic'
+      },
+      roadQualities: {
+        excellent: 'Excellent roads',
+        good: 'Good roads',
+        fair: 'Fair roads'
       }
     },
     ua: {
       mapTitle: 'Інтерактивна карта маршруту',
-      noRoute: 'Введіть ваш маршрут для аналізу безпеки на карті',
-      analyzing: 'Аналіз безпеки маршруту та погодних умов...',
-      safetyScore: 'Оцінка безпеки',
+      noRoute: 'Введіть ваш маршрут для детального аналізу на карті',
+      analyzing: 'Аналіз маршруту та умов руху...',
       routeDetails: 'Деталі маршруту',
       distance: 'Відстань',
       duration: 'Тривалість',
       transportMode: 'Вид транспорту',
       weather: 'Погода',
       conflictRisk: 'Ризик конфлікту',
-      alternativeSuggestion: 'Альтернативна пропозиція',
+      trafficLevel: 'Рівень трафіку',
+      roadQuality: 'Якість доріг',
+      estimatedDelay: 'Затримка через трафік',
       realTimeData: 'Дані в реальному часі',
       fallbackData: 'Оціночні дані',
       transportModes: {
         driving: 'Автомобіль',
-        walking: 'Пішки',
-        cycling: 'Велосипед'
+        bus: 'Автобус'
       },
       weatherConditions: {
         clear: 'Ясне небо',
@@ -73,6 +84,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         low: 'Низький ризик',
         moderate: 'Помірний ризик',
         high: 'Високий ризик'
+      },
+      trafficLevels: {
+        light: 'Легкий трафік',
+        moderate: 'Помірний трафік',
+        heavy: 'Важкий трафік'
+      },
+      roadQualities: {
+        excellent: 'Відмінні дороги',
+        good: 'Хороші дороги',
+        fair: 'Задовільні дороги'
       }
     }
   };
@@ -123,16 +144,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     }
   };
 
-  const getSafetyColor = (score: number) => {
-    if (score >= 80) return 'bg-green-100 border-green-300 text-green-800';
-    if (score >= 60) return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-    return 'bg-red-100 border-red-300 text-red-800';
+  const getTrafficColor = (level: string) => {
+    switch (level) {
+      case 'light': return 'text-green-700';
+      case 'moderate': return 'text-yellow-700';
+      case 'heavy': return 'text-red-700';
+      default: return 'text-gray-700';
+    }
   };
 
-  const getSafetyScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-200 text-green-900';
-    if (score >= 60) return 'bg-yellow-200 text-yellow-900';
-    return 'bg-red-200 text-red-900';
+  const getRoadQualityColor = (quality: string) => {
+    switch (quality) {
+      case 'excellent': return 'text-green-700';
+      case 'good': return 'text-blue-700';
+      case 'fair': return 'text-orange-700';
+      default: return 'text-gray-700';
+    }
   };
 
   const getRiskColor = (risk: string) => {
@@ -338,17 +365,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         </div>
       )}
 
-      {/* Compact Route Info Overlay */}
+      {/* Enhanced Route Info Overlay - Without Safety Score */}
       {routeData && !isSearching && (
         <div className="absolute top-3 left-3 bg-white rounded-lg shadow-lg p-3 max-w-xs border border-gray-100">
-          {/* Safety Score Header - Compact */}
+          {/* Route Header */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-1">
-              <AlertTriangle className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm font-semibold text-gray-900">{t.safetyScore}</span>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-lg font-bold ${getSafetyScoreColor(routeData.safetyScore)}`}>
-              {routeData.safetyScore}%
+              <MapPin className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-semibold text-gray-900">{t.routeDetails}</span>
             </div>
           </div>
 
@@ -389,8 +413,48 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
             </div>
           )}
 
-          {/* Weather & Risk - Stacked */}
+          {/* Enhanced Route Analysis */}
           <div className="space-y-1 mb-2">
+            {/* Traffic Level */}
+            {routeData.trafficLevel && (
+              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
+                <div className="flex items-center space-x-1">
+                  <Gauge className="w-3 h-3 text-yellow-600" />
+                  <span className="text-xs font-medium">{t.trafficLevel}</span>
+                </div>
+                <span className={`text-xs font-medium ${getTrafficColor(routeData.trafficLevel)}`}>
+                  {t.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
+                </span>
+              </div>
+            )}
+
+            {/* Road Quality */}
+            {routeData.roadQuality && (
+              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                <div className="flex items-center space-x-1">
+                  <MapPin className="w-3 h-3 text-blue-600" />
+                  <span className="text-xs font-medium">{t.roadQuality}</span>
+                </div>
+                <span className={`text-xs font-medium ${getRoadQualityColor(routeData.roadQuality)}`}>
+                  {t.roadQualities[routeData.roadQuality] || routeData.roadQuality}
+                </span>
+              </div>
+            )}
+
+            {/* Traffic Delay */}
+            {routeData.estimatedDelay !== undefined && routeData.estimatedDelay > 0 && (
+              <div className="flex items-center justify-between p-2 bg-orange-50 rounded">
+                <div className="flex items-center space-x-1">
+                  <Clock className="w-3 h-3 text-orange-600" />
+                  <span className="text-xs font-medium">{t.estimatedDelay}</span>
+                </div>
+                <span className="text-xs text-orange-700">
+                  +{routeData.estimatedDelay} min
+                </span>
+              </div>
+            )}
+
+            {/* Weather */}
             <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
               <div className="flex items-center space-x-1">
                 <Cloud className="w-3 h-3 text-blue-600" />
@@ -401,6 +465,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
               </span>
             </div>
 
+            {/* Conflict Risk */}
             <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
               <div className="flex items-center space-x-1">
                 <AlertTriangle className="w-3 h-3 text-yellow-600" />
@@ -411,19 +476,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
               </span>
             </div>
           </div>
-
-          {/* Alternative Suggestion - Compact */}
-          {routeData.alternativeSuggestion && (
-            <div className="p-2 bg-green-50 rounded border border-green-200 mb-2">
-              <div className="flex items-start space-x-1">
-                <Star className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="text-xs font-medium text-green-800">{t.alternativeSuggestion}</div>
-                  <div className="text-xs text-green-700">{routeData.alternativeSuggestion}</div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Error Message - Compact */}
           {routeData.error && (

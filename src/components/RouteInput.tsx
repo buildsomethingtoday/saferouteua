@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navigation, Star, Car, MapPin, Clock } from 'lucide-react';
+import { Navigation, Car, MapPin, Bus } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
 import { getMapboxService } from '../services/mapboxService';
 
@@ -22,49 +22,40 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [needsReturn, setNeedsReturn] = useState(false);
-  const [transportMode, setTransportMode] = useState<'driving' | 'walking' | 'cycling'>('driving');
+  const [transportMode, setTransportMode] = useState<'driving' | 'bus'>('driving');
 
   const translations = {
     en: {
       title: 'Plan Your Route',
       startCity: 'Starting city',
       endCity: 'Destination city',
+      startPlaceholder: 'Enter starting city (e.g., Kyiv, Lviv, Odesa)',
+      endPlaceholder: 'Enter destination city (e.g., Chernivtsi, Zakarpattia)',
       returnRoute: 'Need return route?',
-      findRoute: 'Find Safe Route',
-      searching: 'Analyzing safety...',
-      safestDestinations: 'Show Safest Destinations',
-      popularRoutes: 'Popular Safe Routes',
+      findRoute: 'Find Route',
+      searching: 'Finding route...',
       transportMode: 'Transportation',
       driving: 'Driving',
-      walking: 'Walking',
-      cycling: 'Cycling',
+      bus: 'Bus',
       error: 'Error finding route. Please try again.'
     },
     ua: {
       title: 'Спланувати маршрут',
       startCity: 'Місто відправлення',
       endCity: 'Місто призначення',
+      startPlaceholder: 'Введіть місто відправлення (напр., Київ, Львів, Одеса)',
+      endPlaceholder: 'Введіть місто призначення (напр., Чернівці, Закарпаття)',
       returnRoute: 'Потрібен зворотний маршрут?',
-      findRoute: 'Знайти безпечний маршрут',
-      searching: 'Аналіз безпеки...',
-      safestDestinations: 'Показати найбезпечніші напрямки',
-      popularRoutes: 'Популярні безпечні маршрути',
+      findRoute: 'Знайти маршрут',
+      searching: 'Пошук маршруту...',
       transportMode: 'Транспорт',
       driving: 'Автомобіль',
-      walking: 'Пішки',
-      cycling: 'Велосипед',
+      bus: 'Автобус',
       error: 'Помилка пошуку маршруту. Спробуйте ще раз.'
     }
   };
 
   const t = translations[language];
-
-  const popularRoutes = [
-    { from: 'Kyiv', to: 'Lviv', safety: 85 },
-    { from: 'Lviv', to: 'Zakarpattia', safety: 92 },
-    { from: 'Odesa', to: 'Chernivtsi', safety: 78 },
-    { from: 'Dnipro', to: 'Kyiv', safety: 72 }
-  ];
 
   const handleRouteSearch = async () => {
     if (!startCity || !endCity) return;
@@ -90,16 +81,19 @@ const RouteInput: React.FC<RouteInputProps> = ({
       console.log('Start coordinates:', startCoords);
       console.log('End coordinates:', endCoords);
       
-      // Get directions
+      // Get directions with alternatives
       const profile = transportMode === 'driving' ? 'driving-traffic' : transportMode;
-      const directions = await mapboxService.getDirections([startCoords, endCoords], profile as any);
+      const directions = await mapboxService.getDirections([startCoords, endCoords], profile as any, true);
       
       if (directions.routes.length === 0) {
         throw new Error('No routes found');
       }
       
       const route = directions.routes[0];
-      const safetyScore = mapboxService.calculateSafetyScore(route, []);
+      
+      // Use enhanced safety calculation with real traffic data
+      const safetyScore = mapboxService.calculateTrafficBasedSafetyScore(route);
+      const routeQuality = mapboxService.analyzeRouteQuality(route);
       
       const routeData = {
         startCity,
@@ -113,9 +107,12 @@ const RouteInput: React.FC<RouteInputProps> = ({
         distanceFormatted: mapboxService.formatDistance(route.distance),
         geometry: route.geometry,
         transportMode,
+        trafficLevel: routeQuality.trafficLevel,
+        roadQuality: routeQuality.roadQuality,
+        estimatedDelay: routeQuality.estimatedDelay,
         weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
         conflictRisk: safetyScore > 80 ? 'low' : 'moderate',
-        alternativeSuggestion: safetyScore < 75 ? 'Consider alternative route via safer areas' : null,
+        alternativeRoutes: directions.routes.slice(1, 3), // Up to 2 alternative routes
         realRoute: true
       };
       
@@ -134,7 +131,9 @@ const RouteInput: React.FC<RouteInputProps> = ({
         duration: Math.floor(Math.random() * 8) + 2,
         weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
         conflictRisk: ['low', 'moderate'][Math.floor(Math.random() * 2)],
-        alternativeSuggestion: Math.random() > 0.5 ? 'Consider Lviv - safer conditions' : null,
+        trafficLevel: ['light', 'moderate', 'heavy'][Math.floor(Math.random() * 3)],
+        roadQuality: ['excellent', 'good', 'fair'][Math.floor(Math.random() * 3)],
+        estimatedDelay: Math.floor(Math.random() * 30),
         transportMode,
         error: t.error,
         realRoute: false
@@ -144,11 +143,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
     }
     
     setIsSearching(false);
-  };
-
-  const handlePopularRoute = (route: any) => {
-    setStartCity(route.from);
-    setEndCity(route.to);
   };
 
   return (
@@ -176,22 +170,13 @@ const RouteInput: React.FC<RouteInputProps> = ({
               {t.driving}
             </Button>
             <Button
-              variant={transportMode === 'walking' ? 'default' : 'outline'}
+              variant={transportMode === 'bus' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTransportMode('walking')}
+              onClick={() => setTransportMode('bus')}
               className="flex-1"
             >
-              <MapPin className="w-4 h-4 mr-2" />
-              {t.walking}
-            </Button>
-            <Button
-              variant={transportMode === 'cycling' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTransportMode('cycling')}
-              className="flex-1"
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              {t.cycling}
+              <Bus className="w-4 h-4 mr-2" />
+              {t.bus}
             </Button>
           </div>
         </div>
@@ -205,7 +190,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
             <CityAutocomplete
               value={startCity}
               onChange={setStartCity}
-              placeholder="Kyiv, Lviv, Odesa..."
+              placeholder={t.startPlaceholder}
               language={language}
             />
           </div>
@@ -217,7 +202,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
             <CityAutocomplete
               value={endCity}
               onChange={setEndCity}
-              placeholder="Lviv, Chernivtsi, Zakarpattia..."
+              placeholder={t.endPlaceholder}
               language={language}
             />
           </div>
@@ -236,61 +221,21 @@ const RouteInput: React.FC<RouteInputProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <Button 
-            onClick={handleRouteSearch}
-            disabled={!startCity || !endCity || isSearching}
-            className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
-          >
-            {isSearching ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>{t.searching}</span>
-              </div>
-            ) : (
-              t.findRoute
-            )}
-          </Button>
-
-          <Button 
-            variant="outline" 
-            className="w-full border-green-200 hover:bg-green-50 text-green-700"
-            onClick={() => {
-              console.log('Show safest destinations');
-            }}
-          >
-            <Star className="w-4 h-4 mr-2" />
-            {t.safestDestinations}
-          </Button>
-        </div>
-
-        {/* Popular Routes */}
-        <div className="pt-4 border-t border-gray-200">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">{t.popularRoutes}</h4>
-          <div className="space-y-2">
-            {popularRoutes.map((route, index) => (
-              <button
-                key={index}
-                onClick={() => handlePopularRoute(route)}
-                className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-900">
-                    {route.from} → {route.to}
-                  </span>
-                  <div className="flex items-center space-x-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      route.safety >= 85 ? 'bg-green-500' : 
-                      route.safety >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`} />
-                    <span className="text-xs text-gray-600">{route.safety}%</span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Action Button */}
+        <Button 
+          onClick={handleRouteSearch}
+          disabled={!startCity || !endCity || isSearching}
+          className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+        >
+          {isSearching ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>{t.searching}</span>
+            </div>
+          ) : (
+            t.findRoute
+          )}
+        </Button>
       </CardContent>
     </Card>
   );
