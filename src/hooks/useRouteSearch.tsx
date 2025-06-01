@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { getMapboxService } from '../services/mapboxService';
+import { getWeatherService } from '../services/weatherService';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
 interface UseRouteSearchProps {
@@ -21,6 +21,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     
     try {
       const mapboxService = getMapboxService();
+      const weatherService = getWeatherService();
       
       // Geocode both cities
       console.log('Geocoding start city:', startCity);
@@ -48,6 +49,18 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       
       const route = directions.routes[0];
       
+      // Fetch real weather data for start city
+      let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
+      try {
+        console.log('Fetching weather for start city coordinates:', startCoords);
+        const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
+        weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
+        console.log('Weather data received:', weatherData.weather[0].main, 'mapped to:', weatherCondition);
+      } catch (weatherError) {
+        console.warn('Weather API failed, using fallback:', weatherError);
+        // Keep default 'clear' weather condition
+      }
+      
       // Use enhanced safety calculation with real traffic data
       const safetyScore = mapboxService.calculateTrafficBasedSafetyScore(route);
       const routeQuality = mapboxService.analyzeRouteQuality(route);
@@ -67,7 +80,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         trafficLevel: routeQuality.trafficLevel,
         roadQuality: routeQuality.roadQuality,
         estimatedDelay: routeQuality.estimatedDelay,
-        weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
+        weatherCondition,
         conflictRisk: safetyScore > 80 ? 'low' : 'moderate',
         alternativeRoutes: directions.routes.slice(1, 3),
         realRoute: true
@@ -79,10 +92,10 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     } catch (error) {
       console.error('Route search error:', error);
       
-      // Fallback to mock data if API fails
+      // Fallback to mock data if API fails (including weather fallback)
       const trafficLevels: ('light' | 'moderate' | 'heavy')[] = ['light', 'moderate', 'heavy'];
       const roadQualities: ('excellent' | 'good' | 'fair')[] = ['excellent', 'good', 'fair'];
-      const weatherConditions = ['clear', 'cloudy', 'light_rain'];
+      const weatherConditions: ('clear' | 'cloudy' | 'light_rain')[] = ['clear', 'cloudy', 'light_rain'];
       const conflictRisks: ('low' | 'moderate')[] = ['low', 'moderate'];
       
       const mockRouteData: RouteData = {
