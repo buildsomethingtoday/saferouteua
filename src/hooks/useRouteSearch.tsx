@@ -17,7 +17,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     transportMode: 'driving'
   ) => {
     if (!startCity || !endCity) {
-      console.log('Missing start or end city:', { startCity, endCity });
+      console.log('❌ Missing start or end city:', { startCity, endCity });
       return;
     }
     
@@ -26,24 +26,24 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     
     try {
       // Get the async services to ensure proper token handling
-      console.log('📡 Initializing Mapbox service...');
+      console.log('📡 Getting Mapbox service...');
       const mapboxService = await getMapboxService();
-      console.log('✅ Mapbox service initialized successfully');
+      console.log('✅ Mapbox service obtained');
       
       // Geocode both cities with more specific queries
       console.log('🌍 Geocoding start city:', startCity);
-      const startGeocode = await mapboxService.geocodeForward(`${startCity}, Ukraine`);
+      const startGeocode = await mapboxService.geocodeForward(`${startCity}`);
       console.log('📍 Start geocode result:', startGeocode);
       
-      if (!startGeocode || !startGeocode.features || startGeocode.features.length === 0) {
+      if (!startGeocode?.features?.length) {
         throw new Error(`Could not find start city: ${startCity}`);
       }
       
       console.log('🌍 Geocoding end city:', endCity);
-      const endGeocode = await mapboxService.geocodeForward(`${endCity}, Ukraine`);
+      const endGeocode = await mapboxService.geocodeForward(`${endCity}`);
       console.log('📍 End geocode result:', endGeocode);
       
-      if (!endGeocode || !endGeocode.features || endGeocode.features.length === 0) {
+      if (!endGeocode?.features?.length) {
         throw new Error(`Could not find end city: ${endCity}`);
       }
       
@@ -53,7 +53,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('📍 Start coordinates:', startCoords);
       console.log('📍 End coordinates:', endCoords);
       
-      // Get directions with proper error handling
+      // Get directions
       console.log('🛣️ Fetching directions...');
       const directions = await mapboxService.getDirections(
         [startCoords, endCoords], 
@@ -61,21 +61,21 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         true
       );
       
-      console.log('🛣️ Directions response:', directions);
+      console.log('🛣️ Directions response received');
       
-      if (!directions || !directions.routes || directions.routes.length === 0) {
+      if (!directions?.routes?.length) {
         throw new Error('No routes found between the selected cities');
       }
       
       const route = directions.routes[0];
-      console.log('✅ Selected route:', route);
+      console.log('✅ Selected route found, distance:', route.distance, 'duration:', route.duration);
       
-      // Fetch weather data with better error handling
+      // Fetch weather data
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
       let temperature: number | undefined;
       
       try {
-        console.log('🌤️ Initializing weather service...');
+        console.log('🌤️ Getting weather service...');
         const weatherService = await getWeatherService();
         console.log('🌤️ Fetching weather for coordinates:', startCoords);
         const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
@@ -83,8 +83,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         temperature = Math.round(weatherData.main.temp);
         console.log('✅ Weather data retrieved:', weatherCondition, temperature + '°C');
       } catch (weatherError) {
-        console.warn('⚠️ Weather API failed, using fallback:', weatherError);
-        // Continue with default weather values
+        console.warn('⚠️ Weather API failed, using defaults:', weatherError);
       }
       
       // Calculate route metrics
@@ -94,7 +93,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('📊 Safety score:', safetyScore);
       console.log('📊 Route quality:', routeQuality);
       
-      // Create a clean route data object
+      // Create route data with clean serializable objects
       const routeData: RouteData = {
         startCity,
         endCity,
@@ -105,7 +104,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         duration: Math.round(route.duration / 3600),
         durationFormatted: mapboxService.formatDuration(route.duration),
         distanceFormatted: mapboxService.formatDistance(route.distance),
-        geometry: route.geometry,
+        geometry: route.geometry ? JSON.parse(JSON.stringify(route.geometry)) : undefined, // Deep clone geometry
         transportMode: 'driving',
         trafficLevel: routeQuality.trafficLevel,
         roadQuality: routeQuality.roadQuality,
@@ -113,27 +112,41 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         weatherCondition,
         temperature,
         conflictRisk: safetyScore > 80 ? 'low' : 'moderate',
-        alternativeRoutes: directions.routes.slice(1, 3),
+        alternativeRoutes: directions.routes.slice(1, 3).map(r => ({
+          distance: r.distance,
+          duration: r.duration,
+          geometry: r.geometry ? JSON.parse(JSON.stringify(r.geometry)) : undefined
+        })),
         realRoute: true
       };
       
-      console.log('✅ Final route data prepared, calling onRouteRequest...');
+      console.log('✅ Route data prepared successfully');
+      console.log('📋 Route summary:', {
+        start: startCity,
+        end: endCity,
+        distance: routeData.distanceFormatted,
+        duration: routeData.durationFormatted,
+        safety: routeData.safetyScore
+      });
+      
       onRouteRequest(routeData);
       console.log('✅ Route request completed successfully');
       
     } catch (error) {
       console.error('❌ Route search error:', error);
       
-      // Create a proper error route data object
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred during route search';
+      
+      // Create error route data
       const errorRouteData: RouteData = {
         startCity,
         endCity,
         transportMode: 'driving',
         realRoute: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: errorMessage
       };
       
-      console.log('❌ Sending error route data:', errorRouteData);
+      console.log('❌ Sending error route data');
       onRouteRequest(errorRouteData);
     } finally {
       console.log('🔄 Setting isSearching to false');

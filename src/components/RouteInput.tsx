@@ -101,18 +101,19 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
-  // Auto-trigger route search when both cities are selected (only once)
+  // Auto-trigger route search when both cities are selected
   useEffect(() => {
     if (startCity && endCity && !isSearching && !hasTriggeredSearch) {
       console.log('🎯 Auto-triggering route search for:', startCity, 'to', endCity);
       setHasTriggeredSearch(true);
+      
+      // Small delay to ensure UI updates
       const timer = setTimeout(() => {
         console.log('🚀 Executing route search...');
         handleRouteSearch(startCity, endCity, 'driving');
-      }, 500);
+      }, 300);
 
       return () => {
-        console.log('🔄 Clearing route search timer');
         clearTimeout(timer);
       };
     }
@@ -121,7 +122,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
   // Reset search trigger when cities are cleared
   useEffect(() => {
     if (!startCity || !endCity) {
-      console.log('🔄 Resetting search trigger - cities cleared');
       setHasTriggeredSearch(false);
     }
   }, [startCity, endCity]);
@@ -129,7 +129,12 @@ const RouteInput: React.FC<RouteInputProps> = ({
   // Debug route data changes
   useEffect(() => {
     if (routeData) {
-      console.log('📊 RouteInput received new route data:', routeData);
+      console.log('📊 RouteInput received route data:', {
+        hasError: !!routeData.error,
+        realRoute: routeData.realRoute,
+        startCity: routeData.startCity,
+        endCity: routeData.endCity
+      });
     }
   }, [routeData]);
 

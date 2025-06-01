@@ -63,7 +63,7 @@ class MapboxService {
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
-    console.log('🔑 MapboxService initialized with token:', accessToken ? 'Token present' : 'No token');
+    console.log('🔑 MapboxService initialized');
   }
 
   async getDirections(
@@ -84,43 +84,36 @@ class MapboxService {
       params.append('max_alternatives', '2');
     }
 
-    // Add traffic annotations for driving profiles
     if (profile === 'driving' || profile === 'driving-traffic') {
       params.append('annotations', 'congestion,maxspeed,duration,distance');
     }
 
     const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?${params}`;
 
-    console.log('🛣️ Fetching directions from URL:', url.replace(this.accessToken, 'TOKEN_HIDDEN'));
+    console.log('🛣️ Fetching directions...');
 
-    try {
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Mapbox API Error Response:', errorText);
-        throw new Error(`Mapbox Directions API error: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Raw Mapbox directions response received, routes count:', data.routes?.length || 0);
-      
-      if (data.code !== 'Ok') {
-        console.error('❌ Mapbox API returned error code:', data.code, data.message);
-        throw new Error(`Mapbox API error: ${data.code} - ${data.message || 'Unknown error'}`);
-      }
-      
-      return data;
-    } catch (fetchError) {
-      console.error('❌ Network error fetching directions:', fetchError);
-      throw new Error(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Unknown network error'}`);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Mapbox API Error:', response.status, errorText);
+      throw new Error(`Mapbox Directions API error: ${response.status} - ${errorText}`);
     }
+
+    const data = await response.json();
+    console.log('✅ Directions response received, routes:', data.routes?.length || 0);
+    
+    if (data.code !== 'Ok') {
+      console.error('❌ Mapbox API error code:', data.code, data.message);
+      throw new Error(`Mapbox API error: ${data.code} - ${data.message || 'Unknown error'}`);
+    }
+    
+    return data;
   }
 
   async geocodeForward(query: string, proximity?: [number, number]): Promise<GeocodingResponse> {
     const params = new URLSearchParams({
       access_token: this.accessToken,
-      country: 'ua',
       limit: '5',
       types: 'place,locality,neighborhood,address'
     });
@@ -131,23 +124,18 @@ class MapboxService {
 
     const url = `${this.baseUrl}/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
 
-    console.log('🌍 Geocoding query URL:', url.replace(this.accessToken, 'TOKEN_HIDDEN'));
+    console.log('🌍 Geocoding query:', query);
 
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Geocoding API Error:', errorText);
-        throw new Error(`Mapbox Geocoding API error: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Geocoding response received, features count:', data.features?.length || 0);
-      return data;
-    } catch (fetchError) {
-      console.error('❌ Network error in geocoding:', fetchError);
-      throw new Error(`Geocoding network error: ${fetchError instanceof Error ? fetchError.message : 'Unknown network error'}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Geocoding API Error:', response.status, errorText);
+      throw new Error(`Mapbox Geocoding API error: ${response.status} - ${errorText}`);
     }
+
+    const data = await response.json();
+    console.log('✅ Geocoding response:', data.features?.length || 0, 'features');
+    return data;
   }
 
   async geocodeReverse(coordinates: [number, number]): Promise<GeocodingResponse> {
@@ -183,7 +171,6 @@ class MapboxService {
   calculateTrafficBasedSafetyScore(route: any): number {
     let baseScore = 75;
     
-    // Use real traffic data if available
     if (route.legs && route.legs[0]?.annotation?.congestion) {
       const congestionData = route.legs[0].annotation.congestion;
       const totalSegments = congestionData.length;
@@ -191,26 +178,22 @@ class MapboxService {
         level === 'heavy' || level === 'severe'
       ).length;
       
-      // Lower score for heavy traffic areas
       const trafficPenalty = (heavyTrafficSegments / totalSegments) * 15;
       baseScore -= trafficPenalty;
     }
     
-    // Consider route distance (longer routes may be less safe)
     if (route.distance) {
       const distancePenalty = Math.min(route.distance / 1000 * 0.05, 8);
       baseScore -= distancePenalty;
     }
     
-    // Use traffic duration vs normal duration
     if (route.duration_traffic && route.duration) {
       const trafficDelay = (route.duration_traffic - route.duration) / route.duration;
-      if (trafficDelay > 0.2) { // More than 20% delay
+      if (trafficDelay > 0.2) {
         baseScore -= trafficDelay * 10;
       }
     }
     
-    // Add some realistic variation
     const variation = (Math.random() - 0.5) * 10;
     
     return Math.max(60, Math.min(95, Math.round(baseScore + variation)));
@@ -238,10 +221,9 @@ class MapboxService {
     }
 
     if (route.duration_traffic && route.duration) {
-      estimatedDelay = Math.round((route.duration_traffic - route.duration) / 60); // in minutes
+      estimatedDelay = Math.round((route.duration_traffic - route.duration) / 60);
     }
 
-    // Analyze road quality based on speed limits
     if (route.legs && route.legs[0]?.annotation?.maxspeed) {
       const speeds = route.legs[0].annotation.maxspeed;
       const avgSpeed = speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length;
@@ -287,12 +269,12 @@ export const getMapboxService = async (): Promise<MapboxService> => {
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
       if (error || !data?.token) {
-        console.warn('⚠️ Could not fetch token from Supabase, error:', error);
+        console.error('❌ Could not fetch token from Supabase:', error);
         throw new Error('Failed to get Mapbox token from Supabase');
-      } else {
-        console.log('✅ Successfully retrieved Mapbox token from Supabase');
-        mapboxService = new MapboxService(data.token);
       }
+      
+      console.log('✅ Successfully retrieved Mapbox token from Supabase');
+      mapboxService = new MapboxService(data.token);
     } catch (error) {
       console.error('❌ Error fetching token from Supabase:', error);
       throw new Error(`Failed to initialize Mapbox service: ${error instanceof Error ? error.message : 'Unknown error'}`);
