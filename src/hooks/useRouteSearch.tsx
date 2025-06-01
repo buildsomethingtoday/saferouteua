@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { getMapboxServiceSync } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
@@ -41,7 +42,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('End coordinates:', endCoords);
       
       // Try different driving profiles for better coverage in Ukraine
-      const profiles = ['driving', 'driving-traffic'];
+      const profiles = ['driving-traffic', 'driving'];
       
       let directions = null;
       let usedProfile = '';
@@ -53,6 +54,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
           if (directions.routes.length > 0) {
             usedProfile = profile;
             console.log('Successfully got route with profile:', profile);
+            console.log('Route geometry:', directions.routes[0].geometry);
             break;
           }
         } catch (profileError) {
@@ -101,7 +103,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         duration: Math.round(route.duration / 3600),
         durationFormatted: mapboxService.formatDuration(route.duration),
         distanceFormatted: mapboxService.formatDistance(route.distance),
-        geometry: route.geometry,
+        geometry: route.geometry, // Ensure geometry is passed
         transportMode: 'driving',
         trafficLevel: routeQuality.trafficLevel,
         roadQuality: routeQuality.roadQuality,
@@ -113,7 +115,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         realRoute: true
       };
       
-      console.log('Final route data:', routeData);
+      console.log('Final route data with geometry:', routeData);
       onRouteRequest(routeData);
       
     } catch (error) {
@@ -162,7 +164,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         estimatedDelay: Math.floor(Math.random() * 30),
         transportMode: 'driving',
         realRoute: false
-        // Removed error property to avoid showing error message in successful fallback
+        // Note: no geometry for fallback data, which is expected
       };
       
       console.log('Using fallback route data:', mockRouteData);
