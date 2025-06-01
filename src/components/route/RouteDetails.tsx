@@ -22,21 +22,18 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  const getRiskBadgeStyle = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'bg-green-600 text-white border-none';
-      case 'moderate': return 'bg-yellow-600 text-white border-none';
-      case 'high': return 'bg-red-600 text-white border-none';
-      default: return 'bg-gray-600 text-white border-none';
-    }
-  };
-
-  const getTrafficBadgeStyle = (level: string) => {
+  const getBadgeStyle = (level: string) => {
     switch (level) {
-      case 'light': return 'bg-green-600 text-white border-none';
-      case 'moderate': return 'bg-yellow-600 text-white border-none';
-      case 'heavy': return 'bg-red-600 text-white border-none';
-      default: return 'bg-gray-600 text-white border-none';
+      case 'low':
+      case 'light': 
+        return 'bg-green-600 text-white border-none';
+      case 'moderate': 
+        return 'bg-yellow-600 text-white border-none';
+      case 'high':
+      case 'heavy': 
+        return 'bg-red-600 text-white border-none';
+      default: 
+        return 'bg-gray-600 text-white border-none';
     }
   };
 
@@ -81,7 +78,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             </div>
             <span className="text-sm font-medium text-white">{translations.conflictRisk}</span>
           </div>
-          <Badge className={`text-sm font-semibold ${getRiskBadgeStyle(routeData.conflictRisk)}`}>
+          <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.conflictRisk)}`}>
             {translations.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
           </Badge>
         </div>
@@ -95,7 +92,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
               </div>
               <span className="text-sm font-medium text-white">{translations.trafficLevel}</span>
             </div>
-            <Badge className={`text-xs px-3 py-1 ${getTrafficBadgeStyle(routeData.trafficLevel)}`}>
+            <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.trafficLevel)}`}>
               {translations.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
             </Badge>
           </div>
