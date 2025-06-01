@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -31,6 +30,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const startMarker = useRef<mapboxgl.Marker | null>(null);
   const endMarker = useRef<mapboxgl.Marker | null>(null);
   const alertMarkers = useRef<mapboxgl.Marker[]>([]);
+  const currentPopup = useRef<mapboxgl.Popup | null>(null);
 
   const translations = {
     en: {
@@ -69,6 +69,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       case 'missile_threat': return '#B91C1C'; // Dark red
       case 'chemical_threat': return '#7C2D12'; // Brown
       default: return '#6B7280'; // Gray
+    }
+  };
+
+  // Helper function to clean up current popup
+  const cleanupCurrentPopup = () => {
+    if (currentPopup.current) {
+      currentPopup.current.remove();
+      currentPopup.current = null;
     }
   };
 
@@ -255,6 +263,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       console.log('✅ Map initialized successfully');
 
       return () => {
+        cleanupCurrentPopup();
         clearAlertMarkers();
         if (startMarker.current) startMarker.current.remove();
         if (endMarker.current) endMarker.current.remove();
@@ -372,9 +381,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             }
           });
 
-          // Add hover effects and popup
+          // Add hover effects and popup with improved management
           map.current.on('mouseenter', layerId, (e) => {
             map.current!.getCanvas().style.cursor = 'pointer';
+            
+            // Clean up any existing popup first
+            cleanupCurrentPopup();
             
             if (e.features && e.features[0] && e.features[0].properties) {
               const properties = e.features[0].properties;
@@ -391,7 +403,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 return `<span class="inline-block px-2 py-1 text-xs rounded-full text-white mr-1 mb-1" style="background-color: ${color}">${type}</span>`;
               }).join('');
               
-              const popup = new mapboxgl.Popup({
+              currentPopup.current = new mapboxgl.Popup({
                 closeButton: false,
                 closeOnClick: false
               })
@@ -415,18 +427,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 </div>
               `)
               .addTo(map.current!);
-
-            // Store popup reference to remove it later
-            (map.current as any)._currentPopup = popup;
             }
           });
 
           map.current.on('mouseleave', layerId, () => {
             map.current!.getCanvas().style.cursor = '';
-            if ((map.current as any)._currentPopup) {
-              (map.current as any)._currentPopup.remove();
-              (map.current as any)._currentPopup = null;
-            }
+            cleanupCurrentPopup();
           });
         }
       }
