@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navigation, Star } from 'lucide-react';
+import { Navigation, Star, Car, MapPin, Clock } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
+import { getMapboxService } from '../services/mapboxService';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -21,6 +22,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [needsReturn, setNeedsReturn] = useState(false);
+  const [transportMode, setTransportMode] = useState<'driving' | 'walking' | 'cycling'>('driving');
 
   const translations = {
     en: {
@@ -31,7 +33,12 @@ const RouteInput: React.FC<RouteInputProps> = ({
       findRoute: 'Find Safe Route',
       searching: 'Analyzing safety...',
       safestDestinations: 'Show Safest Destinations',
-      popularRoutes: 'Popular Safe Routes'
+      popularRoutes: 'Popular Safe Routes',
+      transportMode: 'Transportation',
+      driving: 'Driving',
+      walking: 'Walking',
+      cycling: 'Cycling',
+      error: 'Error finding route. Please try again.'
     },
     ua: {
       title: 'Спланувати маршрут',
@@ -41,7 +48,12 @@ const RouteInput: React.FC<RouteInputProps> = ({
       findRoute: 'Знайти безпечний маршрут',
       searching: 'Аналіз безпеки...',
       safestDestinations: 'Показати найбезпечніші напрямки',
-      popularRoutes: 'Популярні безпечні маршрути'
+      popularRoutes: 'Популярні безпечні маршрути',
+      transportMode: 'Транспорт',
+      driving: 'Автомобіль',
+      walking: 'Пішки',
+      cycling: 'Велосипед',
+      error: 'Помилка пошуку маршруту. Спробуйте ще раз.'
     }
   };
 
@@ -59,8 +71,61 @@ const RouteInput: React.FC<RouteInputProps> = ({
     
     setIsSearching(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const mapboxService = getMapboxService();
+      
+      // Geocode both cities
+      console.log('Geocoding start city:', startCity);
+      const startGeocode = await mapboxService.geocodeForward(startCity + ', Ukraine');
+      console.log('Geocoding end city:', endCity);
+      const endGeocode = await mapboxService.geocodeForward(endCity + ', Ukraine');
+      
+      if (startGeocode.features.length === 0 || endGeocode.features.length === 0) {
+        throw new Error('Could not find one or both cities');
+      }
+      
+      const startCoords = startGeocode.features[0].center;
+      const endCoords = endGeocode.features[0].center;
+      
+      console.log('Start coordinates:', startCoords);
+      console.log('End coordinates:', endCoords);
+      
+      // Get directions
+      const profile = transportMode === 'driving' ? 'driving-traffic' : transportMode;
+      const directions = await mapboxService.getDirections([startCoords, endCoords], profile as any);
+      
+      if (directions.routes.length === 0) {
+        throw new Error('No routes found');
+      }
+      
+      const route = directions.routes[0];
+      const safetyScore = mapboxService.calculateSafetyScore(route, []);
+      
+      const routeData = {
+        startCity,
+        endCity,
+        startCoords,
+        endCoords,
+        safetyScore: Math.round(safetyScore),
+        distance: Math.round(route.distance / 1000),
+        duration: Math.round(route.duration / 3600),
+        durationFormatted: mapboxService.formatDuration(route.duration),
+        distanceFormatted: mapboxService.formatDistance(route.distance),
+        geometry: route.geometry,
+        transportMode,
+        weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
+        conflictRisk: safetyScore > 80 ? 'low' : 'moderate',
+        alternativeSuggestion: safetyScore < 75 ? 'Consider alternative route via safer areas' : null,
+        realRoute: true
+      };
+      
+      console.log('Final route data:', routeData);
+      onRouteRequest(routeData);
+      
+    } catch (error) {
+      console.error('Route search error:', error);
+      
+      // Fallback to mock data if API fails
       const mockRouteData = {
         startCity,
         endCity,
@@ -69,12 +134,16 @@ const RouteInput: React.FC<RouteInputProps> = ({
         duration: Math.floor(Math.random() * 8) + 2,
         weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
         conflictRisk: ['low', 'moderate'][Math.floor(Math.random() * 2)],
-        alternativeSuggestion: Math.random() > 0.5 ? 'Consider Lviv - safer conditions' : null
+        alternativeSuggestion: Math.random() > 0.5 ? 'Consider Lviv - safer conditions' : null,
+        transportMode,
+        error: t.error,
+        realRoute: false
       };
       
       onRouteRequest(mockRouteData);
-      setIsSearching(false);
-    }, 2000);
+    }
+    
+    setIsSearching(false);
   };
 
   const handlePopularRoute = (route: any) => {
@@ -91,6 +160,42 @@ const RouteInput: React.FC<RouteInputProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Transportation Mode Selector */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t.transportMode}
+          </label>
+          <div className="flex space-x-2">
+            <Button
+              variant={transportMode === 'driving' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransportMode('driving')}
+              className="flex-1"
+            >
+              <Car className="w-4 h-4 mr-2" />
+              {t.driving}
+            </Button>
+            <Button
+              variant={transportMode === 'walking' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransportMode('walking')}
+              className="flex-1"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              {t.walking}
+            </Button>
+            <Button
+              variant={transportMode === 'cycling' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTransportMode('cycling')}
+              className="flex-1"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              {t.cycling}
+            </Button>
+          </div>
+        </div>
+
         {/* Route Input */}
         <div className="space-y-4">
           <div>

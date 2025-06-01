@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -54,13 +55,26 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     if (routeData && map.current) {
       console.log('Adding route visualization for:', routeData);
       
-      // Clear existing markers
+      // Clear existing markers and layers
       markers.current.forEach(marker => marker.remove());
       markers.current = [];
 
-      // Add route visualization
-      const startCoords = getCoordinatesForCity(routeData.startCity);
-      const endCoords = getCoordinatesForCity(routeData.endCity);
+      // Remove existing route layers if they exist
+      if (map.current.getSource('route')) {
+        map.current.removeLayer('route');
+        map.current.removeSource('route');
+      }
+
+      let startCoords, endCoords;
+
+      // Use real coordinates if available, otherwise fallback to city mapping
+      if (routeData.startCoords && routeData.endCoords) {
+        startCoords = routeData.startCoords;
+        endCoords = routeData.endCoords;
+      } else {
+        startCoords = getCoordinatesForCity(routeData.startCity);
+        endCoords = getCoordinatesForCity(routeData.endCity);
+      }
 
       console.log('Start coordinates:', startCoords, 'for city:', routeData.startCity);
       console.log('End coordinates:', endCoords, 'for city:', routeData.endCity);
@@ -81,27 +95,43 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       
       markers.current.push(endMarker);
 
-      // Add route line between cities
-      const routeLineGeoJSON = {
-        type: 'Feature' as const,
-        properties: {},
-        geometry: {
-          type: 'LineString' as const,
-          coordinates: [startCoords, endCoords]
-        }
-      };
-
-      // Remove existing route source and layer if they exist
-      if (map.current.getSource('route')) {
-        map.current.removeLayer('route');
-        map.current.removeSource('route');
+      // Add route visualization
+      let routeGeoJSON;
+      
+      if (routeData.geometry && routeData.realRoute) {
+        // Use real route geometry from Mapbox Directions API
+        routeGeoJSON = {
+          type: 'Feature' as const,
+          properties: {
+            safetyScore: routeData.safetyScore
+          },
+          geometry: routeData.geometry
+        };
+        console.log('Using real route geometry from Mapbox API');
+      } else {
+        // Fallback to straight line
+        routeGeoJSON = {
+          type: 'Feature' as const,
+          properties: {
+            safetyScore: routeData.safetyScore
+          },
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: [startCoords, endCoords]
+          }
+        };
+        console.log('Using fallback straight line geometry');
       }
 
       // Add route line
       map.current.addSource('route', {
         type: 'geojson',
-        data: routeLineGeoJSON
+        data: routeGeoJSON
       });
+
+      // Style route based on safety score
+      const routeColor = routeData.safetyScore >= 80 ? '#22c55e' : 
+                        routeData.safetyScore >= 65 ? '#f59e0b' : '#ef4444';
 
       map.current.addLayer({
         id: 'route',
@@ -112,20 +142,36 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
           'line-cap': 'round'
         },
         paint: {
-          'line-color': '#3b82f6',
-          'line-width': 4,
+          'line-color': routeColor,
+          'line-width': 6,
           'line-opacity': 0.8
         }
       });
 
-      // Fit bounds to show both cities
+      // Add route outline for better visibility
+      map.current.addLayer({
+        id: 'route-outline',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 8,
+          'line-opacity': 0.6
+        }
+      }, 'route');
+
+      // Fit bounds to show the route
       const bounds = new mapboxgl.LngLatBounds()
         .extend(startCoords)
         .extend(endCoords);
       
       map.current.fitBounds(bounds, { 
         padding: 100,
-        maxZoom: 10
+        maxZoom: 12
       });
 
       console.log('Route visualization added successfully');
@@ -145,8 +191,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       'Kharkiv': [36.2304, 49.9935],
       'Chernivtsi': [25.9358, 48.2916],
       'Zakarpattia': [22.7202, 48.6208],
-      
-      // Additional cities
       'Lutsk': [25.3424, 50.7593],
       'Rivne': [26.2516, 50.6199],
       'Ternopil': [25.5948, 49.5535],
@@ -195,6 +239,32 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
           <div className="text-center text-gray-500">
             <p>{t.noRoute}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Route Info Overlay */}
+      {routeData && !isSearching && (
+        <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
+          <div className="flex items-center space-x-2 mb-2">
+            <div className={`w-3 h-3 rounded-full ${
+              routeData.safetyScore >= 80 ? 'bg-green-500' : 
+              routeData.safetyScore >= 65 ? 'bg-yellow-500' : 'bg-red-500'
+            }`} />
+            <span className="text-sm font-medium">
+              Safety Score: {routeData.safetyScore}%
+            </span>
+          </div>
+          <div className="text-xs text-gray-600 space-y-1">
+            <div>Distance: {routeData.distanceFormatted || `${routeData.distance} km`}</div>
+            <div>Duration: {routeData.durationFormatted || `${routeData.duration}h`}</div>
+            <div>Mode: {routeData.transportMode || 'driving'}</div>
+            {routeData.realRoute && (
+              <div className="text-green-600 font-medium">✓ Real-time route</div>
+            )}
+            {routeData.error && (
+              <div className="text-orange-600">⚠ Using fallback data</div>
+            )}
           </div>
         </div>
       )}
