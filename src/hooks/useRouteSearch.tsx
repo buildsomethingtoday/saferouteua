@@ -119,28 +119,37 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         hasGeometry: !!route.geometry
       });
       
-      // Step 5: Fetch safety alerts data using BOTH coordinate-based AND city-based methods
-      console.log('🚨 Step 5: Fetching safety alerts data...');
+      // Step 5: Enhanced safety alerts data fetching
+      console.log('🚨 Step 5: Fetching safety alerts data with enhanced matching...');
       let routeAlerts = [];
       let alertsSafetyScore = 75;
       
       try {
         const alertsService = getAlertsService();
         
-        // Get alerts using city names (primary method)
+        console.log('🔍 Getting city-based alerts for route:', { startCity, endCity });
+        
+        // Get alerts using enhanced city matching (primary method)
         const cityBasedAlerts = await alertsService.getAlertsForCities(startCity, endCity);
         console.log('✅ City-based alerts retrieved:', {
           alertsCount: cityBasedAlerts.length,
           alerts: cityBasedAlerts.map(a => ({ 
+            id: a.id,
             severity: a.severity, 
             location: a.location_name,
-            oblast: a.location_oblast 
+            oblast: a.location_oblast,
+            type: a.alert_type
           }))
         });
         
-        // Get alerts using coordinates (backup method)
-        const coordBasedAlerts = await alertsService.getAlertsForRoute(startCoords, endCoords);
-        console.log('✅ Coordinate-based alerts retrieved:', coordBasedAlerts.length);
+        // Get alerts using coordinates as backup
+        let coordBasedAlerts = [];
+        try {
+          coordBasedAlerts = await alertsService.getAlertsForRoute(startCoords, endCoords);
+          console.log('✅ Coordinate-based alerts retrieved:', coordBasedAlerts.length);
+        } catch (coordError) {
+          console.warn('⚠️ Coordinate-based alerts failed:', coordError);
+        }
         
         // Combine and deduplicate alerts
         const allAlerts = [...cityBasedAlerts, ...coordBasedAlerts];
@@ -151,16 +160,23 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         routeAlerts = uniqueAlerts;
         alertsSafetyScore = alertsService.calculateRouteSafetyScore(routeAlerts);
         
-        console.log('✅ Final safety alerts summary:', {
+        console.log('✅ Final enhanced safety alerts summary:', {
           totalAlerts: routeAlerts.length,
           cityBasedCount: cityBasedAlerts.length,
           coordBasedCount: coordBasedAlerts.length,
           uniqueCount: uniqueAlerts.length,
-          safetyScore: alertsSafetyScore
+          safetyScore: alertsSafetyScore,
+          alertDetails: routeAlerts.map(alert => ({
+            id: alert.id,
+            location: alert.location_name,
+            oblast: alert.location_oblast,
+            severity: alert.severity,
+            type: alert.alert_type
+          }))
         });
         
       } catch (alertsError) {
-        console.warn('⚠️ Alerts API failed, using defaults:', alertsError);
+        console.warn('⚠️ Enhanced alerts API failed, using defaults:', alertsError);
         // Continue with default values
       }
       

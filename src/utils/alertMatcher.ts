@@ -23,13 +23,14 @@ export function doesAlertMatchCity(alertLocation: string, alertOblast: string, c
     return true;
   }
   
-  // Check city aliases
+  // Get city data from our mapping
   const cityData = Object.entries(cityToOblastMapping).find(([key, data]) => 
     key === normalizedCity || data.aliases.some(alias => alias.toLowerCase() === normalizedCity)
   );
   
   if (cityData) {
     const [cityKey, data] = cityData;
+    console.log('🏙️ Found city data:', { cityKey, oblastUA: data.oblastUA, oblastEN: data.oblastEN });
     
     // Check if alert location mentions any alias of the city
     if (data.aliases.some(alias => normalizedAlertLocation.includes(alias.toLowerCase()))) {
@@ -37,22 +38,52 @@ export function doesAlertMatchCity(alertLocation: string, alertOblast: string, c
       return true;
     }
     
-    // Check if alert is in the same oblast as the city
-    if (normalizedAlertOblast.includes(data.oblastUA.toLowerCase()) || 
-        normalizedAlertOblast.includes(data.oblastEN.toLowerCase())) {
-      console.log('✅ Oblast match found');
+    // ENHANCED: Check if alert is an oblast-level alert that covers this city
+    const cityOblastUA = data.oblastUA.toLowerCase();
+    const cityOblastEN = data.oblastEN.toLowerCase();
+    
+    // Check if the alert oblast matches the city's oblast
+    if (normalizedAlertOblast.includes(cityOblastUA) || 
+        normalizedAlertOblast.includes(cityOblastEN)) {
+      console.log('✅ Oblast match found:', { alertOblast: normalizedAlertOblast, cityOblast: cityOblastUA });
       return true;
+    }
+    
+    // Check if the alert location itself mentions the oblast
+    if (normalizedAlertLocation.includes(cityOblastUA) || 
+        normalizedAlertLocation.includes(cityOblastEN)) {
+      console.log('✅ Oblast in location match found');
+      return true;
+    }
+    
+    // ENHANCED: Handle common oblast name variations
+    if (cityOblastUA.includes('область') || cityOblastEN.includes('oblast')) {
+      const oblastNameUA = cityOblastUA.replace(' область', '').trim();
+      const oblastNameEN = cityOblastEN.replace(' oblast', '').trim();
+      
+      if (normalizedAlertOblast.includes(oblastNameUA) || 
+          normalizedAlertOblast.includes(oblastNameEN) ||
+          normalizedAlertLocation.includes(oblastNameUA) ||
+          normalizedAlertLocation.includes(oblastNameEN)) {
+        console.log('✅ Oblast name variation match found');
+        return true;
+      }
     }
   }
   
-  // Special case for major cities by oblast matching
-  if (normalizedCity === 'kyiv' && normalizedAlertOblast.includes('київ')) {
-    console.log('✅ Kyiv oblast match');
+  // Special case handling for major cities
+  if (normalizedCity === 'kyiv' && (normalizedAlertOblast.includes('київ') || normalizedAlertLocation.includes('київ'))) {
+    console.log('✅ Kyiv special case match');
     return true;
   }
   
-  if (normalizedCity === 'dnipro' && normalizedAlertOblast.includes('дніпропетровськ')) {
-    console.log('✅ Dnipro oblast match');
+  if (normalizedCity === 'kharkiv' && (normalizedAlertOblast.includes('харків') || normalizedAlertLocation.includes('харків'))) {
+    console.log('✅ Kharkiv special case match');
+    return true;
+  }
+  
+  if (normalizedCity === 'dnipro' && (normalizedAlertOblast.includes('дніпропетровськ') || normalizedAlertLocation.includes('дніпропетровськ'))) {
+    console.log('✅ Dnipro special case match');
     return true;
   }
   

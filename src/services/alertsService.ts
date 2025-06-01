@@ -77,20 +77,37 @@ export class AlertsService {
     
     const recentAlerts = allAlerts.filter(alert => {
       const alertDate = new Date(alert.start_time);
-      return !alert.end_time && alertDate >= seventyTwoHoursAgo;
+      const isActive = !alert.end_time;
+      const isRecent = alertDate >= seventyTwoHoursAgo;
+      return isActive && isRecent;
     });
     
     console.log('📊 Recent active alerts (72h):', recentAlerts.length);
+    console.log('📋 Recent alerts details:', recentAlerts.map(alert => ({
+      id: alert.id,
+      location: alert.location_name,
+      oblast: alert.location_oblast,
+      type: alert.alert_type,
+      severity: alert.severity
+    })));
     
     const routeAlerts = recentAlerts.filter(alert => {
       const alertLocation = alert.location_name?.toLowerCase() || '';
       const alertOblast = alert.location_oblast?.toLowerCase() || '';
       
+      console.log('🔍 Checking alert:', {
+        alertId: alert.id,
+        alertLocation: alert.location_name,
+        alertOblast: alert.location_oblast,
+        startCity,
+        endCity
+      });
+      
       // Check if alert matches start city
-      const matchesStartCity = doesAlertMatchCity(alertLocation, alert.location_oblast || '', startCity);
+      const matchesStartCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', startCity);
       
       // Check if alert matches end city  
-      const matchesEndCity = doesAlertMatchCity(alertLocation, alert.location_oblast || '', endCity);
+      const matchesEndCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', endCity);
       
       if (matchesStartCity || matchesEndCity) {
         console.log('✅ Alert matches route:', {
@@ -99,15 +116,25 @@ export class AlertsService {
           startCity,
           endCity,
           matchesStart: matchesStartCity,
-          matchesEnd: matchesEndCity
+          matchesEnd: matchesEndCity,
+          alertType: alert.alert_type,
+          severity: alert.severity
         });
         return true;
       }
       
+      console.log('❌ Alert does not match route');
       return false;
     });
     
-    console.log('📊 Route-specific alerts found:', routeAlerts.length);
+    console.log('📊 Final route-specific alerts found:', routeAlerts.length);
+    console.log('📋 Final alerts details:', routeAlerts.map(alert => ({
+      id: alert.id,
+      location: alert.location_name,
+      oblast: alert.location_oblast,
+      type: alert.alert_type,
+      severity: alert.severity
+    })));
     
     return routeAlerts;
   }
