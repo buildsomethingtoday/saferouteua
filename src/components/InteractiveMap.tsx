@@ -1,7 +1,7 @@
-
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Clock, Cloud, AlertTriangle, Star } from 'lucide-react';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -18,12 +18,62 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     en: {
       mapTitle: 'Interactive Route Map',
       noRoute: 'Enter your route to see safety analysis on the map',
-      analyzing: 'Analyzing route safety and weather conditions...'
+      analyzing: 'Analyzing route safety and weather conditions...',
+      safetyScore: 'Safety Score',
+      routeDetails: 'Route Details',
+      distance: 'Distance',
+      duration: 'Duration',
+      transportMode: 'Transport Mode',
+      weather: 'Weather',
+      conflictRisk: 'Conflict Risk',
+      alternativeSuggestion: 'Alternative Suggestion',
+      realTimeData: 'Real-time Data',
+      fallbackData: 'Estimated Data',
+      transportModes: {
+        driving: 'Driving',
+        walking: 'Walking',
+        cycling: 'Cycling'
+      },
+      weatherConditions: {
+        clear: 'Clear skies',
+        cloudy: 'Cloudy',
+        light_rain: 'Light rain'
+      },
+      riskLevels: {
+        low: 'Low risk',
+        moderate: 'Moderate risk',
+        high: 'High risk'
+      }
     },
     ua: {
       mapTitle: 'Інтерактивна карта маршруту',
       noRoute: 'Введіть ваш маршрут для аналізу безпеки на карті',
-      analyzing: 'Аналіз безпеки маршруту та погодних умов...'
+      analyzing: 'Аналіз безпеки маршруту та погодних умов...',
+      safetyScore: 'Оцінка безпеки',
+      routeDetails: 'Деталі маршруту',
+      distance: 'Відстань',
+      duration: 'Тривалість',
+      transportMode: 'Вид транспорту',
+      weather: 'Погода',
+      conflictRisk: 'Ризик конфлікту',
+      alternativeSuggestion: 'Альтернативна пропозиція',
+      realTimeData: 'Дані в реальному часі',
+      fallbackData: 'Оціночні дані',
+      transportModes: {
+        driving: 'Автомобіль',
+        walking: 'Пішки',
+        cycling: 'Велосипед'
+      },
+      weatherConditions: {
+        clear: 'Ясне небо',
+        cloudy: 'Хмарно',
+        light_rain: 'Невеликий дощ'
+      },
+      riskLevels: {
+        low: 'Низький ризик',
+        moderate: 'Помірний ризик',
+        high: 'Високий ризик'
+      }
     }
   };
 
@@ -70,6 +120,27 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       }
     } catch (error) {
       console.warn('Error cleaning up route visualization:', error);
+    }
+  };
+
+  const getSafetyColor = (score: number) => {
+    if (score >= 80) return 'bg-green-100 border-green-300 text-green-800';
+    if (score >= 60) return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+    return 'bg-red-100 border-red-300 text-red-800';
+  };
+
+  const getSafetyScoreColor = (score: number) => {
+    if (score >= 80) return 'bg-green-200 text-green-900';
+    if (score >= 60) return 'bg-yellow-200 text-yellow-900';
+    return 'bg-red-200 text-red-900';
+  };
+
+  const getRiskColor = (risk: string) => {
+    switch (risk) {
+      case 'low': return 'text-green-700';
+      case 'moderate': return 'text-yellow-700';
+      case 'high': return 'text-red-700';
+      default: return 'text-gray-700';
     }
   };
 
@@ -267,29 +338,107 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         </div>
       )}
 
-      {/* Route Info Overlay */}
+      {/* Enhanced Route Info Overlay */}
       {routeData && !isSearching && (
-        <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <div className={`w-3 h-3 rounded-full ${
-              routeData.safetyScore >= 80 ? 'bg-green-500' : 
-              routeData.safetyScore >= 65 ? 'bg-yellow-500' : 'bg-red-500'
-            }`} />
-            <span className="text-sm font-medium">
-              Safety Score: {routeData.safetyScore}%
+        <div className="absolute top-4 left-4 bg-white rounded-2xl shadow-xl p-6 max-w-sm border border-gray-100">
+          {/* Safety Score Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              <span className="text-lg font-semibold text-gray-900">{t.safetyScore}</span>
+            </div>
+            <div className={`px-4 py-2 rounded-full text-2xl font-bold ${getSafetyScoreColor(routeData.safetyScore)}`}>
+              {routeData.safetyScore}%
+            </div>
+          </div>
+
+          {/* Data Source Indicator */}
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl mb-4">
+            <span className="text-sm font-medium text-blue-800">
+              {routeData.realRoute ? t.realTimeData : t.fallbackData}
+            </span>
+            <div className={`w-3 h-3 rounded-full ${routeData.realRoute ? 'bg-green-500' : 'bg-orange-500'}`} />
+          </div>
+
+          {/* Route Details */}
+          <div className="mb-4">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">{t.routeDetails}</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">{t.distance}</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {routeData.distanceFormatted || `${routeData.distance} km`}
+                </div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">{t.duration}</div>
+                <div className="text-xl font-bold text-gray-900">
+                  {routeData.durationFormatted || `${routeData.duration}h`}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Transport Mode */}
+          {routeData.transportMode && (
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-4">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-900">{t.transportMode}</span>
+              </div>
+              <span className="text-sm font-medium text-gray-700 capitalize">
+                {t.transportModes[routeData.transportMode] || routeData.transportMode}
+              </span>
+            </div>
+          )}
+
+          {/* Weather Conditions */}
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl mb-3">
+            <div className="flex items-center space-x-2">
+              <Cloud className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-gray-900">{t.weather}</span>
+            </div>
+            <span className="text-sm font-medium text-blue-700 capitalize">
+              {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
             </span>
           </div>
-          <div className="text-xs text-gray-600 space-y-1">
-            <div>Distance: {routeData.distanceFormatted || `${routeData.distance} km`}</div>
-            <div>Duration: {routeData.durationFormatted || `${routeData.duration}h`}</div>
-            <div>Mode: {routeData.transportMode || 'driving'}</div>
-            {routeData.realRoute && (
-              <div className="text-green-600 font-medium">✓ Real-time route</div>
-            )}
-            {routeData.error && (
-              <div className="text-orange-600">⚠ Using fallback data</div>
-            )}
+
+          {/* Conflict Risk */}
+          <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl mb-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-medium text-gray-900">{t.conflictRisk}</span>
+            </div>
+            <span className={`text-sm font-medium capitalize ${getRiskColor(routeData.conflictRisk)}`}>
+              {t.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
+            </span>
           </div>
+
+          {/* Alternative Suggestion */}
+          {routeData.alternativeSuggestion && (
+            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+              <div className="flex items-start space-x-2">
+                <Star className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="text-sm font-medium text-green-800 mb-1">{t.alternativeSuggestion}</div>
+                  <div className="text-sm text-green-700">{routeData.alternativeSuggestion}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {routeData.error && (
+            <div className="p-3 bg-orange-50 rounded-xl border border-orange-200 mt-3">
+              <div className="flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5" />
+                <div>
+                  <div className="text-sm font-medium text-orange-800">API Notice</div>
+                  <div className="text-sm text-orange-700">{routeData.error}</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
