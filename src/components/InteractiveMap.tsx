@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -10,13 +9,15 @@ interface InteractiveMapProps {
   routeData?: any;
   isSearching?: boolean;
   onRegionSelect?: (region: string | null) => void;
+  focusAlert?: any;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
   language,
   routeData,
   isSearching,
-  onRegionSelect
+  onRegionSelect,
+  focusAlert
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -101,6 +102,67 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  // Handle focusing on specific alerts
+  useEffect(() => {
+    if (focusAlert && map.current) {
+      console.log('Focusing map on alert:', focusAlert);
+      
+      // Get oblast center coordinates
+      const oblast = focusAlert.location_oblast;
+      const oblastCenters = {
+        'Київська область': [30.5234, 50.4501],
+        'Харківська область': [36.2310, 49.9935],
+        'Дніпропетровська область': [35.0462, 48.4647],
+        'Луганська область': [38.5045, 48.5740],
+        'Донецька область': [37.8036, 48.0159],
+        'Запорізька область': [35.1396, 47.8388],
+        'Херсонська область': [32.6178, 46.6554],
+        'Миколаївська область': [31.9946, 46.9750],
+        'Одеська область': [30.7326, 46.4825],
+        'Вінницька область': [28.4682, 49.2331],
+        'Житомирська область': [28.6587, 50.2547],
+        'Закарпатська область': [22.7183, 48.6208],
+        'Івано-Франківська область': [24.7111, 48.9226],
+        'Кіровоградська область': [32.2623, 48.5132],
+        'Львівська область': [24.0232, 49.8397],
+        'Полтавська область': [34.5514, 49.5883],
+        'Рівненська область': [26.2518, 50.6199],
+        'Сумська область': [34.8000, 50.9077],
+        'Тернопільська область': [25.5948, 49.5535],
+        'Хмельницька область': [26.9871, 49.4229],
+        'Черкаська область': [32.0617, 49.4444],
+        'Чернівецька область': [25.9358, 48.2920],
+        'Чернігівська область': [31.2893, 51.4982],
+        'Автономна Республіка Крим': [34.1018, 44.9480],
+      };
+
+      const coords = oblastCenters[oblast];
+      if (coords) {
+        map.current.flyTo({
+          center: coords,
+          zoom: 8,
+          duration: 2000
+        });
+
+        // Add a temporary highlight marker
+        const highlightMarker = new mapboxgl.Marker({ 
+          color: '#FFD700', 
+          scale: 1.5 
+        })
+          .setLngLat(coords)
+          .addTo(map.current);
+
+        // Remove highlight after 5 seconds
+        setTimeout(() => {
+          highlightMarker.remove();
+        }, 5000);
+
+        // Update region selection
+        onRegionSelect?.(oblast);
+      }
+    }
+  }, [focusAlert, onRegionSelect]);
+
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || tokenError) return;
 
@@ -111,7 +173,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/dark-v11',
-        center: [31.1656, 48.3794], // Center on Ukraine
+        center: [31.1656, 48.3794],
         zoom: 6,
       });
 

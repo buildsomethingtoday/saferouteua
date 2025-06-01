@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ interface AlertsApiExplorerProps {
   language: 'en' | 'ua';
   selectedRegion?: string | null;
   compact?: boolean;
+  onAlertClick?: (alert: AlertItem) => void;
 }
 
 interface AlertItem {
@@ -27,7 +27,8 @@ interface AlertItem {
 const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ 
   language, 
   selectedRegion, 
-  compact = false 
+  compact = false,
+  onAlertClick
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiData, setApiData] = useState<any>(null);
@@ -62,7 +63,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       },
       lastUpdated: 'Last updated',
       alertDuration: 'Duration',
-      clickMapHint: 'Click on the map to filter alerts by region'
+      clickMapHint: 'Click on alerts to view region on map',
+      clickToFocus: 'Click to focus on map'
     },
     ua: {
       title: compact ? 'Сповіщення безпеки' : 'Сповіщення безпеки України',
@@ -91,7 +93,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       },
       lastUpdated: 'Останнє оновлення',
       alertDuration: 'Тривалість',
-      clickMapHint: 'Натисніть на карту, щоб фільтрувати сповіщення за регіоном'
+      clickMapHint: 'Натисніть на сповіщення, щоб переглянути регіон на карті',
+      clickToFocus: 'Натисніть, щоб сфокусуватися на карті'
     }
   };
 
@@ -125,28 +128,36 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     }
   };
 
-  // Auto-refresh alerts data
   useEffect(() => {
     loadAlertsData();
     
     if (autoRefresh) {
-      const interval = setInterval(loadAlertsData, 60000); // Refresh every minute
+      const interval = setInterval(loadAlertsData, 60000);
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);
 
-  // Filter alerts based on selected region
   const getFilteredAlerts = (alerts: AlertItem[]) => {
-    if (!selectedRegion || !alerts) return alerts;
+    if (!alerts) return alerts;
     
-    const filtered = alerts.filter(alert => 
+    // Filter to only active alerts (finished_at is null)
+    const activeAlerts = alerts.filter(alert => !alert.finished_at);
+    
+    if (!selectedRegion) return activeAlerts;
+    
+    const filtered = activeAlerts.filter(alert => 
       alert.location_oblast.toLowerCase().includes(selectedRegion.toLowerCase()) ||
       alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase()) ||
       (alert.location_raion && alert.location_raion.toLowerCase().includes(selectedRegion.toLowerCase()))
     );
     
-    console.log(`Filtering alerts for region "${selectedRegion}": ${filtered.length} out of ${alerts.length} alerts`);
+    console.log(`Filtering alerts for region "${selectedRegion}": ${filtered.length} out of ${activeAlerts.length} active alerts`);
     return filtered;
+  };
+
+  const handleAlertClick = (alert: AlertItem) => {
+    console.log('Alert clicked, focusing map on:', alert.location_oblast);
+    onAlertClick?.(alert);
   };
 
   const getAlertIcon = (alertType: string) => {
@@ -209,7 +220,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       );
     }
 
-    // Sort by most recent first
     const sortedAlerts = filteredAlerts.sort((a, b) => 
       new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
     );
@@ -217,7 +227,11 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     return (
       <div className="space-y-3">
         {sortedAlerts.slice(0, compact ? 5 : 15).map((alert) => (
-          <Card key={alert.id} className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors">
+          <Card 
+            key={alert.id} 
+            className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors cursor-pointer"
+            onClick={() => handleAlertClick(alert)}
+          >
             <CardContent className={compact ? "p-3" : "p-4"}>
               <div className="flex items-start space-x-3">
                 <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)}`}>
@@ -237,6 +251,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
                     <Badge variant="outline" className="text-xs border-gray-500 text-gray-300">
                       {t.alertTypes[alert.alert_type] || alert.alert_type}
                     </Badge>
+                  </div>
+                  <div className="text-xs text-blue-400 mt-1">
+                    {t.clickToFocus}
                   </div>
                 </div>
                 <div className="text-right">
@@ -279,7 +296,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
               variant="ghost"
               size="sm"
               className="text-gray-400 hover:text-white p-1 h-auto"
-              onClick={() => window.location.reload()} // Simple way to clear region filter
+              onClick={() => window.location.reload()}
             >
               <X className="w-3 h-3" />
             </Button>
@@ -288,7 +305,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Control Buttons */}
         <div className="flex items-center justify-between">
           <Button
             onClick={loadAlertsData}
@@ -316,7 +332,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
           )}
         </div>
 
-        {/* Loading State */}
         {isLoading && (
           <div className="flex items-center justify-center p-4">
             <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -324,7 +339,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
           </div>
         )}
 
-        {/* Error Display */}
         {error && (
           <div className="p-3 bg-red-900/20 border border-red-700 rounded-lg">
             <div className="flex items-center space-x-2">
@@ -335,7 +349,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
           </div>
         )}
 
-        {/* Success Results */}
         {apiData && !error && apiData.data?.alerts && (
           <div className="space-y-4">
             {!compact && apiData.data?.meta?.last_updated_at && (

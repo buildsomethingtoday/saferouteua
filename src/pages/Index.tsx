@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
@@ -17,9 +16,9 @@ const Index = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('route');
+  const [focusAlert, setFocusAlert] = useState<any>(null);
   const isMobile = useIsMobile();
 
-  // Update language when detection completes
   useEffect(() => {
     setLanguage(detectedLanguage);
   }, [detectedLanguage]);
@@ -37,17 +36,24 @@ const Index = () => {
 
   const t = translations[language];
 
+  const handleAlertClick = (alert: any) => {
+    console.log('Alert clicked in Index:', alert);
+    setFocusAlert(alert);
+    
+    // Switch to the map view by activating the route tab (where map is visible)
+    // or keep current tab but just focus the map
+  };
+
   return (
     <div className="min-h-screen relative">
-      {/* Full Screen Map */}
       <InteractiveMap 
         language={language}
         routeData={routeData}
         isSearching={isSearching}
         onRegionSelect={setSelectedRegion}
+        focusAlert={focusAlert}
       />
 
-      {/* Tabbed Interface - Top Left */}
       <div className="absolute top-4 left-4 z-40 w-96 max-w-[calc(100vw-2rem)]">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-600">
@@ -82,12 +88,12 @@ const Index = () => {
               language={language}
               selectedRegion={selectedRegion}
               compact={true}
+              onAlertClick={handleAlertClick}
             />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Language Toggle - Bottom Right */}
       <div className="absolute bottom-4 right-4 z-40">
         <LanguageToggle 
           language={language} 
