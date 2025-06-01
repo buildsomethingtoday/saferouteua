@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { getMapboxService } from '../services/mapboxService';
+import { getMapboxServiceSync } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
@@ -21,7 +21,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     setIsSearching(true);
     
     try {
-      const mapboxService = getMapboxService();
+      const mapboxService = getMapboxServiceSync();
       const weatherService = getWeatherService();
       
       // Geocode both cities

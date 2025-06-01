@@ -4,6 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Shield, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -19,12 +20,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
+  const [isLoadingToken, setIsLoadingToken] = useState(true);
 
   const translations = {
     en: {
-      enterToken: 'Enter your Mapbox public token to display the map',
-      tokenPlaceholder: 'pk.eyJ1IjoieW91cnVzZXJuYW1lIiwiYSI6IkFCQzEyM...',
-      getToken: 'Get your token at https://mapbox.com',
+      loadingMap: 'Loading map...',
+      mapError: 'Unable to load map',
       routeDetails: 'Route Details',
       distance: 'Distance',
       duration: 'Duration',
@@ -37,9 +38,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     },
     ua: {
-      enterToken: 'Введіть ваш публічний токен Mapbox для відображення карти',
-      tokenPlaceholder: 'pk.eyJ1IjoieW91cnVzZXJuYW1lIiwiYSI6IkFCQzEyM...',
-      getToken: 'Отримайте токен на https://mapbox.com',
+      loadingMap: 'Завантаження карти...',
+      mapError: 'Неможливо завантажити карту',
       routeDetails: 'Деталі маршруту',
       distance: 'Відстань',
       duration: 'Час',
@@ -54,6 +54,31 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   };
 
   const t = translations[language];
+
+  // Fetch Mapbox token from Supabase secrets
+  useEffect(() => {
+    const fetchMapboxToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (error) {
+          console.error('Error fetching Mapbox token:', error);
+          setIsLoadingToken(false);
+          return;
+        }
+        
+        if (data?.token) {
+          setMapboxToken(data.token);
+        }
+      } catch (error) {
+        console.error('Error fetching Mapbox token:', error);
+      } finally {
+        setIsLoadingToken(false);
+      }
+    };
+
+    fetchMapboxToken();
+  }, []);
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
@@ -87,19 +112,25 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
   };
 
+  if (isLoadingToken) {
+    return (
+      <div className="relative w-full h-full bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium">{t.loadingMap}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!mapboxToken) {
     return (
       <div className="relative w-full h-full bg-gray-100 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-4">
-          <h3 className="text-lg font-semibold mb-4">{t.enterToken}</h3>
-          <input
-            type="text"
-            placeholder={t.tokenPlaceholder}
-            className="w-full p-3 border border-gray-300 rounded-lg mb-3 text-sm"
-            value={mapboxToken}
-            onChange={(e) => setMapboxToken(e.target.value)}
-          />
-          <p className="text-sm text-gray-600">{t.getToken}</p>
+          <h3 className="text-lg font-semibold mb-4 text-red-600">{t.mapError}</h3>
+          <p className="text-sm text-gray-600">Mapbox token configuration issue</p>
         </div>
       </div>
     );

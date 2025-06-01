@@ -253,10 +253,36 @@ class MapboxService {
   }
 }
 
-// Create a singleton instance with the access token
+// Updated singleton instance that fetches token from Supabase
 let mapboxService: MapboxService | null = null;
 
-export const getMapboxService = (): MapboxService => {
+export const getMapboxService = async (): Promise<MapboxService> => {
+  if (!mapboxService) {
+    try {
+      // Try to get token from Supabase function
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      
+      if (error || !data?.token) {
+        console.warn('Could not fetch token from Supabase, using fallback');
+        // Fallback to hardcoded token if Supabase fails
+        const fallbackToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
+        mapboxService = new MapboxService(fallbackToken);
+      } else {
+        mapboxService = new MapboxService(data.token);
+      }
+    } catch (error) {
+      console.warn('Error fetching token from Supabase, using fallback:', error);
+      // Fallback to hardcoded token if there's an error
+      const fallbackToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
+      mapboxService = new MapboxService(fallbackToken);
+    }
+  }
+  return mapboxService;
+};
+
+// Keep the synchronous version for backward compatibility
+export const getMapboxServiceSync = (): MapboxService => {
   if (!mapboxService) {
     const accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
     mapboxService = new MapboxService(accessToken);
