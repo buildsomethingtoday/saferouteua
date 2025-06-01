@@ -1,3 +1,4 @@
+
 interface DirectionsResponse {
   routes: {
     geometry: any; // GeoJSON geometry object
@@ -84,8 +85,9 @@ class MapboxService {
       params.append('max_alternatives', '2');
     }
 
+    // Simplified annotations - only use basic ones that are widely supported
     if (profile === 'driving' || profile === 'driving-traffic') {
-      params.append('annotations', 'congestion,maxspeed,duration,distance');
+      params.append('annotations', 'duration,distance');
     }
 
     const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?${params}`;
