@@ -13,6 +13,7 @@ interface InteractiveMapProps {
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, isSearching }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
 
   const translations = {
     en: {
@@ -53,31 +54,46 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
 
   useEffect(() => {
     if (routeData && map.current) {
+      console.log('Adding route visualization for:', routeData);
+      
       // Clear existing markers
-      const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
-      existingMarkers.forEach(marker => marker.remove());
+      markers.current.forEach(marker => marker.remove());
+      markers.current = [];
 
       // Add route visualization
       const startCoords = getCoordinatesForCity(routeData.startCity);
       const endCoords = getCoordinatesForCity(routeData.endCity);
 
-      // Add markers
-      new mapboxgl.Marker({ color: '#22c55e' })
-        .setLngLat(startCoords)
-        .setPopup(new mapboxgl.Popup().setText(routeData.startCity))
-        .addTo(map.current);
+      console.log('Start coordinates:', startCoords, 'for city:', routeData.startCity);
+      console.log('End coordinates:', endCoords, 'for city:', routeData.endCity);
 
-      new mapboxgl.Marker({ color: '#ef4444' })
-        .setLngLat(endCoords)
-        .setPopup(new mapboxgl.Popup().setText(routeData.endCity))
+      // Add start marker
+      const startMarker = new mapboxgl.Marker({ color: '#22c55e' })
+        .setLngLat(startCoords)
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(`Start: ${routeData.startCity}`))
         .addTo(map.current);
+      
+      markers.current.push(startMarker);
+
+      // Add end marker
+      const endMarker = new mapboxgl.Marker({ color: '#ef4444' })
+        .setLngLat(endCoords)
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(`Destination: ${routeData.endCity}`))
+        .addTo(map.current);
+      
+      markers.current.push(endMarker);
 
       // Fit bounds to show both cities
       const bounds = new mapboxgl.LngLatBounds()
         .extend(startCoords)
         .extend(endCoords);
       
-      map.current.fitBounds(bounds, { padding: 50 });
+      map.current.fitBounds(bounds, { 
+        padding: 100,
+        maxZoom: 10
+      });
+
+      console.log('Route visualization added successfully');
     }
   }, [routeData]);
 
