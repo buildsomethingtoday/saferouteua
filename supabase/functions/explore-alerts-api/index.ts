@@ -32,13 +32,13 @@ serve(async (req) => {
     const requestBody = await req.json().catch(() => ({}));
     const { endpoint = 'regions' } = requestBody;
     
-    // Base URL for Alerts.in.ua API
-    const baseUrl = 'https://api.alerts.in.ua/v1';
+    // Base URL for Alerts.in.ua API based on documentation
+    const baseUrl = 'https://api.alerts.in.ua/v2';
     
-    // Test different endpoints to explore available data
+    // Available endpoints based on official documentation
     const endpoints = {
       regions: `${baseUrl}/regions.json`,
-      status: `${baseUrl}/status.json`,
+      status: `${baseUrl}/status.json`, 
       alerts: `${baseUrl}/alerts/active.json`,
       history: `${baseUrl}/alerts/history.json`,
     };
@@ -46,11 +46,11 @@ serve(async (req) => {
     const targetUrl = endpoints[endpoint] || endpoints.regions;
     console.log('📡 Fetching from:', targetUrl);
 
-    // Try Bearer token first (most common)
+    // Use X-API-Key header as shown in documentation
     const response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${alertsApiKey}`,
+        'X-API-Key': alertsApiKey,
         'Content-Type': 'application/json',
         'User-Agent': 'SafeRoute-UA/1.0',
       },
@@ -60,86 +60,28 @@ serve(async (req) => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Bearer token failed:', errorText);
+      console.error('❌ API request failed:', errorText);
       
-      // Try without Bearer prefix
-      console.log('🔄 Retrying without Bearer prefix...');
-      const retryResponse = await fetch(targetUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': alertsApiKey,
-          'Content-Type': 'application/json',
-          'User-Agent': 'SafeRoute-UA/1.0',
-        },
-      });
-
-      console.log('📊 Retry response status:', retryResponse.status, retryResponse.statusText);
-
-      if (!retryResponse.ok) {
-        // Try as query parameter
-        console.log('🔄 Retrying with API key as query parameter...');
-        const urlWithKey = `${targetUrl}?token=${alertsApiKey}`;
-        const queryResponse = await fetch(urlWithKey, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'SafeRoute-UA/1.0',
-          },
-        });
-
-        console.log('📊 Query param response status:', queryResponse.status, queryResponse.statusText);
-
-        if (!queryResponse.ok) {
-          const queryErrorText = await queryResponse.text();
-          console.error('❌ All auth methods failed:', queryErrorText);
-          
-          return new Response(JSON.stringify({ 
-            error: 'API request failed with all authentication methods',
-            status: queryResponse.status,
-            statusText: queryResponse.statusText,
-            details: queryErrorText,
-            triedMethods: ['Bearer token', 'Direct header', 'Query parameter'],
-            url: targetUrl
-          }), {
-            status: queryResponse.status,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        const queryData = await queryResponse.json();
-        console.log('✅ Success with query parameter method');
-        return new Response(JSON.stringify({
-          success: true,
-          endpoint: endpoint,
-          authMethod: 'query_parameter',
-          data: queryData,
-          dataStructure: analyzeDataStructure(queryData)
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const retryData = await retryResponse.json();
-      console.log('✅ Success with direct header method');
-      return new Response(JSON.stringify({
-        success: true,
-        endpoint: endpoint,
-        authMethod: 'direct_header',
-        data: retryData,
-        dataStructure: analyzeDataStructure(retryData)
+      return new Response(JSON.stringify({ 
+        error: 'API request failed',
+        status: response.status,
+        statusText: response.statusText,
+        details: errorText,
+        url: targetUrl
       }), {
+        status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const data = await response.json();
-    console.log('✅ Success with Bearer token method');
+    console.log('✅ Success with X-API-Key method');
     console.log('📋 Data received:', JSON.stringify(data, null, 2));
 
     return new Response(JSON.stringify({
       success: true,
       endpoint: endpoint,
-      authMethod: 'bearer_token',
+      authMethod: 'x-api-key',
       data: data,
       dataStructure: analyzeDataStructure(data)
     }), {
