@@ -1,6 +1,6 @@
 interface DirectionsResponse {
   routes: {
-    geometry: string;
+    geometry: any; // GeoJSON geometry object
     duration: number;
     distance: number;
     duration_traffic?: number;
@@ -80,24 +80,34 @@ class MapboxService {
 
     if (alternatives) {
       params.append('alternatives', 'true');
+      params.append('max_alternatives', '2');
     }
 
     // Add traffic annotations for driving profiles
     if (profile === 'driving' || profile === 'driving-traffic') {
-      params.append('annotations', 'congestion,maxspeed');
+      params.append('annotations', 'congestion,maxspeed,duration,distance');
     }
 
     const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?${params}`;
 
-    console.log('Fetching directions from:', url);
+    console.log('Fetching directions from URL:', url);
 
     const response = await fetch(url);
+    
     if (!response.ok) {
-      throw new Error(`Mapbox Directions API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Mapbox API Error Response:', errorText);
+      throw new Error(`Mapbox Directions API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('Directions response:', data);
+    console.log('Raw Mapbox directions response:', data);
+    
+    if (data.code !== 'Ok') {
+      console.error('Mapbox API returned error code:', data.code, data.message);
+      throw new Error(`Mapbox API error: ${data.code} - ${data.message || 'Unknown error'}`);
+    }
+    
     return data;
   }
 
@@ -115,11 +125,13 @@ class MapboxService {
 
     const url = `${this.baseUrl}/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
 
-    console.log('Geocoding query:', url);
+    console.log('Geocoding query URL:', url);
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Mapbox Geocoding API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Geocoding API Error:', errorText);
+      throw new Error(`Mapbox Geocoding API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();

@@ -90,6 +90,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         console.log('Map loaded successfully');
       });
 
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+      });
+
       console.log('Map initialized successfully');
 
       return () => {
@@ -105,9 +109,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Handle route data changes
   useEffect(() => {
-    if (!map.current || !routeData) return;
+    if (!map.current || !routeData) {
+      console.log('Map or route data not available:', { map: !!map.current, routeData: !!routeData });
+      return;
+    }
 
-    console.log('Route data received:', routeData);
+    console.log('Processing route data:', routeData);
 
     // Clear existing markers
     if (startMarker.current) {
@@ -121,6 +128,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Add start marker
     if (routeData.startCoords) {
+      console.log('Adding start marker at:', routeData.startCoords);
       startMarker.current = new mapboxgl.Marker({ color: '#10B981' })
         .setLngLat(routeData.startCoords)
         .setPopup(new mapboxgl.Popup().setHTML(`<strong>Start:</strong> ${routeData.startCity}`))
@@ -129,6 +137,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Add end marker
     if (routeData.endCoords) {
+      console.log('Adding end marker at:', routeData.endCoords);
       endMarker.current = new mapboxgl.Marker({ color: '#EF4444' })
         .setLngLat(routeData.endCoords)
         .setPopup(new mapboxgl.Popup().setHTML(`<strong>Destination:</strong> ${routeData.endCity}`))
@@ -137,7 +146,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Add route line if geometry exists
     if (routeData.geometry) {
-      console.log('Adding route geometry to map');
+      console.log('Adding route geometry to map:', routeData.geometry);
       
       // Remove existing route source and layer
       if (map.current.getSource(routeSource.current)) {
@@ -147,14 +156,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         map.current.removeSource(routeSource.current);
       }
 
+      // Create GeoJSON feature from geometry
+      const routeGeoJSON = {
+        type: 'Feature' as const,
+        properties: {},
+        geometry: routeData.geometry
+      };
+
+      console.log('Route GeoJSON:', routeGeoJSON);
+
       // Add route source
       map.current.addSource(routeSource.current, {
         type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: routeData.geometry
-        }
+        data: routeGeoJSON
       });
 
       // Add route layer
@@ -179,6 +193,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         bounds.extend(routeData.startCoords);
         bounds.extend(routeData.endCoords);
         
+        // Add some padding to include the entire route
+        if (routeData.geometry && routeData.geometry.coordinates) {
+          routeData.geometry.coordinates.forEach((coord: [number, number]) => {
+            bounds.extend(coord);
+          });
+        }
+        
         map.current.fitBounds(bounds, {
           padding: 100,
           maxZoom: 12
@@ -186,6 +207,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     } else if (routeData.startCoords && routeData.endCoords) {
       // If no geometry but we have coordinates, fit to markers
+      console.log('No geometry, fitting to markers');
       const bounds = new mapboxgl.LngLatBounds();
       bounds.extend(routeData.startCoords);
       bounds.extend(routeData.endCoords);

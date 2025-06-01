@@ -25,11 +25,14 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       const mapboxService = getMapboxServiceSync();
       const weatherService = getWeatherService();
       
-      // Geocode both cities
+      // Geocode both cities with more specific queries
       console.log('Geocoding start city:', startCity);
-      const startGeocode = await mapboxService.geocodeForward(startCity + ', Ukraine');
+      const startGeocode = await mapboxService.geocodeForward(`${startCity}, Ukraine`);
+      console.log('Start geocode result:', startGeocode);
+      
       console.log('Geocoding end city:', endCity);
-      const endGeocode = await mapboxService.geocodeForward(endCity + ', Ukraine');
+      const endGeocode = await mapboxService.geocodeForward(`${endCity}, Ukraine`);
+      console.log('End geocode result:', endGeocode);
       
       if (startGeocode.features.length === 0 || endGeocode.features.length === 0) {
         throw new Error('Could not find one or both cities');
@@ -41,40 +44,30 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('Start coordinates:', startCoords);
       console.log('End coordinates:', endCoords);
       
-      // Try different driving profiles for better coverage in Ukraine
-      const profiles = ['driving-traffic', 'driving'];
+      // Get directions with proper error handling
+      console.log('Fetching directions...');
+      const directions = await mapboxService.getDirections(
+        [startCoords, endCoords], 
+        'driving-traffic', 
+        true
+      );
       
-      let directions = null;
-      let usedProfile = '';
+      console.log('Directions response:', directions);
       
-      for (const profile of profiles) {
-        try {
-          console.log('Trying routing profile:', profile);
-          directions = await mapboxService.getDirections([startCoords, endCoords], profile as any, true);
-          if (directions.routes.length > 0) {
-            usedProfile = profile;
-            console.log('Successfully got route with profile:', profile);
-            console.log('Route geometry:', directions.routes[0].geometry);
-            break;
-          }
-        } catch (profileError) {
-          console.warn(`Profile ${profile} failed:`, profileError);
-          continue;
-        }
-      }
-      
-      if (!directions || directions.routes.length === 0) {
-        throw new Error('No routes found with any profile');
+      if (!directions || !directions.routes || directions.routes.length === 0) {
+        throw new Error('No routes found');
       }
       
       const route = directions.routes[0];
+      console.log('Selected route:', route);
+      console.log('Route geometry:', route.geometry);
       
-      // Fetch real weather data for start city with timeout
+      // Fetch weather data
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
       let temperature: number | undefined;
       
       try {
-        console.log('Fetching weather for start city coordinates:', startCoords);
+        console.log('Fetching weather for coordinates:', startCoords);
         const weatherPromise = weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Weather timeout')), 3000)
@@ -83,13 +76,12 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         const weatherData = await Promise.race([weatherPromise, timeoutPromise]) as any;
         weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
         temperature = Math.round(weatherData.main.temp);
-        console.log('Weather data received:', weatherData.weather[0].main, 'mapped to:', weatherCondition, 'temp:', temperature + '°C');
+        console.log('Weather data:', weatherCondition, temperature + '°C');
       } catch (weatherError) {
         console.warn('Weather API failed, using fallback:', weatherError);
-        // Keep default 'clear' weather condition and undefined temperature
       }
       
-      // Use enhanced safety calculation with real traffic data
+      // Calculate route metrics
       const safetyScore = mapboxService.calculateTrafficBasedSafetyScore(route);
       const routeQuality = mapboxService.analyzeRouteQuality(route);
       
@@ -103,7 +95,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         duration: Math.round(route.duration / 3600),
         durationFormatted: mapboxService.formatDuration(route.duration),
         distanceFormatted: mapboxService.formatDistance(route.distance),
-        geometry: route.geometry, // Ensure geometry is passed
+        geometry: route.geometry, // This is crucial for map display
         transportMode: 'driving',
         trafficLevel: routeQuality.trafficLevel,
         roadQuality: routeQuality.roadQuality,
@@ -115,56 +107,33 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         realRoute: true
       };
       
-      console.log('Final route data with geometry:', routeData);
+      console.log('Final route data:', routeData);
       onRouteRequest(routeData);
       
     } catch (error) {
       console.error('Route search error:', error);
       
-      // Enhanced fallback with more realistic data - NO ERROR MESSAGE
-      const trafficLevels: ('light' | 'moderate' | 'heavy')[] = ['light', 'moderate', 'heavy'];
-      const roadQualities: ('excellent' | 'good' | 'fair')[] = ['excellent', 'good', 'fair'];
-      const weatherConditions: ('clear' | 'cloudy' | 'light_rain')[] = ['clear', 'cloudy', 'light_rain'];
-      const conflictRisks: ('low' | 'moderate')[] = ['low', 'moderate'];
-      
-      // Calculate realistic distance based on city names
-      const calculateEstimatedDistance = (start: string, end: string) => {
-        const cityDistances: Record<string, Record<string, number>> = {
-          'kyiv': { 'lviv': 540, 'odesa': 470, 'kharkiv': 480, 'dnipro': 480 },
-          'lviv': { 'kyiv': 540, 'odesa': 650, 'ivano-frankivsk': 140 },
-          'odesa': { 'kyiv': 470, 'lviv': 650, 'mykolaiv': 130 }
-        };
-        
-        const startKey = start.toLowerCase();
-        const endKey = end.toLowerCase();
-        
-        if (cityDistances[startKey]?.[endKey]) {
-          return cityDistances[startKey][endKey];
-        }
-        
-        return Math.floor(Math.random() * 400) + 200;
-      };
-      
-      const estimatedDistance = calculateEstimatedDistance(startCity, endCity);
-      const estimatedDuration = Math.round(estimatedDistance / 80); // ~80 km/h average
+      // Provide fallback data without geometry (no visual route)
+      const estimatedDistance = 540; // Kyiv to Lviv approximate distance
+      const estimatedDuration = 7; // Approximate driving time
       
       const mockRouteData: RouteData = {
         startCity,
         endCity,
-        safetyScore: Math.floor(Math.random() * 40) + 60,
+        safetyScore: 75,
         distance: estimatedDistance,
         duration: estimatedDuration,
-        durationFormatted: `${estimatedDuration}h ${Math.floor(Math.random() * 60)}m`,
+        durationFormatted: `${estimatedDuration}h 30m`,
         distanceFormatted: `${estimatedDistance} km`,
-        weatherCondition: weatherConditions[Math.floor(Math.random() * weatherConditions.length)],
-        temperature: Math.floor(Math.random() * 30) + 5,
-        conflictRisk: conflictRisks[Math.floor(Math.random() * conflictRisks.length)],
-        trafficLevel: trafficLevels[Math.floor(Math.random() * trafficLevels.length)],
-        roadQuality: roadQualities[Math.floor(Math.random() * roadQualities.length)],
-        estimatedDelay: Math.floor(Math.random() * 30),
+        weatherCondition: 'clear',
+        temperature: 15,
+        conflictRisk: 'low',
+        trafficLevel: 'moderate',
+        roadQuality: 'good',
+        estimatedDelay: 15,
         transportMode: 'driving',
         realRoute: false
-        // Note: no geometry for fallback data, which is expected
+        // No geometry for fallback - will show markers only
       };
       
       console.log('Using fallback route data:', mockRouteData);
