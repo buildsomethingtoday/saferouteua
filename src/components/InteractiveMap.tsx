@@ -51,19 +51,38 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     };
   }, []);
 
+  // Helper function to safely remove route layers and source
+  const cleanupRouteVisualization = () => {
+    if (!map.current) return;
+
+    try {
+      // Remove layers first (in reverse order of creation)
+      const layersToRemove = ['route', 'route-outline'];
+      layersToRemove.forEach(layerId => {
+        if (map.current?.getLayer(layerId)) {
+          map.current.removeLayer(layerId);
+        }
+      });
+
+      // Then remove the source
+      if (map.current?.getSource('route')) {
+        map.current.removeSource('route');
+      }
+    } catch (error) {
+      console.warn('Error cleaning up route visualization:', error);
+    }
+  };
+
   useEffect(() => {
     if (routeData && map.current) {
       console.log('Adding route visualization for:', routeData);
       
-      // Clear existing markers and layers
+      // Clear existing markers
       markers.current.forEach(marker => marker.remove());
       markers.current = [];
 
-      // Remove existing route layers if they exist
-      if (map.current.getSource('route')) {
-        map.current.removeLayer('route');
-        map.current.removeSource('route');
-      }
+      // Safely cleanup existing route visualization
+      cleanupRouteVisualization();
 
       let startCoords, endCoords;
 
@@ -123,58 +142,63 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         console.log('Using fallback straight line geometry');
       }
 
-      // Add route line
-      map.current.addSource('route', {
-        type: 'geojson',
-        data: routeGeoJSON
-      });
+      // Add route source - make sure it doesn't already exist
+      try {
+        map.current.addSource('route', {
+          type: 'geojson',
+          data: routeGeoJSON
+        });
 
-      // Style route based on safety score
-      const routeColor = routeData.safetyScore >= 80 ? '#22c55e' : 
-                        routeData.safetyScore >= 65 ? '#f59e0b' : '#ef4444';
+        // Style route based on safety score
+        const routeColor = routeData.safetyScore >= 80 ? '#22c55e' : 
+                          routeData.safetyScore >= 65 ? '#f59e0b' : '#ef4444';
 
-      map.current.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': routeColor,
-          'line-width': 6,
-          'line-opacity': 0.8
-        }
-      });
+        // Add route outline first (background layer)
+        map.current.addLayer({
+          id: 'route-outline',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 8,
+            'line-opacity': 0.6
+          }
+        });
 
-      // Add route outline for better visibility
-      map.current.addLayer({
-        id: 'route-outline',
-        type: 'line',
-        source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': '#ffffff',
-          'line-width': 8,
-          'line-opacity': 0.6
-        }
-      }, 'route');
+        // Add main route line on top
+        map.current.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': routeColor,
+            'line-width': 6,
+            'line-opacity': 0.8
+          }
+        });
 
-      // Fit bounds to show the route
-      const bounds = new mapboxgl.LngLatBounds()
-        .extend(startCoords)
-        .extend(endCoords);
-      
-      map.current.fitBounds(bounds, { 
-        padding: 100,
-        maxZoom: 12
-      });
+        // Fit bounds to show the route
+        const bounds = new mapboxgl.LngLatBounds()
+          .extend(startCoords)
+          .extend(endCoords);
+        
+        map.current.fitBounds(bounds, { 
+          padding: 100,
+          maxZoom: 12
+        });
 
-      console.log('Route visualization added successfully');
+        console.log('Route visualization added successfully');
+      } catch (error) {
+        console.error('Error adding route visualization:', error);
+      }
     }
   }, [routeData]);
 
