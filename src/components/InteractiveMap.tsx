@@ -87,7 +87,18 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         
         if (!error && data?.data?.alerts) {
           console.log('Fresh alerts received:', data.data.alerts.length, 'alerts');
-          const processedAlerts = alertsMapService.processAlertsForMap(data.data.alerts);
+          
+          // Filter alerts to only show those from the last 72 hours
+          const now = new Date();
+          const seventyTwoHoursAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+          
+          const recentAlerts = data.data.alerts.filter((alert: any) => {
+            const alertDate = new Date(alert.started_at);
+            return alertDate >= seventyTwoHoursAgo && !alert.finished_at;
+          });
+          
+          console.log('Recent alerts (last 72 hours):', recentAlerts.length, 'alerts');
+          const processedAlerts = alertsMapService.processAlertsForMap(recentAlerts);
           setAlertsData(processedAlerts);
         }
       } catch (error) {
@@ -175,6 +186,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         style: 'mapbox://styles/mapbox/dark-v11',
         center: [31.1656, 48.3794],
         zoom: 6,
+        // Disable user interactions for dropping pins
+        doubleClickZoom: false,
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchZoomRotate: false
       });
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -272,9 +288,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const center = oblastCenters[oblast];
       if (center) {
-        // Create a circle to represent the region
-        const radius = 0.8; // Approximate radius in degrees
-        const circle = {
+        // Create a circle to represent the region (changed from oval to circle)
+        const radius = 0.6; // Reduced radius for better circles
+        const circle: GeoJSON.Feature<GeoJSON.Polygon> = {
           type: 'Feature',
           geometry: {
             type: 'Polygon',
@@ -283,7 +299,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           properties: {
             oblast: oblast,
             alertCount: alerts.length,
-            fillColor: fillColor
+            fillColor: fillColor,
+            alertTypes: alerts.map(a => a.alert_type),
+            latestAlert: alerts.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0]
           }
         };
 
@@ -306,12 +324,58 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               'fill-outline-color': fillColor
             }
           });
+
+          // Add hover effects and popup
+          map.current.on('mouseenter', layerId, (e) => {
+            map.current!.getCanvas().style.cursor = 'pointer';
+            
+            if (e.features && e.features[0] && e.features[0].properties) {
+              const properties = e.features[0].properties;
+              const alertTypes = JSON.parse(properties.alertTypes || '[]');
+              const latestAlert = JSON.parse(properties.latestAlert || '{}');
+              
+              const popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false
+              })
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <div class="p-3 bg-gray-900 text-white rounded-lg">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: ${properties.fillColor}"></div>
+                    <strong class="text-sm">${properties.oblast}</strong>
+                  </div>
+                  <div class="text-xs text-gray-300 mb-1">
+                    <strong>Active Alerts:</strong> ${properties.alertCount}
+                  </div>
+                  <div class="text-xs text-gray-300 mb-1">
+                    <strong>Types:</strong> ${alertTypes.join(', ')}
+                  </div>
+                  <div class="text-xs text-gray-400">
+                    <strong>Latest:</strong> ${new Date(latestAlert.started_at).toLocaleString()}
+                  </div>
+                </div>
+              `)
+              .addTo(map.current!);
+
+            // Store popup reference to remove it later
+            (map.current as any)._currentPopup = popup;
+            }
+          });
+
+          map.current.on('mouseleave', layerId, () => {
+            map.current!.getCanvas().style.cursor = '';
+            if ((map.current as any)._currentPopup) {
+              (map.current as any)._currentPopup.remove();
+              (map.current as any)._currentPopup = null;
+            }
+          });
         }
       }
     });
   };
 
-  // Helper function to create a circle polygon
+  // Helper function to create a perfect circle polygon
   const createCircle = (center: [number, number], radius: number) => {
     const points = 64;
     const coordinates = [];
@@ -329,7 +393,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const addUkraineRegions = () => {
     if (!map.current) return;
 
-    // Add clickable regions
+    // Add clickable regions (but prevent pin dropping)
     map.current.on('click', async (e) => {
       const coordinates = [e.lngLat.lng, e.lngLat.lat];
       
@@ -344,7 +408,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           console.log('Selected region:', regionName);
           onRegionSelect?.(regionName);
           
-          // Visual feedback - add a temporary marker
+          // Visual feedback - add a temporary marker but don't allow pin dropping
           const clickMarker = new mapboxgl.Marker({ color: '#3B82F6', scale: 0.8 })
             .setLngLat([e.lngLat.lng, e.lngLat.lat])
             .addTo(map.current!);

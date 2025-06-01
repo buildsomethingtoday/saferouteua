@@ -1,3 +1,4 @@
+
 export interface AlertMapData {
   id: number;
   location_title: string;
@@ -42,11 +43,18 @@ export class AlertsMapService {
 
     console.log('Processing alerts for map:', rawAlerts.length, 'alerts');
     
-    // Filter to only show active alerts (where finished_at is null)
-    const activeAlerts = rawAlerts.filter(alert => !alert.finished_at);
-    console.log('Active alerts (finished_at is null):', activeAlerts.length);
+    // Filter to only show active alerts from the last 72 hours
+    const now = new Date();
+    const seventyTwoHoursAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+    
+    const recentActiveAlerts = rawAlerts.filter(alert => {
+      const alertDate = new Date(alert.started_at);
+      return !alert.finished_at && alertDate >= seventyTwoHoursAgo;
+    });
+    
+    console.log('Recent active alerts (last 72 hours, finished_at is null):', recentActiveAlerts.length);
 
-    return activeAlerts.map(alert => ({
+    return recentActiveAlerts.map(alert => ({
       id: alert.id,
       location_title: alert.location_title,
       location_oblast: alert.location_oblast,
@@ -122,13 +130,13 @@ export class AlertsMapService {
 
     let score = 100;
     alerts.forEach(alert => {
-      // Heavier penalties for artillery and air raids
+      // Heavier penalties for artillery and air raids (as requested)
       switch (alert.alert_type) {
         case 'air_raid':
-          score -= 40; // Increased from 30
+          score -= 45; // Increased penalty for air raids
           break;
         case 'artillery_shelling':
-          score -= 35; // Increased from 20
+          score -= 40; // Increased penalty for artillery
           break;
         case 'urban_fights':
           score -= 25; // Increased from 10

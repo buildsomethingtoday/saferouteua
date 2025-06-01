@@ -52,7 +52,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       autoRefresh: 'Auto-refresh',
       clearFilter: 'Clear filter',
       filterByType: 'Filter by type',
-      showAll: 'Show all',
+      showAll: 'All',
       alertTypes: {
         air_raid: 'Air Raid',
         artillery_shelling: 'Artillery',
@@ -68,7 +68,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       lastUpdated: 'Last updated',
       alertDuration: 'Duration',
       clickMapHint: 'Click on alerts to view region on map',
-      clickToFocus: 'Click to focus on map'
+      clickToFocus: 'Click to focus on map',
+      last72Hours: 'Showing alerts from last 72 hours'
     },
     ua: {
       title: compact ? 'Сповіщення безпеки' : 'Сповіщення безпеки України',
@@ -84,7 +85,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       autoRefresh: 'Авто-оновлення',
       clearFilter: 'Очистити фільтр',
       filterByType: 'Фільтр за типом',
-      showAll: 'Показати всі',
+      showAll: 'Всі',
       alertTypes: {
         air_raid: 'Повітряна тривога',
         artillery_shelling: 'Артилерія',
@@ -100,7 +101,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       lastUpdated: 'Останнє оновлення',
       alertDuration: 'Тривалість',
       clickMapHint: 'Натисніть на сповіщення, щоб переглянути регіон на карті',
-      clickToFocus: 'Натисніть, щоб сфокусуватися на карті'
+      clickToFocus: 'Натисніть, щоб сфокусуватися на карті',
+      last72Hours: 'Показано сповіщення за останні 72 години'
     }
   };
 
@@ -146,8 +148,14 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
   const getFilteredAlerts = (alerts: AlertItem[]) => {
     if (!alerts) return alerts;
     
-    // Filter to only active alerts (finished_at is null)
-    let activeAlerts = alerts.filter(alert => !alert.finished_at);
+    // Filter to only active alerts from the last 72 hours
+    const now = new Date();
+    const seventyTwoHoursAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+    
+    let activeAlerts = alerts.filter(alert => {
+      const alertDate = new Date(alert.started_at);
+      return !alert.finished_at && alertDate >= seventyTwoHoursAgo;
+    });
     
     // Filter by selected alert types
     if (selectedAlertTypes.length > 0) {
@@ -241,6 +249,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         <div className="text-center py-8 text-gray-400">
           <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
           <p className="mb-2">{t.noAlerts}</p>
+          <p className="text-xs text-gray-500 mb-2">{t.last72Hours}</p>
           {(selectedRegion || selectedAlertTypes.length > 0) && (
             <p className="text-xs text-gray-500">{t.clickMapHint}</p>
           )}
@@ -254,6 +263,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
 
     return (
       <div className={`space-y-3 ${compact ? 'max-h-80' : 'max-h-96'} overflow-y-auto pr-2`}>
+        <div className="text-xs text-gray-500 mb-2 px-1">{t.last72Hours}</div>
         {sortedAlerts.slice(0, compact ? 5 : 20).map((alert) => (
           <Card 
             key={alert.id} 
