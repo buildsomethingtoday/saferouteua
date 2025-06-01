@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -8,18 +7,21 @@ interface InteractiveMapProps {
   language: 'en' | 'ua';
   routeData?: any;
   isSearching?: boolean;
+  onRegionSelect?: (region: string | null) => void;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
   language,
   routeData,
-  isSearching
+  isSearching,
+  onRegionSelect
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [isLoadingToken, setIsLoadingToken] = useState(true);
   const [tokenError, setTokenError] = useState(false);
+  const [alertsData, setAlertsData] = useState<any>(null);
   const routeSource = useRef<string>('route-source');
   const startMarker = useRef<mapboxgl.Marker | null>(null);
   const endMarker = useRef<mapboxgl.Marker | null>(null);
@@ -70,6 +72,29 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     fetchMapboxToken();
   }, []);
 
+  // Fetch alerts data for map overlay
+  useEffect(() => {
+    const fetchAlertsData = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('explore-alerts-api', {
+          body: { endpoint: 'alerts' }
+        });
+        
+        if (!error && data?.data?.alerts) {
+          setAlertsData(data.data.alerts);
+        }
+      } catch (error) {
+        console.error('Error fetching alerts for map:', error);
+      }
+    };
+
+    fetchAlertsData();
+    
+    // Refresh alerts data every 2 minutes
+    const interval = setInterval(fetchAlertsData, 120000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || tokenError) return;
 
@@ -88,6 +113,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       map.current.on('load', () => {
         console.log('Map loaded successfully');
+        addUkraineRegions();
       });
 
       map.current.on('error', (e) => {
@@ -106,6 +132,78 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       setTokenError(true);
     }
   }, [mapboxToken, tokenError]);
+
+  // Add Ukraine regions and alert overlays
+  const addUkraineRegions = () => {
+    if (!map.current) return;
+
+    // Add clickable regions (simplified approach using administrative boundaries)
+    map.current.on('click', (e) => {
+      // Use geocoding to get region information
+      const coordinates = [e.lngLat.lng, e.lngLat.lat];
+      
+      // For now, we'll use a simple approach to detect regions
+      // In a production app, you'd want to use proper administrative boundary data
+      fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates[0]},${coordinates[1]}.json?access_token=${mapboxToken}&types=region`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.features && data.features.length > 0) {
+            const regionName = data.features[0].text;
+            console.log('Selected region:', regionName);
+            onRegionSelect?.(regionName);
+          }
+        })
+        .catch(error => {
+          console.error('Error geocoding region:', error);
+        });
+    });
+
+    // Add alert markers
+    if (alertsData && Array.isArray(alertsData)) {
+      alertsData.forEach((alert: any) => {
+        // For now, we'll place markers at approximate oblast centers
+        // In a production app, you'd want exact coordinates
+        const oblastCenters: { [key: string]: [number, number] } = {
+          'Київська область': [30.5234, 50.4501],
+          'Харківська область': [36.2310, 49.9935],
+          'Дніпропетровська область': [35.0462, 48.4647],
+          'Луганська область': [38.5045, 48.5740],
+          'Автономна Республіка Крим': [34.1018, 44.9480],
+          // Add more oblast centers as needed
+        };
+
+        const coords = oblastCenters[alert.location_oblast];
+        if (coords) {
+          const alertColor = getAlertMarkerColor(alert.alert_type);
+          
+          const marker = new mapboxgl.Marker({ 
+            color: alertColor,
+            scale: 0.8
+          })
+            .setLngLat(coords)
+            .setPopup(
+              new mapboxgl.Popup().setHTML(`
+                <div class="p-2">
+                  <strong>${alert.location_title}</strong><br/>
+                  <span class="text-sm">${alert.alert_type.replace('_', ' ')}</span><br/>
+                  <span class="text-xs text-gray-600">Since: ${new Date(alert.started_at).toLocaleString()}</span>
+                </div>
+              `)
+            )
+            .addTo(map.current!);
+        }
+      });
+    }
+  };
+
+  const getAlertMarkerColor = (alertType: string): string => {
+    switch (alertType) {
+      case 'air_raid': return '#DC2626'; // red
+      case 'artillery_shelling': return '#EA580C'; // orange
+      case 'urban_fights': return '#9333EA'; // purple
+      default: return '#EAB308'; // yellow
+    }
+  };
 
   // Handle route data changes
   useEffect(() => {
@@ -218,6 +316,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       });
     }
   }, [routeData]);
+
+  // Update alert markers when alerts data changes
+  useEffect(() => {
+    if (map.current && map.current.loaded()) {
+      addUkraineRegions();
+    }
+  }, [alertsData]);
 
   if (isLoadingToken) {
     return (

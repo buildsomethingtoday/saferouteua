@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface AlertsApiExplorerProps {
   language: 'en' | 'ua';
+  selectedRegion?: string | null;
+  compact?: boolean;
 }
 
 interface AlertItem {
@@ -21,27 +23,30 @@ interface AlertItem {
   notes?: string;
 }
 
-const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
+const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ 
+  language, 
+  selectedRegion, 
+  compact = false 
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiData, setApiData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<string>('');
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const translations = {
     en: {
-      title: 'Live Ukraine Safety Alerts',
+      title: compact ? 'Safety Alerts' : 'Live Ukraine Safety Alerts',
       subtitle: 'Real-time alert data from Alerts.in.ua',
-      testEndpoint: 'Load Data',
-      regions: 'Regions',
-      alerts: 'Active Alerts',
-      status: 'System Status',
-      history: 'Alert History',
+      loadData: 'Refresh Data',
       loading: 'Loading...',
       error: 'Error',
       success: 'Live Data',
       activeAlerts: 'Active Alerts',
       longTermAlerts: 'Long-term Alerts',
       noAlerts: 'No active alerts',
+      regionFilter: 'Showing alerts for',
+      allRegions: 'All regions',
+      autoRefresh: 'Auto-refresh',
       alertTypes: {
         air_raid: 'Air Raid',
         artillery_shelling: 'Artillery Shells',
@@ -58,19 +63,18 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
       alertDuration: 'Duration'
     },
     ua: {
-      title: 'Сповіщення безпеки України',
+      title: compact ? 'Сповіщення безпеки' : 'Сповіщення безпеки України',
       subtitle: 'Дані в реальному часі з Alerts.in.ua',
-      testEndpoint: 'Завантажити дані',
-      regions: 'Регіони',
-      alerts: 'Активні сповіщення',
-      status: 'Статус системи',
-      history: 'Історія сповіщень',
+      loadData: 'Оновити дані',
       loading: 'Завантаження...',
       error: 'Помилка',
       success: 'Дані онлайн',
       activeAlerts: 'Активні сповіщення',
-      longTermAlerts: 'Довгострокові сповіщення',
+      longTermAlerts: 'Довгострокові сповіщень',
       noAlerts: 'Немає активних сповіщень',
+      regionFilter: 'Показано сповіщення для',
+      allRegions: 'Всі регіони',
+      autoRefresh: 'Авто-оновлення',
       alertTypes: {
         air_raid: 'Повітряна тривога',
         artillery_shelling: 'Артилерійський обстріл',
@@ -90,17 +94,15 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
 
   const t = translations[language];
 
-  const testEndpoint = async (endpoint: string) => {
+  const loadAlertsData = async () => {
     setIsLoading(true);
     setError(null);
-    setApiData(null);
-    setSelectedEndpoint(endpoint);
 
     try {
-      console.log('🔍 Testing endpoint:', endpoint);
+      console.log('🔍 Loading alerts data...');
       
       const { data, error: functionError } = await supabase.functions.invoke('explore-alerts-api', {
-        body: { endpoint }
+        body: { endpoint: 'alerts' }
       });
 
       if (functionError) {
@@ -109,7 +111,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
         return;
       }
 
-      console.log('✅ API data received:', data);
+      console.log('✅ Alerts data received:', data);
       setApiData(data);
 
     } catch (err) {
@@ -118,6 +120,26 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Auto-refresh alerts data
+  useEffect(() => {
+    loadAlertsData();
+    
+    if (autoRefresh) {
+      const interval = setInterval(loadAlertsData, 60000); // Refresh every minute
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh]);
+
+  // Filter alerts based on selected region
+  const getFilteredAlerts = (alerts: AlertItem[]) => {
+    if (!selectedRegion || !alerts) return alerts;
+    
+    return alerts.filter(alert => 
+      alert.location_oblast.toLowerCase().includes(selectedRegion.toLowerCase()) ||
+      alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase())
+    );
   };
 
   const getAlertIcon = (alertType: string) => {
@@ -165,7 +187,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
   };
 
   const renderAlerts = (alerts: AlertItem[]) => {
-    if (!alerts || alerts.length === 0) {
+    const filteredAlerts = getFilteredAlerts(alerts);
+    
+    if (!filteredAlerts || filteredAlerts.length === 0) {
       return (
         <div className="text-center py-8 text-gray-400">
           <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
@@ -174,94 +198,71 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
       );
     }
 
-    // Group alerts by date
-    const groupedAlerts = alerts.reduce((groups: { [key: string]: AlertItem[] }, alert) => {
-      const date = new Date(alert.started_at).toDateString();
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(alert);
-      return groups;
-    }, {});
-
-    // Separate long-term alerts (older than 7 days)
+    // Separate recent and long-term alerts
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    const recentAlerts = alerts.filter(alert => new Date(alert.started_at) > sevenDaysAgo);
-    const longTermAlerts = alerts.filter(alert => new Date(alert.started_at) <= sevenDaysAgo);
+    const recentAlerts = filteredAlerts.filter(alert => new Date(alert.started_at) > sevenDaysAgo);
+    const longTermAlerts = filteredAlerts.filter(alert => new Date(alert.started_at) <= sevenDaysAgo);
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Recent Alerts */}
         {recentAlerts.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
-              {t.activeAlerts}
-            </h3>
-            <div className="space-y-4">
-              {Object.entries(groupedAlerts).map(([date, dayAlerts]) => {
-                const filteredDayAlerts = dayAlerts.filter(alert => new Date(alert.started_at) > sevenDaysAgo);
-                if (filteredDayAlerts.length === 0) return null;
-                
-                return (
-                  <div key={date}>
-                    <div className="text-sm font-medium text-gray-400 mb-2">
-                      {new Date(date).toLocaleDateString(language === 'ua' ? 'uk-UA' : 'en-US', {
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+            {!compact && (
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
+                {t.activeAlerts}
+              </h3>
+            )}
+            <div className="space-y-2">
+              {recentAlerts.slice(0, compact ? 3 : 10).map((alert) => (
+                <Card key={alert.id} className="bg-gray-800 border-gray-600">
+                  <CardContent className={compact ? "p-3" : "p-4"}>
+                    <div className="flex items-start space-x-3">
+                      <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)}`}>
+                        {getAlertIcon(alert.alert_type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`font-medium text-white truncate ${compact ? 'text-sm' : ''}`}>
+                          {alert.location_title}
+                        </h4>
+                        <p className={`text-gray-400 ${compact ? 'text-xs' : 'text-sm'}`}>
+                          {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-xs text-gray-500">
+                            {formatDate(alert.started_at)}
+                          </span>
+                          <Badge variant="outline" className="text-xs border-gray-500">
+                            {t.alertTypes[alert.alert_type] || alert.alert_type}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center text-xs text-gray-400">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatTimeAgo(alert.started_at)}
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      {filteredDayAlerts.map((alert) => (
-                        <Card key={alert.id} className="bg-gray-800 border-gray-600">
-                          <CardContent className="p-4">
-                            <div className="flex items-start space-x-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)}`}>
-                                {getAlertIcon(alert.alert_type)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-white truncate">
-                                  {alert.location_title}
-                                </h4>
-                                <p className="text-sm text-gray-400">
-                                  {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
-                                </p>
-                                <div className="flex items-center space-x-4 mt-2">
-                                  <span className="text-xs text-gray-500">
-                                    {formatDate(alert.started_at)}
-                                  </span>
-                                  <Badge variant="outline" className="text-xs border-gray-500">
-                                    {t.alertTypes[alert.alert_type] || alert.alert_type}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="flex items-center text-xs text-gray-400">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {formatTimeAgo(alert.started_at)}
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Long-term Alerts */}
-        {longTermAlerts.length > 0 && (
+        {/* Long-term Alerts - only show in non-compact mode */}
+        {!compact && longTermAlerts.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
               <Clock className="w-5 h-5 mr-2 text-orange-400" />
               {t.longTermAlerts}
             </h3>
             <div className="space-y-2">
-              {longTermAlerts.slice(0, 5).map((alert) => (
+              {longTermAlerts.slice(0, 3).map((alert) => (
                 <Card key={alert.id} className="bg-gray-800/50 border-gray-700">
                   <CardContent className="p-3">
                     <div className="flex items-center space-x-3">
@@ -288,11 +289,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
                   </CardContent>
                 </Card>
               ))}
-              {longTermAlerts.length > 5 && (
-                <p className="text-xs text-gray-500 text-center py-2">
-                  +{longTermAlerts.length - 5} more long-term alerts
-                </p>
-              )}
             </div>
           </div>
         )}
@@ -300,115 +296,80 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
     );
   };
 
-  const endpoints = [
-    { key: 'alerts', label: t.alerts, icon: AlertTriangle },
-    { key: 'regions', label: t.regions, icon: MapPin },
-    { key: 'status', label: t.status, icon: Shield },
-    { key: 'history', label: t.history, icon: Clock },
-  ];
-
   return (
-    <Card className="w-full max-w-6xl mx-auto bg-gray-900 border-gray-700 text-white">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <AlertTriangle className="w-6 h-6 text-orange-400" />
-          <div>
-            <div className="text-xl">{t.title}</div>
-            <div className="text-sm text-gray-400 font-normal">{t.subtitle}</div>
-          </div>
+    <Card className="w-full bg-gray-900 border border-gray-700 shadow-xl text-white">
+      <CardHeader className={compact ? "pb-2" : "pb-3"}>
+        <CardTitle className={`flex items-center space-x-2 ${compact ? 'text-base' : 'text-lg'} text-white`}>
+          <AlertTriangle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-orange-400`} />
+          <span>{t.title}</span>
         </CardTitle>
+        {selectedRegion && (
+          <div className="text-sm text-gray-400">
+            {t.regionFilter}: {selectedRegion}
+          </div>
+        )}
       </CardHeader>
       
-      <CardContent className="space-y-6">
-        {/* Endpoint Testing Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          {endpoints.map(({ key, label, icon: Icon }) => (
-            <Button
-              key={key}
-              onClick={() => testEndpoint(key)}
-              disabled={isLoading}
-              variant="outline"
-              className="h-16 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
-            >
-              <div className="flex flex-col items-center space-y-2">
-                <Icon className="w-5 h-5" />
-                <span className="text-sm">{label}</span>
-              </div>
-            </Button>
-          ))}
+      <CardContent className="space-y-4">
+        {/* Control Buttons */}
+        <div className="flex items-center justify-between">
+          <Button
+            onClick={loadAlertsData}
+            disabled={isLoading}
+            variant="outline"
+            size={compact ? "sm" : "default"}
+            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+          >
+            {isLoading ? t.loading : t.loadData}
+          </Button>
+          
+          {!compact && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="autoRefresh"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                className="rounded"
+              />
+              <label htmlFor="autoRefresh" className="text-sm text-gray-300">
+                {t.autoRefresh}
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex items-center justify-center p-8">
-            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex items-center justify-center p-4">
+            <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="ml-3 text-gray-300">{t.loading}</span>
           </div>
         )}
 
         {/* Error Display */}
         {error && (
-          <div className="p-4 bg-red-900/20 border border-red-700 rounded-lg">
+          <div className="p-3 bg-red-900/20 border border-red-700 rounded-lg">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <AlertTriangle className="w-4 h-4 text-red-400" />
               <span className="font-medium text-red-400">{t.error}</span>
             </div>
-            <p className="text-red-300 text-sm mt-2">{error}</p>
+            <p className="text-red-300 text-sm mt-1">{error}</p>
           </div>
         )}
 
         {/* Success Results */}
-        {apiData && !error && (
+        {apiData && !error && apiData.data?.alerts && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-green-400" />
-                <span className="font-medium text-green-400">{t.success}</span>
+            {!compact && apiData.data?.meta?.last_updated_at && (
+              <div className="text-sm text-gray-400">
+                {t.lastUpdated}: {new Date(apiData.data.meta.last_updated_at).toLocaleString()}
               </div>
-              {apiData.data?.meta?.last_updated_at && (
-                <div className="text-sm text-gray-400">
-                  {t.lastUpdated}: {new Date(apiData.data.meta.last_updated_at).toLocaleString()}
-                </div>
-              )}
+            )}
+
+            <div className="bg-gray-800 rounded-lg p-3">
+              {renderAlerts(apiData.data.alerts)}
             </div>
-
-            {/* Display Alerts Data */}
-            {selectedEndpoint === 'alerts' && apiData.data?.alerts && (
-              <div className="bg-gray-800 rounded-lg p-4">
-                {renderAlerts(apiData.data.alerts)}
-              </div>
-            )}
-
-            {/* Display Other Data Types */}
-            {selectedEndpoint !== 'alerts' && (
-              <div className="space-y-4">
-                {/* API Metadata */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <div className="text-sm text-gray-400">Endpoint</div>
-                    <div className="font-medium">{apiData.endpoint}</div>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <div className="text-sm text-gray-400">Auth Method</div>
-                    <Badge variant="outline" className="mt-1">
-                      {apiData.authMethod}
-                    </Badge>
-                  </div>
-                  <div className="p-3 bg-gray-800 rounded-lg">
-                    <div className="text-sm text-gray-400">Data Type</div>
-                    <div className="font-medium">{apiData.dataStructure?.type}</div>
-                  </div>
-                </div>
-
-                {/* Raw Data Sample */}
-                <div className="p-4 bg-gray-800 rounded-lg">
-                  <h4 className="font-medium mb-3">Sample Data</h4>
-                  <pre className="text-sm text-gray-300 overflow-auto max-h-64">
-                    {JSON.stringify(apiData.data, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </CardContent>
