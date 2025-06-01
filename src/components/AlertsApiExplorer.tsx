@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,16 +151,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       return !alert.finished_at && alertDate >= seventyTwoHoursAgo;
     });
     
-    // Filter by region
-    if (selectedRegion) {
-      activeAlerts = activeAlerts.filter(alert => 
-        alert.location_oblast.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-        alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-        (alert.location_raion && alert.location_raion.toLowerCase().includes(selectedRegion.toLowerCase()))
-      );
-    }
-    
-    console.log(`Filtering alerts: ${activeAlerts.length} out of ${alerts.filter(alert => !alert.finished_at).length} active alerts`);
+    // Don't filter by region anymore - show all alerts
+    console.log(`Showing all alerts: ${activeAlerts.length} active alerts`);
     return activeAlerts;
   };
 
@@ -224,9 +215,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
           <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
           <p className="mb-2">{t.noAlerts}</p>
           <p className="text-xs text-gray-500 mb-2">{t.last72Hours}</p>
-          {selectedRegion && (
-            <p className="text-xs text-gray-500">{t.clickMapHint}</p>
-          )}
         </div>
       );
     }
@@ -297,23 +285,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
             <span>{t.title}</span>
           </div>
         </CardTitle>
-        
-        {selectedRegion && (
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-3 h-3 text-blue-400" />
-              <span className="text-gray-400">{t.regionFilter}: {selectedRegion}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white p-1 h-auto"
-              onClick={() => window.location.reload()}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
       </CardHeader>
       
       <CardContent className="space-y-4">
