@@ -29,7 +29,32 @@ export interface RouteInputTranslations {
   startPlaceholder: string;
   endPlaceholder: string;
   returnRoute: string;
-  findRoute?: string; // Made optional since we're removing the button
+  findRoute?: string;
   searching: string;
   error: string;
+  appTitle: string;
+  appSubtitle: string;
+  routeDetails: string;
+  distance: string;
+  duration: string;
+  weather: string;
+  conflictRisk: string;
+  trafficLevel: string;
+  live: string;
+  estimated: string;
+  riskLevels: {
+    low: string;
+    moderate: string;
+    high: string;
+  };
+  weatherConditions: {
+    clear: string;
+    cloudy: string;
+    light_rain: string;
+  };
+  trafficLevels: {
+    light: string;
+    moderate: string;
+    heavy: string;
+  };
 }
