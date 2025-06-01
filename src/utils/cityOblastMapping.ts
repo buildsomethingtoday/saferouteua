@@ -237,35 +237,59 @@ export function findOblastForCity(cityName: string): { oblastUA: string; oblastE
   return null;
 }
 
-// Function to check if an alert location matches a city
+// Enhanced function to check if an alert location matches a city
 export function doesAlertMatchCity(alertLocation: string, alertOblast: string, cityName: string): boolean {
-  const cityOblast = findOblastForCity(cityName);
-  if (!cityOblast) return false;
+  console.log('🔍 Checking alert match:', { alertLocation, alertOblast, cityName });
   
-  // Check if alert is for the city's oblast
-  if (alertOblast === cityOblast.oblastUA) {
+  const normalizedAlertLocation = alertLocation.toLowerCase().trim();
+  const normalizedAlertOblast = alertOblast.toLowerCase().trim();
+  const normalizedCity = cityName.toLowerCase().trim();
+  
+  // Special handling for "м. Київ м. Київ" format
+  if (normalizedAlertLocation.includes('м. київ') && normalizedCity === 'kyiv') {
+    console.log('✅ Special Kyiv match found');
     return true;
   }
   
-  // Check if alert location mentions the city directly
-  const normalizedAlertLocation = alertLocation.toLowerCase();
-  const normalizedCity = cityName.toLowerCase();
-  
-  // Check direct city name match
+  // Check if alert location directly mentions the city
   if (normalizedAlertLocation.includes(normalizedCity)) {
+    console.log('✅ Direct city name match');
     return true;
   }
   
-  // Check aliases
-  const cityData = Object.values(cityToOblastMapping).find(data => 
-    data.oblastUA === cityOblast.oblastUA
+  // Check city aliases
+  const cityData = Object.entries(cityToOblastMapping).find(([key, data]) => 
+    key === normalizedCity || data.aliases.some(alias => alias.toLowerCase() === normalizedCity)
   );
   
-  if (cityData && cityData.aliases.some(alias => 
-    normalizedAlertLocation.includes(alias.toLowerCase())
-  )) {
+  if (cityData) {
+    const [cityKey, data] = cityData;
+    
+    // Check if alert location mentions any alias of the city
+    if (data.aliases.some(alias => normalizedAlertLocation.includes(alias.toLowerCase()))) {
+      console.log('✅ City alias match found');
+      return true;
+    }
+    
+    // Check if alert is in the same oblast as the city
+    if (normalizedAlertOblast.includes(data.oblastUA.toLowerCase()) || 
+        normalizedAlertOblast.includes(data.oblastEN.toLowerCase())) {
+      console.log('✅ Oblast match found');
+      return true;
+    }
+  }
+  
+  // Special case for major cities by oblast matching
+  if (normalizedCity === 'kyiv' && normalizedAlertOblast.includes('київ')) {
+    console.log('✅ Kyiv oblast match');
     return true;
   }
   
+  if (normalizedCity === 'dnipro' && normalizedAlertOblast.includes('дніпропетровськ')) {
+    console.log('✅ Dnipro oblast match');
+    return true;
+  }
+  
+  console.log('❌ No match found');
   return false;
 }
