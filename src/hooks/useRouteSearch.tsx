@@ -80,16 +80,21 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.error('Route search error:', error);
       
       // Fallback to mock data if API fails
+      const trafficLevels: ('light' | 'moderate' | 'heavy')[] = ['light', 'moderate', 'heavy'];
+      const roadQualities: ('excellent' | 'good' | 'fair')[] = ['excellent', 'good', 'fair'];
+      const weatherConditions = ['clear', 'cloudy', 'light_rain'];
+      const conflictRisks: ('low' | 'moderate')[] = ['low', 'moderate'];
+      
       const mockRouteData: RouteData = {
         startCity,
         endCity,
         safetyScore: Math.floor(Math.random() * 40) + 60,
         distance: Math.floor(Math.random() * 500) + 100,
         duration: Math.floor(Math.random() * 8) + 2,
-        weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
-        conflictRisk: ['low', 'moderate'][Math.floor(Math.random() * 2)],
-        trafficLevel: ['light', 'moderate', 'heavy'][Math.floor(Math.random() * 3)],
-        roadQuality: ['excellent', 'good', 'fair'][Math.floor(Math.random() * 3)],
+        weatherCondition: weatherConditions[Math.floor(Math.random() * weatherConditions.length)],
+        conflictRisk: conflictRisks[Math.floor(Math.random() * conflictRisks.length)],
+        trafficLevel: trafficLevels[Math.floor(Math.random() * trafficLevels.length)],
+        roadQuality: roadQualities[Math.floor(Math.random() * roadQualities.length)],
         estimatedDelay: Math.floor(Math.random() * 30),
         transportMode,
         error: translations.error,
