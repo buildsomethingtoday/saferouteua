@@ -15,19 +15,28 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 }) => {
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'text-green-600';
-      case 'moderate': return 'text-yellow-600';
-      case 'high': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'low': return 'text-green-400';
+      case 'moderate': return 'text-yellow-400';
+      case 'high': return 'text-red-400';
+      default: return 'text-gray-400';
     }
   };
 
-  const getTrafficBadgeVariant = (level: string) => {
+  const getRiskBadgeStyle = (risk: string) => {
+    switch (risk) {
+      case 'low': return 'bg-green-600 text-white border-none';
+      case 'moderate': return 'bg-yellow-600 text-white border-none';
+      case 'high': return 'bg-red-600 text-white border-none';
+      default: return 'bg-gray-600 text-white border-none';
+    }
+  };
+
+  const getTrafficBadgeStyle = (level: string) => {
     switch (level) {
-      case 'light': return 'default';
-      case 'moderate': return 'secondary';
-      case 'heavy': return 'destructive';
-      default: return 'outline';
+      case 'light': return 'bg-green-600 text-white border-none';
+      case 'moderate': return 'bg-yellow-600 text-white border-none';
+      case 'heavy': return 'bg-red-600 text-white border-none';
+      default: return 'bg-gray-600 text-white border-none';
     }
   };
 
@@ -48,15 +57,15 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
       {/* Distance and Duration Grid */}
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="text-center p-4 bg-white rounded-xl">
-          <div className="text-sm font-medium text-blue-600 mb-1">{translations.distance}</div>
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="text-center p-4 bg-gray-800 rounded-xl">
+          <div className="text-sm font-medium text-blue-400 mb-1">{translations.distance}</div>
+          <div className="text-2xl font-bold text-blue-400">
             {routeData.distanceFormatted || `${routeData.distance} km`}
           </div>
         </div>
-        <div className="text-center p-4 bg-white rounded-xl">
-          <div className="text-sm font-medium text-blue-600 mb-1">{translations.duration}</div>
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="text-center p-4 bg-gray-800 rounded-xl">
+          <div className="text-sm font-medium text-blue-400 mb-1">{translations.duration}</div>
+          <div className="text-2xl font-bold text-blue-400">
             {routeData.durationFormatted || `${routeData.duration}h`}
           </div>
         </div>
@@ -65,28 +74,28 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       {/* Status Information */}
       <div className="space-y-3">
         {/* Safety Risk */}
-        <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+        <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-medium text-gray-800">{translations.conflictRisk}</span>
+            <span className="text-sm font-medium text-white">{translations.conflictRisk}</span>
           </div>
-          <span className={`text-sm font-semibold ${getRiskColor(routeData.conflictRisk)}`}>
+          <Badge className={`text-sm font-semibold ${getRiskBadgeStyle(routeData.conflictRisk)}`}>
             {translations.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
-          </span>
+          </Badge>
         </div>
         
         {/* Traffic Level */}
         {routeData.trafficLevel && (
-          <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
                 <Gauge className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-medium text-gray-800">{translations.trafficLevel}</span>
+              <span className="text-sm font-medium text-white">{translations.trafficLevel}</span>
             </div>
-            <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-800 text-white border-none">
+            <Badge className={`text-xs px-3 py-1 ${getTrafficBadgeStyle(routeData.trafficLevel)}`}>
               {translations.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
             </Badge>
           </div>
@@ -94,19 +103,19 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         
         {/* Weather */}
         {routeData.weatherCondition && (
-          <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
                 <Cloud className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-medium text-gray-800">{translations.weather}</span>
+              <span className="text-sm font-medium text-white">{translations.weather}</span>
             </div>
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-900">
+              <div className="text-sm font-semibold text-white">
                 {translations.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
               </div>
               {routeData.temperature !== undefined && (
-                <div className="text-xs text-gray-600">{routeData.temperature}°C</div>
+                <div className="text-xs text-gray-400">{routeData.temperature}°C</div>
               )}
             </div>
           </div>
@@ -114,14 +123,14 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         
         {/* Estimated Delay */}
         {routeData.estimatedDelay > 0 && (
-          <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-orange-900 rounded-xl">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
                 <MapPin className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-medium text-gray-700">Delay</span>
+              <span className="text-sm font-medium text-white">Delay</span>
             </div>
-            <span className="text-sm font-semibold text-orange-600">
+            <span className="text-sm font-semibold text-orange-400">
               +{routeData.estimatedDelay}min
             </span>
           </div>
