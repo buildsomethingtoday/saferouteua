@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MapPin, Shield, Cloud, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -30,20 +31,58 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Enhanced threat detection with improved oblast matching
+  // Simplified threat detection - focus on destination city
   const hasActiveThreats = routeData.safetyAlerts && routeData.safetyAlerts.length > 0;
   
-  // Enhanced city threat detection using improved matching logic
+  // Check if destination city has any threats
+  const destinationThreats = routeData.safetyAlerts ? routeData.safetyAlerts.filter(alert => {
+    const endCity = routeData.endCity || '';
+    
+    console.log('🔍 Checking destination threats for:', endCity, 'against alert:', {
+      alertLocation: alert.location_name,
+      alertOblast: alert.location_oblast
+    });
+    
+    // Direct city name match in alert location
+    if (alert.location_name?.toLowerCase().includes(endCity.toLowerCase())) {
+      console.log('✅ Direct city name match found');
+      return true;
+    }
+    
+    // Use our enhanced matching function
+    const matchesDestination = doesAlertMatchCity(
+      alert.location_name || '', 
+      alert.location_oblast || '', 
+      endCity
+    );
+    
+    if (matchesDestination) {
+      console.log('✅ Enhanced matching found match');
+      return true;
+    }
+    
+    // Additional oblast-level check for destination
+    const endOblastInfo = findOblastForCity(endCity);
+    if (endOblastInfo) {
+      const oblastMatch = alert.location_oblast?.toLowerCase().includes(endOblastInfo.oblastUA.toLowerCase()) || 
+                         alert.location_oblast?.toLowerCase().includes(endOblastInfo.oblastEN.toLowerCase()) ||
+                         alert.location_name?.toLowerCase().includes(endOblastInfo.oblastUA.toLowerCase()) ||
+                         alert.location_name?.toLowerCase().includes(endOblastInfo.oblastEN.toLowerCase());
+      
+      if (oblastMatch) {
+        console.log('✅ Oblast-level match found for destination');
+        return true;
+      }
+    }
+    
+    console.log('❌ No match found for this alert');
+    return false;
+  }) : [];
+
+  // Also check for route alerts (start OR end city threats)
   const routeCityAlerts = routeData.safetyAlerts ? routeData.safetyAlerts.filter(alert => {
     const startCity = routeData.startCity || '';
     const endCity = routeData.endCity || '';
-    
-    console.log('🔍 RouteDetails checking alert:', {
-      alertLocation: alert.location_name,
-      alertOblast: alert.location_oblast,
-      startCity,
-      endCity
-    });
     
     // Check if alert matches start city
     const matchesStart = doesAlertMatchCity(
@@ -59,61 +98,23 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       endCity
     );
     
-    // Additional oblast-level matching for major cities
-    let matchesStartOblast = false;
-    let matchesEndOblast = false;
-    
-    if (!matchesStart && !matchesEnd) {
-      // Get oblast info for start and end cities
-      const startOblastInfo = findOblastForCity(startCity);
-      const endOblastInfo = findOblastForCity(endCity);
-      
-      if (startOblastInfo) {
-        matchesStartOblast = alert.location_oblast?.includes(startOblastInfo.oblastUA) || 
-                            alert.location_oblast?.includes(startOblastInfo.oblastEN) ||
-                            alert.location_name?.includes(startOblastInfo.oblastUA) ||
-                            alert.location_name?.includes(startOblastInfo.oblastEN);
-      }
-      
-      if (endOblastInfo) {
-        matchesEndOblast = alert.location_oblast?.includes(endOblastInfo.oblastUA) || 
-                          alert.location_oblast?.includes(endOblastInfo.oblastEN) ||
-                          alert.location_name?.includes(endOblastInfo.oblastUA) ||
-                          alert.location_name?.includes(endOblastInfo.oblastEN);
-      }
-    }
-    
-    const hasMatch = matchesStart || matchesEnd || matchesStartOblast || matchesEndOblast;
-    
-    if (hasMatch) {
-      console.log('🚨 RouteDetails: Alert matches route:', {
-        alertLocation: alert.location_name,
-        alertOblast: alert.location_oblast,
-        startCity,
-        endCity,
-        matchesStart,
-        matchesEnd,
-        matchesStartOblast,
-        matchesEndOblast
-      });
-      return true;
-    }
-    
-    return false;
+    return matchesStart || matchesEnd;
   }) : [];
 
-  const hasCityThreats = routeCityAlerts.length > 0;
-  const finalHasThreats = hasActiveThreats && hasCityThreats;
+  // Show YES if destination has threats OR if there are any route-specific threats
+  const hasDestinationThreats = destinationThreats.length > 0;
+  const hasRouteThreats = routeCityAlerts.length > 0;
+  const finalHasThreats = hasDestinationThreats || hasRouteThreats;
   
-  console.log('🔍 RouteDetails threat detection summary:', {
-    startCity: routeData.startCity,
+  console.log('🎯 Threat detection summary:', {
     endCity: routeData.endCity,
     totalAlerts: routeData.safetyAlerts?.length || 0,
-    routeCityAlertsCount: routeCityAlerts.length,
-    hasActiveThreats,
-    hasCityThreats,
+    destinationThreatsCount: destinationThreats.length,
+    routeThreatsCount: routeCityAlerts.length,
+    hasDestinationThreats,
+    hasRouteThreats,
     finalHasThreats,
-    routeCityAlerts: routeCityAlerts.map(alert => ({
+    destinationThreatDetails: destinationThreats.map(alert => ({
       location: alert.location_name,
       oblast: alert.location_oblast,
       severity: alert.severity
@@ -159,7 +160,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         </div>
       </div>
 
-      {/* Safety Alerts Section - show if there are route-specific threats */}
+      {/* Safety Alerts Section - show if there are destination or route threats */}
       {finalHasThreats && (
         <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-xl">
           <div className="flex items-center justify-between mb-3">
@@ -193,7 +194,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
       {/* Status Information */}
       <div className="space-y-3">
-        {/* Active Threats Status - enhanced with better detection */}
+        {/* Active Threats Status - simplified to focus on destination */}
         <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
