@@ -6,6 +6,7 @@ import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 import RouteHeader from './route/RouteHeader';
 import CityInputForm from './route/CityInputForm';
+import RouteSearchButton from './route/RouteSearchButton';
 import RouteStatus from './route/RouteStatus';
 import RouteDetails from './route/RouteDetails';
 
@@ -28,7 +29,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
 }) => {
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
-  const [hasTriggeredSearch, setHasTriggeredSearch] = useState(false);
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
     en: {
@@ -38,6 +38,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
       startPlaceholder: 'Starting city',
       endPlaceholder: 'Destination city',
       returnRoute: 'Need return route?',
+      findRoute: 'Find Route',
       searching: 'Finding route...',
       error: 'Error finding route. Please try again.',
       appTitle: 'SafeRoute UA',
@@ -73,6 +74,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
       startPlaceholder: 'Місто відправлення',
       endPlaceholder: 'Місто призначення',
       returnRoute: 'Потрібен зворотний маршрут?',
+      findRoute: 'Знайти маршрут',
       searching: 'Пошук маршруту...',
       error: 'Помилка пошуку маршруту. Спробуйте ще раз.',
       appTitle: 'SafeRoute UA',
@@ -106,29 +108,20 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
-  // Auto-trigger route search when both cities are selected
-  useEffect(() => {
-    if (startCity && endCity && !isSearching && !hasTriggeredSearch) {
-      console.log('🎯 Auto-triggering route search for:', startCity, 'to', endCity);
-      setHasTriggeredSearch(true);
-      
-      const timer = setTimeout(() => {
-        console.log('🚀 Executing route search...');
-        handleRouteSearch(startCity, endCity, 'driving');
-      }, 300);
-
-      return () => {
-        clearTimeout(timer);
-      };
+  const handleManualSearch = () => {
+    if (startCity && endCity && !isSearching) {
+      console.log('🎯 Manual route search triggered for:', startCity, 'to', endCity);
+      handleRouteSearch(startCity, endCity, 'driving');
     }
-  }, [startCity, endCity, isSearching, hasTriggeredSearch, handleRouteSearch]);
+  };
 
-  // Reset search trigger when cities are cleared
+  // Clear route data when cities change
   useEffect(() => {
-    if (!startCity || !endCity) {
-      setHasTriggeredSearch(false);
+    if (routeData && (routeData.startCity !== startCity || routeData.endCity !== endCity)) {
+      console.log('🧹 Clearing route data due to city changes');
+      onRouteRequest(null);
     }
-  }, [startCity, endCity]);
+  }, [startCity, endCity, routeData, onRouteRequest]);
 
   // Debug route data changes
   useEffect(() => {
@@ -166,6 +159,14 @@ const RouteInput: React.FC<RouteInputProps> = ({
           translations={t}
           onStartCityChange={setStartCity}
           onEndCityChange={setEndCity}
+        />
+
+        <RouteSearchButton
+          startCity={startCity}
+          endCity={endCity}
+          isSearching={isSearching}
+          translations={t}
+          onSearch={handleManualSearch}
         />
 
         <RouteStatus

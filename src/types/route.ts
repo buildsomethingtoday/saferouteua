@@ -29,7 +29,7 @@ export interface RouteInputTranslations {
   startPlaceholder: string;
   endPlaceholder: string;
   returnRoute: string;
-  findRoute?: string;
+  findRoute: string;
   searching: string;
   error: string;
   appTitle: string;
