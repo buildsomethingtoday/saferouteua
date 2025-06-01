@@ -1,10 +1,8 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -15,24 +13,14 @@ interface InteractiveMapProps {
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, isSearching }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [tokenInputVisible, setTokenInputVisible] = useState<boolean>(true);
 
   const translations = {
     en: {
-      enterToken: 'Enter your Mapbox public token to display the map',
-      tokenPlaceholder: 'pk.eyJ1...',
-      loadMap: 'Load Map',
-      getToken: 'Get your free token at mapbox.com',
       mapTitle: 'Interactive Route Map',
       noRoute: 'Enter your route to see safety analysis on the map',
       analyzing: 'Analyzing route safety and weather conditions...'
     },
     ua: {
-      enterToken: 'Введіть ваш публічний токен Mapbox для відображення карти',
-      tokenPlaceholder: 'pk.eyJ1...',
-      loadMap: 'Завантажити карту',
-      getToken: 'Отримайте безкоштовний токен на mapbox.com',
       mapTitle: 'Інтерактивна карта маршруту',
       noRoute: 'Введіть ваш маршрут для аналізу безпеки на карті',
       analyzing: 'Аналіз безпеки маршруту та погодних умов...'
@@ -41,11 +29,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
 
   const t = translations[language];
 
-  const initializeMap = () => {
-    if (!mapContainer.current || !mapboxToken) return;
+  useEffect(() => {
+    if (!mapContainer.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    // Set Mapbox access token
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
     
+    // Initialize map
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
@@ -54,11 +44,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     });
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    setTokenInputVisible(false);
-  };
+
+    // Cleanup function
+    return () => {
+      map.current?.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (routeData && map.current) {
+      // Clear existing markers
+      const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
+      existingMarkers.forEach(marker => marker.remove());
+
       // Add route visualization
       const startCoords = getCoordinatesForCity(routeData.startCity);
       const endCoords = getCoordinatesForCity(routeData.endCity);
@@ -96,38 +94,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     };
     return cityCoords[city] || [31.1656, 48.3794];
   };
-
-  if (tokenInputVisible) {
-    return (
-      <Card className="h-[600px] shadow-xl bg-white border-0 flex items-center justify-center">
-        <div className="text-center p-6 max-w-md">
-          <h3 className="text-lg font-semibold mb-4">{t.mapTitle}</h3>
-          <p className="text-gray-600 mb-4">{t.enterToken}</p>
-          <div className="space-y-3">
-            <Input
-              type="password"
-              placeholder={t.tokenPlaceholder}
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-              className="w-full"
-            />
-            <Button 
-              onClick={initializeMap}
-              disabled={!mapboxToken}
-              className="w-full"
-            >
-              {t.loadMap}
-            </Button>
-            <p className="text-sm text-blue-600">
-              <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer">
-                {t.getToken}
-              </a>
-            </p>
-          </div>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <Card className="h-[600px] shadow-xl bg-white border-0 overflow-hidden">
