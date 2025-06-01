@@ -1,4 +1,5 @@
 
+
 export interface AlertMapData {
   id: number;
   location_title: string;
@@ -125,53 +126,126 @@ export class AlertsMapService {
     return 'safe';
   }
 
-  calculateRouteSafetyScore(alerts: AlertMapData[]): number {
-    if (alerts.length === 0) return 95;
+  calculateRouteSafetyScore(alerts: AlertMapData[], allAlerts?: any[]): { score: number; status: string; description: string } {
+    const now = new Date();
+    
+    // Check for attacks in different time periods
+    const last72Hours = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+    const last5Days = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));
+    const last30Days = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
 
-    let score = 100;
-    alerts.forEach(alert => {
-      // Heavier penalties for artillery and air raids (as requested)
-      switch (alert.alert_type) {
-        case 'air_raid':
-          score -= 45; // Increased penalty for air raids
-          break;
-        case 'artillery_shelling':
-          score -= 40; // Increased penalty for artillery
-          break;
-        case 'urban_fights':
-          score -= 25; // Increased from 10
-          break;
-        case 'chemical':
-          score -= 45;
-          break;
-        case 'nuclear':
-          score -= 50;
-          break;
-        default:
-          score -= 10;
-          break;
-      }
-
-      // Additional penalties based on alert age (more recent = more dangerous)
-      const alertAge = Date.now() - new Date(alert.started_at).getTime();
-      const hoursOld = alertAge / (1000 * 60 * 60);
-      
-      if (hoursOld < 1) {
-        score -= 15; // Very recent alert
-      } else if (hoursOld < 6) {
-        score -= 10; // Recent alert
-      } else if (hoursOld < 24) {
-        score -= 5; // Somewhat recent alert
-      }
+    // Get recent attacks from last 72 hours (current active alerts)
+    const recentAttacks = alerts.filter(alert => {
+      const alertDate = new Date(alert.started_at);
+      return alertDate >= last72Hours;
     });
 
-    // Multiple alerts in same area compound the danger
-    if (alerts.length > 1) {
-      score -= alerts.length * 5;
+    // Check for critical attack types in last 72 hours
+    const hasCriticalAttacks = recentAttacks.some(alert => 
+      alert.alert_type === 'air_raid' || 
+      alert.alert_type === 'artillery_shelling' || 
+      alert.alert_type === 'urban_fights'
+    );
+
+    const hasAirRaid = recentAttacks.some(alert => alert.alert_type === 'air_raid');
+    const hasArtillery = recentAttacks.some(alert => alert.alert_type === 'artillery_shelling');
+    const hasUrbanFights = recentAttacks.some(alert => alert.alert_type === 'urban_fights');
+
+    // If there are critical attacks in last 72 hours
+    if (hasCriticalAttacks) {
+      let score = 15; // Start very low for recent attacks
+      let status = 'DANGER';
+      let description = 'Active threats detected in area';
+
+      if (hasAirRaid) {
+        score = Math.max(5, score - 10);
+        status = 'CRITICAL';
+        description = 'Air raid alerts active - seek shelter immediately';
+      }
+      
+      if (hasArtillery) {
+        score = Math.max(10, score - 8);
+        status = hasAirRaid ? 'CRITICAL' : 'DANGER';
+        description = hasAirRaid ? description : 'Artillery attacks reported - avoid area';
+      }
+
+      if (hasUrbanFights) {
+        score = Math.max(12, score - 6);
+        if (!hasAirRaid && !hasArtillery) {
+          status = 'DANGER';
+          description = 'Urban combat reported - high risk area';
+        }
+      }
+
+      return { score, status, description };
     }
 
-    return Math.max(score, 5); // Minimum score of 5
+    // If using allAlerts data, check for attacks in last 5 days
+    if (allAlerts && Array.isArray(allAlerts)) {
+      const attacksLast5Days = allAlerts.filter(alert => {
+        const alertDate = new Date(alert.started_at);
+        return alertDate >= last5Days && (
+          alert.alert_type === 'air_raid' || 
+          alert.alert_type === 'artillery_shelling' || 
+          alert.alert_type === 'urban_fights'
+        );
+      });
+
+      if (attacksLast5Days.length > 0) {
+        return {
+          score: 35,
+          status: 'CAUTION',
+          description: 'Recent attacks in area - exercise caution'
+        };
+      }
+
+      // Check for attacks in last 30 days
+      const attacksLast30Days = allAlerts.filter(alert => {
+        const alertDate = new Date(alert.started_at);
+        return alertDate >= last30Days && (
+          alert.alert_type === 'air_raid' || 
+          alert.alert_type === 'artillery_shelling' || 
+          alert.alert_type === 'urban_fights'
+        );
+      });
+
+      if (attacksLast30Days.length > 0) {
+        return {
+          score: 65,
+          status: 'MODERATE',
+          description: 'Some recent activity - stay alert'
+        };
+      }
+    }
+
+    // No recent significant attacks
+    return {
+      score: 85,
+      status: 'SAFE',
+      description: 'No recent threats detected'
+    };
+  }
+
+  // Get alerts from last 5 days for pin hover information
+  getRecentAlertsForLocation(allAlerts: any[], coordinates: [number, number]): any[] {
+    if (!allAlerts || !Array.isArray(allAlerts)) return [];
+
+    const now = new Date();
+    const fiveDaysAgo = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));
+
+    return allAlerts.filter(alert => {
+      const alertDate = new Date(alert.started_at);
+      const alertCoords = this.getCoordinatesForAlert(alert);
+      
+      // Check if it's within last 5 days and roughly same location
+      const isRecent = alertDate >= fiveDaysAgo;
+      const isSameLocation = Math.abs(alertCoords[0] - coordinates[0]) < 0.1 && 
+                            Math.abs(alertCoords[1] - coordinates[1]) < 0.1;
+      
+      return isRecent && isSameLocation;
+    }).sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
   }
 }
 
 export const alertsMapService = new AlertsMapService();
+

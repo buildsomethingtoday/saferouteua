@@ -25,6 +25,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [isLoadingToken, setIsLoadingToken] = useState(true);
   const [tokenError, setTokenError] = useState(false);
   const [alertsData, setAlertsData] = useState<any>(null);
+  const [allAlertsData, setAllAlertsData] = useState<any>(null);
   const routeSource = useRef<string>('route-source');
   const startMarker = useRef<mapboxgl.Marker | null>(null);
   const endMarker = useRef<mapboxgl.Marker | null>(null);
@@ -87,6 +88,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         
         if (!error && data?.data?.alerts) {
           console.log('Fresh alerts received:', data.data.alerts.length, 'alerts');
+          
+          // Store all alerts for historical checking
+          setAllAlertsData(data.data.alerts);
           
           // Filter alerts to only show those from the last 72 hours
           const now = new Date();
@@ -288,8 +292,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const center = oblastCenters[oblast];
       if (center) {
-        // Create a circle to represent the region (changed from oval to circle)
-        const radius = 0.6; // Reduced radius for better circles
+        // Create a circle to represent the region
+        const radius = 0.6;
         const circle: GeoJSON.Feature<GeoJSON.Polygon> = {
           type: 'Feature',
           geometry: {
@@ -440,6 +444,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const alertColor = alertsMapService.getAlertColor(alert.alert_type);
       
+      // Get recent alerts for this location for hover info
+      const recentAlerts = alertsMapService.getRecentAlertsForLocation(allAlertsData || [], alert.coordinates);
+      
       const marker = new mapboxgl.Marker({ 
         color: alertColor,
         scale: 0.8
@@ -447,7 +454,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         .setLngLat(alert.coordinates)
         .setPopup(
           new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div class="p-3 bg-gray-900 text-white rounded-lg">
+            <div class="p-3 bg-gray-900 text-white rounded-lg max-w-xs">
               <div class="flex items-center space-x-2 mb-2">
                 <div class="w-3 h-3 rounded-full" style="background-color: ${alertColor}"></div>
                 <strong class="text-sm">${alert.location_title}</strong>
@@ -456,14 +463,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <strong>Oblast:</strong> ${alert.location_oblast}
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Type:</strong> ${alert.alert_type.replace('_', ' ')}
+                <strong>Current Alert:</strong> ${alert.alert_type.replace('_', ' ')}
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Severity:</strong> ${alert.severity}
-              </div>
-              <div class="text-xs text-gray-400">
                 <strong>Since:</strong> ${new Date(alert.started_at).toLocaleString()}
               </div>
+              ${recentAlerts.length > 1 ? `
+                <div class="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
+                  <strong>Recent attacks (last 5 days):</strong>
+                  ${recentAlerts.slice(0, 3).map(recentAlert => `
+                    <div class="mt-1">
+                      ${recentAlert.alert_type.replace('_', ' ')} - ${new Date(recentAlert.started_at).toLocaleDateString()}
+                    </div>
+                  `).join('')}
+                  ${recentAlerts.length > 3 ? `<div class="text-xs text-gray-500">+${recentAlerts.length - 3} more...</div>` : ''}
+                </div>
+              ` : ''}
             </div>
           `)
         )

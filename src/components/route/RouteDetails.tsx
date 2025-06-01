@@ -13,16 +13,35 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   routeData,
   translations
 }) => {
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'text-green-400';
-      case 'moderate': return 'text-yellow-400';
-      case 'high': return 'text-red-400';
+  const getRiskColor = (status: string) => {
+    switch (status) {
+      case 'SAFE': return 'text-green-400';
+      case 'MODERATE': return 'text-blue-400';
+      case 'CAUTION': return 'text-yellow-400';
+      case 'DANGER': return 'text-orange-400';
+      case 'CRITICAL': return 'text-red-400';
       default: return 'text-gray-400';
     }
   };
 
-  const getBadgeStyle = (level: string) => {
+  const getBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'SAFE':
+        return 'bg-green-600 text-white border-none';
+      case 'MODERATE': 
+        return 'bg-blue-600 text-white border-none';
+      case 'CAUTION': 
+        return 'bg-yellow-600 text-white border-none';
+      case 'DANGER':
+        return 'bg-orange-600 text-white border-none';
+      case 'CRITICAL':
+        return 'bg-red-600 text-white border-none';
+      default: 
+        return 'bg-gray-600 text-white border-none';
+    }
+  };
+
+  const getStatusBadgeStyle = (level: string) => {
     switch (level) {
       case 'low':
       case 'light': 
@@ -96,7 +115,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             {routeData.safetyAlerts.slice(0, 3).map((alert, index) => (
               <div key={alert.id || index} className="flex items-center justify-between text-xs">
                 <span className="text-gray-300 truncate">{alert.location_name}</span>
-                <Badge className={`text-xs ${getBadgeStyle(alert.severity)}`}>
+                <Badge className={`text-xs ${getStatusBadgeStyle(alert.severity)}`}>
                   {alert.severity}
                 </Badge>
               </div>
@@ -122,10 +141,15 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
           </div>
           <div className="flex items-center space-x-2">
             <div className="text-right">
-              <div className="text-sm font-semibold text-white">{routeData.safetyScore}/100</div>
+              <div className={`text-sm font-semibold ${getRiskColor(routeData.safetyStatus?.status || '')}`}>
+                {routeData.safetyStatus?.status || 'UNKNOWN'}
+              </div>
+              <div className="text-xs text-gray-400">
+                {routeData.safetyStatus?.description || 'No data available'}
+              </div>
             </div>
-            <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.conflictRisk)}`}>
-              {translations.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
+            <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.safetyStatus?.status || '')}`}>
+              {routeData.safetyScore || 0}/100
             </Badge>
           </div>
         </div>
@@ -139,7 +163,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
               </div>
               <span className="text-sm font-medium text-white">{translations.trafficLevel}</span>
             </div>
-            <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.trafficLevel)}`}>
+            <Badge className={`text-sm font-semibold ${getStatusBadgeStyle(routeData.trafficLevel)}`}>
               {translations.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
             </Badge>
           </div>
@@ -185,3 +209,4 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 };
 
 export default RouteDetails;
+
