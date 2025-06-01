@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from 'lucide-react';
-import TransportModeSelector from './route/TransportModeSelector';
 import RouteForm from './route/RouteForm';
 import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
@@ -23,7 +22,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [needsReturn, setNeedsReturn] = useState(false);
-  const [transportMode, setTransportMode] = useState<'driving' | 'bus'>('driving');
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
     en: {
@@ -34,9 +32,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
       endPlaceholder: 'Enter destination city (e.g., Chernivtsi, Zakarpattia)',
       returnRoute: 'Need return route?',
       searching: 'Finding route...',
-      transportMode: 'Transportation',
-      driving: 'Driving',
-      bus: 'Bus',
       error: 'Error finding route. Please try again.'
     },
     ua: {
@@ -47,9 +42,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
       endPlaceholder: 'Введіть місто призначення (напр., Чернівці, Закарпаття)',
       returnRoute: 'Потрібен зворотний маршрут?',
       searching: 'Пошук маршруту...',
-      transportMode: 'Транспорт',
-      driving: 'Автомобіль',
-      bus: 'Автобус',
       error: 'Помилка пошуку маршруту. Спробуйте ще раз.'
     }
   };
@@ -57,17 +49,17 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
-  // Auto-trigger route search when both cities are selected or transport mode changes
+  // Auto-trigger route search when both cities are selected
   useEffect(() => {
     if (startCity && endCity && !isSearching) {
-      console.log('Triggering route search for:', startCity, 'to', endCity, 'via', transportMode);
+      console.log('Triggering route search for:', startCity, 'to', endCity, 'via driving');
       const timer = setTimeout(() => {
-        handleRouteSearch(startCity, endCity, transportMode);
+        handleRouteSearch(startCity, endCity, 'driving');
       }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [startCity, endCity, transportMode]); // Removed isSearching and memoizedRouteSearch from dependencies
+  }, [startCity, endCity]); // Removed transportMode since it's always 'driving'
 
   return (
     <Card className="bg-white border border-gray-200 shadow-sm">
@@ -78,12 +70,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <TransportModeSelector
-          transportMode={transportMode}
-          onTransportModeChange={setTransportMode}
-          translations={t}
-        />
-
         <RouteForm
           startCity={startCity}
           endCity={endCity}

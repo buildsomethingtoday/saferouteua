@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { getMapboxService } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
@@ -14,7 +13,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
   const handleRouteSearch = useCallback(async (
     startCity: string,
     endCity: string,
-    transportMode: 'driving' | 'bus'
+    transportMode: 'driving'
   ) => {
     if (!startCity || !endCity) return;
     
@@ -41,10 +40,8 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.log('Start coordinates:', startCoords);
       console.log('End coordinates:', endCoords);
       
-      // Try different routing profiles for better coverage in Ukraine
-      const profiles = transportMode === 'driving' 
-        ? ['driving', 'driving-traffic'] 
-        : ['walking'];
+      // Try different driving profiles for better coverage in Ukraine
+      const profiles = ['driving', 'driving-traffic'];
       
       let directions = null;
       let usedProfile = '';
@@ -105,7 +102,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         durationFormatted: mapboxService.formatDuration(route.duration),
         distanceFormatted: mapboxService.formatDistance(route.distance),
         geometry: route.geometry,
-        transportMode,
+        transportMode: 'driving',
         trafficLevel: routeQuality.trafficLevel,
         roadQuality: routeQuality.roadQuality,
         estimatedDelay: routeQuality.estimatedDelay,
@@ -163,7 +160,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         trafficLevel: trafficLevels[Math.floor(Math.random() * trafficLevels.length)],
         roadQuality: roadQualities[Math.floor(Math.random() * roadQualities.length)],
         estimatedDelay: Math.floor(Math.random() * 30),
-        transportMode,
+        transportMode: 'driving',
         realRoute: false
         // Removed error property to avoid showing error message in successful fallback
       };

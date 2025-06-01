@@ -10,7 +10,7 @@ export interface RouteData {
   durationFormatted?: string;
   distanceFormatted?: string;
   geometry?: any;
-  transportMode: 'driving' | 'bus';
+  transportMode: 'driving';
   trafficLevel?: 'light' | 'moderate' | 'heavy';
   roadQuality?: 'excellent' | 'good' | 'fair';
   estimatedDelay?: number;
@@ -31,8 +31,5 @@ export interface RouteInputTranslations {
   returnRoute: string;
   findRoute?: string; // Made optional since we're removing the button
   searching: string;
-  transportMode: string;
-  driving: string;
-  bus: string;
   error: string;
 }

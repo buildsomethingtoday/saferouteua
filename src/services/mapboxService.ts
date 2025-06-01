@@ -1,4 +1,3 @@
-
 interface DirectionsResponse {
   routes: {
     geometry: string;
@@ -68,12 +67,9 @@ class MapboxService {
 
   async getDirections(
     coordinates: Array<[number, number]>,
-    profile: 'driving' | 'driving-traffic' | 'walking' | 'cycling' | 'bus' = 'driving-traffic',
+    profile: 'driving' | 'driving-traffic' | 'walking' | 'cycling' = 'driving-traffic',
     alternatives: boolean = true
   ): Promise<DirectionsResponse> {
-    // For bus, use walking profile as Mapbox doesn't have dedicated transit routing
-    const mapboxProfile = profile === 'bus' ? 'walking' : profile;
-    
     const coordinatesString = coordinates.map(coord => coord.join(',')).join(';');
     const params = new URLSearchParams({
       geometries: 'geojson',
@@ -91,7 +87,7 @@ class MapboxService {
       params.append('annotations', 'congestion,maxspeed');
     }
 
-    const url = `${this.baseUrl}/directions/v5/mapbox/${mapboxProfile}/${coordinatesString}?${params}`;
+    const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?${params}`;
 
     console.log('Fetching directions from:', url);
 
@@ -144,11 +140,10 @@ class MapboxService {
 
   async getMatrix(
     coordinates: Array<[number, number]>,
-    profile: 'driving' | 'walking' | 'cycling' | 'bus' = 'driving'
+    profile: 'driving' | 'walking' | 'cycling' = 'driving'
   ): Promise<MatrixResponse> {
-    const mapboxProfile = profile === 'bus' ? 'walking' : profile;
     const coordinatesString = coordinates.map(coord => coord.join(',')).join(';');
-    const url = `${this.baseUrl}/directions-matrix/v1/mapbox/${mapboxProfile}/${coordinatesString}?access_token=${this.accessToken}`;
+    const url = `${this.baseUrl}/directions-matrix/v1/mapbox/${profile}/${coordinatesString}?access_token=${this.accessToken}`;
 
     console.log('Fetching matrix from:', url);
 
