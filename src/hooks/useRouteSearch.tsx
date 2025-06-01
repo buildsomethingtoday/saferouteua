@@ -51,14 +51,16 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       
       // Fetch real weather data for start city
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
+      let temperature: number | undefined;
       try {
         console.log('Fetching weather for start city coordinates:', startCoords);
         const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
         weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
-        console.log('Weather data received:', weatherData.weather[0].main, 'mapped to:', weatherCondition);
+        temperature = Math.round(weatherData.main.temp);
+        console.log('Weather data received:', weatherData.weather[0].main, 'mapped to:', weatherCondition, 'temp:', temperature + '°C');
       } catch (weatherError) {
         console.warn('Weather API failed, using fallback:', weatherError);
-        // Keep default 'clear' weather condition
+        // Keep default 'clear' weather condition and undefined temperature
       }
       
       // Use enhanced safety calculation with real traffic data
@@ -81,6 +83,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         roadQuality: routeQuality.roadQuality,
         estimatedDelay: routeQuality.estimatedDelay,
         weatherCondition,
+        temperature,
         conflictRisk: safetyScore > 80 ? 'low' : 'moderate',
         alternativeRoutes: directions.routes.slice(1, 3),
         realRoute: true
@@ -105,6 +108,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         distance: Math.floor(Math.random() * 500) + 100,
         duration: Math.floor(Math.random() * 8) + 2,
         weatherCondition: weatherConditions[Math.floor(Math.random() * weatherConditions.length)],
+        temperature: Math.floor(Math.random() * 30) + 5, // Mock temperature 5-35°C
         conflictRisk: conflictRisks[Math.floor(Math.random() * conflictRisks.length)],
         trafficLevel: trafficLevels[Math.floor(Math.random() * trafficLevels.length)],
         roadQuality: roadQualities[Math.floor(Math.random() * roadQualities.length)],

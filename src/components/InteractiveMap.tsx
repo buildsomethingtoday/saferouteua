@@ -25,6 +25,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       duration: 'Duration',
       transportMode: 'Transport Mode',
       weather: 'Weather',
+      temperature: 'Temperature',
       conflictRisk: 'Conflict Risk',
       trafficLevel: 'Traffic Level',
       roadQuality: 'Road Quality',
@@ -65,6 +66,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       duration: 'Тривалість',
       transportMode: 'Вид транспорту',
       weather: 'Погода',
+      temperature: 'Температура',
       conflictRisk: 'Ризик конфлікту',
       trafficLevel: 'Рівень трафіку',
       roadQuality: 'Якість доріг',
@@ -365,7 +367,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         </div>
       )}
 
-      {/* Enhanced Route Info Overlay - Without Safety Score */}
+      {/* Enhanced Route Info Overlay - With Temperature */}
       {routeData && !isSearching && (
         <div className="absolute top-3 left-3 bg-white rounded-lg shadow-lg p-3 max-w-xs border border-gray-100">
           {/* Route Header */}
@@ -464,6 +466,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
                 {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
               </span>
             </div>
+
+            {/* Temperature */}
+            {routeData.temperature !== undefined && (
+              <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 text-blue-600 font-bold text-xs">°C</div>
+                  <span className="text-xs font-medium">{t.temperature}</span>
+                </div>
+                <span className="text-xs text-blue-700 font-medium">
+                  {routeData.temperature}°C
+                </span>
+              </div>
+            )}
 
             {/* Conflict Risk */}
             <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">

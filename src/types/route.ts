@@ -15,6 +15,7 @@ export interface RouteData {
   roadQuality?: 'excellent' | 'good' | 'fair';
   estimatedDelay?: number;
   weatherCondition?: string;
+  temperature?: number;
   conflictRisk?: string;
   alternativeRoutes?: any[];
   realRoute?: boolean;

@@ -16,6 +16,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
       distance: 'Distance',
       duration: 'Duration',
       weather: 'Weather',
+      temperature: 'Temperature',
       conflictRisk: 'Conflict Risk',
       trafficLevel: 'Traffic Level',
       roadQuality: 'Road Quality',
@@ -55,6 +56,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
       distance: 'Відстань',
       duration: 'Тривалість',
       weather: 'Погода',
+      temperature: 'Температура',
       conflictRisk: 'Ризик конфлікту',
       trafficLevel: 'Рівень трафіку',
       roadQuality: 'Якість доріг',
@@ -219,6 +221,19 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
             </span>
           </div>
 
+          {/* Temperature */}
+          {routeData.temperature !== undefined && (
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 text-blue-600 font-bold">°C</div>
+                <span className="text-sm font-medium">{t.temperature}</span>
+              </div>
+              <span className="text-sm text-blue-700 font-medium">
+                {routeData.temperature}°C
+              </span>
+            </div>
+          )}
+
           {/* Conflict Risk */}
           <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
             <div className="flex items-center space-x-2">
@@ -264,6 +279,8 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
             <div>• Monitor weather updates during travel</div>
             {routeData.realRoute && <div>• Route uses real-time traffic data</div>}
             {routeData.estimatedDelay > 15 && <div>• Consider departure time due to traffic</div>}
+            {routeData.temperature !== undefined && routeData.temperature < 0 && <div>• Cold weather: prepare for winter conditions</div>}
+            {routeData.temperature !== undefined && routeData.temperature > 30 && <div>• Hot weather: stay hydrated and cool</div>}
           </div>
         </div>
       </CardContent>
