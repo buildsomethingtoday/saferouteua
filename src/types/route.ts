@@ -1,4 +1,15 @@
 
+export interface AlertData {
+  id: string;
+  region_id: string;
+  alert_type: string;
+  start_time: string;
+  end_time?: string;
+  location_name: string;
+  coordinates?: [number, number];
+  severity: 'low' | 'moderate' | 'high' | 'critical';
+}
+
 export interface RouteData {
   startCity: string;
   endCity: string;
@@ -18,6 +29,7 @@ export interface RouteData {
   temperature?: number;
   conflictRisk?: string;
   alternativeRoutes?: any[];
+  safetyAlerts?: AlertData[];
   realRoute?: boolean;
   error?: string;
 }
@@ -42,6 +54,8 @@ export interface RouteInputTranslations {
   trafficLevel: string;
   live: string;
   estimated: string;
+  safetyAlerts: string;
+  alertsCount: string;
   riskLevels: {
     low: string;
     moderate: string;

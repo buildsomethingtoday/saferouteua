@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Shield, Cloud, Gauge } from 'lucide-react';
+import { MapPin, Shield, Cloud, Gauge, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
@@ -32,6 +32,8 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       case 'high':
       case 'heavy': 
         return 'bg-red-600 text-white border-none';
+      case 'critical':
+        return 'bg-red-800 text-white border-none';
       default: 
         return 'bg-gray-600 text-white border-none';
     }
@@ -76,6 +78,38 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         </div>
       </div>
 
+      {/* Safety Alerts Section */}
+      {routeData.safetyAlerts && routeData.safetyAlerts.length > 0 && (
+        <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <span className="text-sm font-medium text-red-400">
+                {translations.safetyAlerts || 'Safety Alerts'}
+              </span>
+            </div>
+            <Badge className="bg-red-600 text-white text-xs">
+              {routeData.safetyAlerts.length} {translations.alertsCount || 'alerts'}
+            </Badge>
+          </div>
+          <div className="space-y-2">
+            {routeData.safetyAlerts.slice(0, 3).map((alert, index) => (
+              <div key={alert.id || index} className="flex items-center justify-between text-xs">
+                <span className="text-gray-300 truncate">{alert.location_name}</span>
+                <Badge className={`text-xs ${getBadgeStyle(alert.severity)}`}>
+                  {alert.severity}
+                </Badge>
+              </div>
+            ))}
+            {routeData.safetyAlerts.length > 3 && (
+              <div className="text-xs text-gray-400 text-center">
+                +{routeData.safetyAlerts.length - 3} more alerts
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Status Information */}
       <div className="space-y-3">
         {/* Safety Risk */}
@@ -86,9 +120,14 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             </div>
             <span className="text-sm font-medium text-white">{translations.conflictRisk}</span>
           </div>
-          <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.conflictRisk)}`}>
-            {translations.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <div className="text-right">
+              <div className="text-sm font-semibold text-white">{routeData.safetyScore}/100</div>
+            </div>
+            <Badge className={`text-sm font-semibold ${getBadgeStyle(routeData.conflictRisk)}`}>
+              {translations.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
+            </Badge>
+          </div>
         </div>
         
         {/* Traffic Level */}

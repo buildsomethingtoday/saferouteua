@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { getMapboxService } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
+import { getAlertsService } from '../services/alertsService';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
 interface UseRouteSearchProps {
@@ -119,8 +120,27 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         hasGeometry: !!route.geometry
       });
       
-      // Step 5: Fetch weather data with fallback
-      console.log('🌤️ Step 5: Fetching weather data...');
+      // Step 5: Fetch safety alerts data
+      console.log('🚨 Step 5: Fetching safety alerts data...');
+      let routeAlerts = [];
+      let alertsSafetyScore = 75;
+      
+      try {
+        const alertsService = getAlertsService();
+        routeAlerts = await alertsService.getAlertsForRoute(startCoords, endCoords);
+        alertsSafetyScore = alertsService.calculateRouteSafetyScore(routeAlerts);
+        console.log('✅ Safety alerts retrieved:', {
+          alertsCount: routeAlerts.length,
+          safetyScore: alertsSafetyScore,
+          alerts: routeAlerts.map(a => ({ severity: a.severity, location: a.location_name }))
+        });
+      } catch (alertsError) {
+        console.warn('⚠️ Alerts API failed, using defaults:', alertsError);
+        // Continue with default values
+      }
+      
+      // Step 6: Fetch weather data with fallback
+      console.log('🌤️ Step 6: Fetching weather data...');
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
       let temperature: number | undefined;
       
@@ -140,23 +160,24 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         // Continue with default weather values
       }
       
-      // Step 6: Calculate route metrics
-      console.log('📊 Step 6: Calculating route metrics...');
-      let safetyScore: number;
+      // Step 7: Calculate route metrics combining traffic and safety
+      console.log('📊 Step 7: Calculating route metrics...');
+      let trafficSafetyScore: number;
       let routeQuality: any;
       
       try {
-        safetyScore = mapboxService.calculateTrafficBasedSafetyScore(route);
+        trafficSafetyScore = mapboxService.calculateTrafficBasedSafetyScore(route);
         routeQuality = mapboxService.analyzeRouteQuality(route);
         console.log('📊 Route analysis completed:', {
-          safetyScore,
+          trafficSafetyScore,
+          alertsSafetyScore,
           trafficLevel: routeQuality.trafficLevel,
           roadQuality: routeQuality.roadQuality,
           estimatedDelay: routeQuality.estimatedDelay
         });
       } catch (analysisError) {
         console.warn('⚠️ Route analysis failed, using defaults:', analysisError);
-        safetyScore = 75; // Default safety score
+        trafficSafetyScore = 75; // Default safety score
         routeQuality = {
           trafficLevel: 'moderate',
           roadQuality: 'good',
@@ -164,8 +185,11 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         };
       }
       
-      // Step 7: Create clean, serializable route data
-      console.log('📋 Step 7: Creating route data object...');
+      // Combine traffic safety and alerts safety (weighted average)
+      const combinedSafetyScore = Math.round((trafficSafetyScore * 0.3) + (alertsSafetyScore * 0.7));
+      
+      // Step 8: Create clean, serializable route data
+      console.log('📋 Step 8: Creating route data object...');
       
       // Create a completely clean geometry object to avoid DataCloneError
       let cleanGeometry;
@@ -185,7 +209,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         endCity,
         startCoords,
         endCoords,
-        safetyScore: Math.round(safetyScore),
+        safetyScore: combinedSafetyScore,
         distance: Math.round(route.distance / 1000),
         duration: Math.round(route.duration / 3600),
         durationFormatted: mapboxService.formatDuration(route.duration),
@@ -197,12 +221,13 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         estimatedDelay: routeQuality.estimatedDelay,
         weatherCondition,
         temperature,
-        conflictRisk: safetyScore > 80 ? 'low' : safetyScore > 60 ? 'moderate' : 'high',
+        conflictRisk: combinedSafetyScore > 80 ? 'low' : combinedSafetyScore > 60 ? 'moderate' : 'high',
         alternativeRoutes: directions.routes.slice(1, 3).map(r => ({
           distance: r.distance,
           duration: r.duration,
           geometry: r.geometry ? JSON.parse(JSON.stringify(r.geometry)) : undefined
         })),
+        safetyAlerts: routeAlerts,
         realRoute: true
       };
       
@@ -212,11 +237,12 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         distance: routeData.distanceFormatted,
         duration: routeData.durationFormatted,
         safety: routeData.safetyScore,
+        alertsCount: routeAlerts.length,
         hasGeometry: !!routeData.geometry
       });
       
-      // Step 8: Send route data
-      console.log('📤 Step 8: Sending route data...');
+      // Step 9: Send route data
+      console.log('📤 Step 9: Sending route data...');
       onRouteRequest(routeData);
       console.log('✅ Route search completed successfully!');
       

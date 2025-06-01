@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
 import LanguageToggle from '../components/LanguageToggle';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 import { useIsMobile } from '../hooks/use-mobile';
 import { useLanguageDetection } from '../hooks/useLanguageDetection';
 
@@ -36,6 +38,19 @@ const Index = () => {
           setIsSearching={setIsSearching}
           routeData={routeData}
         />
+      </div>
+
+      {/* Alerts Explorer Button - Top Right */}
+      <div className="absolute top-4 right-20 z-40">
+        <Button
+          onClick={() => window.open('/alerts-explorer', '_blank')}
+          variant="outline"
+          size="sm"
+          className="bg-gray-800/90 border-gray-600 text-white hover:bg-gray-700"
+        >
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          {language === 'ua' ? 'Дослідник сповіщень' : 'Alerts Explorer'}
+        </Button>
       </div>
 
       {/* Language Toggle - Bottom Right */}
