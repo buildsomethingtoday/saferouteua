@@ -10,12 +10,18 @@ export interface AlertData {
   severity: 'low' | 'moderate' | 'high' | 'critical';
 }
 
+export interface SafetyStatus {
+  status: string;
+  description: string;
+}
+
 export interface RouteData {
   startCity: string;
   endCity: string;
   startCoords?: [number, number];
   endCoords?: [number, number];
   safetyScore?: number;
+  safetyStatus?: SafetyStatus;
   distance?: number;
   duration?: number;
   durationFormatted?: string;
