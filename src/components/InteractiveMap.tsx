@@ -484,9 +484,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <strong>Oblast:</strong> ${alert.location_oblast}
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Alert Type:</strong> ${alert.alert_type.replace('_', ' ')}
-              </div>
-              <div class="text-xs text-gray-300 mb-1">
                 <strong>Since:</strong> ${new Date(alert.started_at).toLocaleString()}
               </div>
               <div class="text-xs text-orange-400 font-medium">
@@ -494,13 +491,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               </div>
               ${recentAlerts.length > 1 ? `
                 <div class="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
-                  <strong>Recent attacks (last 5 days):</strong>
-                  ${recentAlerts.slice(0, 3).map(recentAlert => `
-                    <div class="mt-1">
-                      ${recentAlert.alert_type.replace('_', ' ')} - ${new Date(recentAlert.started_at).toLocaleDateString()}
-                    </div>
-                  `).join('')}
-                  ${recentAlerts.length > 3 ? `<div class="text-xs text-gray-500">+${recentAlerts.length - 3} more...</div>` : ''}
+                  <strong>Recent attacks (last 5 days):</strong> ${recentAlerts.length} alerts
+                  <div class="mt-1">
+                    Latest: ${new Date(recentAlerts[0].started_at).toLocaleDateString()}
+                  </div>
                 </div>
               ` : ''}
             </div>

@@ -36,13 +36,21 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   // Also check if start or end cities have alerts by name matching
   const hasCityThreats = routeData.safetyAlerts && routeData.safetyAlerts.some(alert => {
     const alertLocation = alert.location_name?.toLowerCase() || '';
+    const alertOblast = alert.location_oblast?.toLowerCase() || '';
     const startCity = routeData.startCity?.toLowerCase() || '';
     const endCity = routeData.endCity?.toLowerCase() || '';
     
+    // Check if the alert location includes the city names or if the oblast matches
     return alertLocation.includes(startCity) || 
            alertLocation.includes(endCity) ||
            alertLocation.includes(startCity.split(',')[0]) || 
-           alertLocation.includes(endCity.split(',')[0]);
+           alertLocation.includes(endCity.split(',')[0]) ||
+           alertOblast.includes(startCity) ||
+           alertOblast.includes(endCity) ||
+           alertOblast.includes(startCity.split(',')[0]) ||
+           alertOblast.includes(endCity.split(',')[0]) ||
+           startCity.includes(alertLocation.split(',')[0]) ||
+           endCity.includes(alertLocation.split(',')[0]);
   });
 
   const finalHasThreats = hasActiveThreats || hasCityThreats;
@@ -57,7 +65,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
           </div>
           <span className="text-sm font-medium text-gray-300 mr-2">Route Information</span>
         </div>
-        <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-black' : 'bg-blue-600'} text-white`}>
+        <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-green-600' : 'bg-blue-600'} text-white border-none`}>
           <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
             {routeData.realRoute && (
               <>
@@ -96,7 +104,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
                 {translations.safetyAlerts || 'Safety Alerts'}
               </span>
             </div>
-            <Badge className="bg-red-600 text-white text-xs">
+            <Badge className="bg-red-600 text-white text-xs border-none">
               {routeData.safetyAlerts?.length || 0} {translations.alertsCount || 'alerts'}
             </Badge>
           </div>
@@ -129,7 +137,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             <span className="text-sm font-medium text-white">Active Threats (72h)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className={`text-sm font-semibold ${finalHasThreats ? 'bg-red-600 text-white border-none' : 'bg-green-600 text-white border-none'}`}>
+            <Badge className={`text-sm font-semibold border-none ${finalHasThreats ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
               {finalHasThreats ? 'YES' : 'NO'}
             </Badge>
           </div>

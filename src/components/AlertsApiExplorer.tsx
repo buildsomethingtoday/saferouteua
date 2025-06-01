@@ -300,7 +300,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
             <span>{t.title}</span>
           </div>
           {apiData && !error && (
-            <Badge className="bg-green-600 text-white text-xs">
+            <Badge className="bg-green-600 text-white text-xs border-none">
               {t.success}
             </Badge>
           )}
