@@ -6,13 +6,11 @@ import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 import RouteHeader from './route/RouteHeader';
 import CityInputForm from './route/CityInputForm';
-import RouteSearchButton from './route/RouteSearchButton';
 import RouteStatus from './route/RouteStatus';
 import RouteDetails from './route/RouteDetails';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
-  onLanguageChange: (language: 'en' | 'ua') => void;
   onRouteRequest: (data: RouteData) => void;
   isSearching: boolean;
   setIsSearching: (searching: boolean) => void;
@@ -21,7 +19,6 @@ interface RouteInputProps {
 
 const RouteInput: React.FC<RouteInputProps> = ({ 
   language,
-  onLanguageChange,
   onRouteRequest, 
   isSearching, 
   setIsSearching,
@@ -108,12 +105,18 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
-  const handleManualSearch = () => {
+  // Automatically trigger route search when both cities are selected
+  useEffect(() => {
     if (startCity && endCity && !isSearching) {
-      console.log('🎯 Manual route search triggered for:', startCity, 'to', endCity);
-      handleRouteSearch(startCity, endCity, 'driving');
+      // Small delay to avoid rapid API calls while typing
+      const searchTimer = setTimeout(() => {
+        console.log('🎯 Auto-triggering route search for:', startCity, 'to', endCity);
+        handleRouteSearch(startCity, endCity, 'driving');
+      }, 500);
+
+      return () => clearTimeout(searchTimer);
     }
-  };
+  }, [startCity, endCity, handleRouteSearch, isSearching]);
 
   // Clear route data when cities change
   useEffect(() => {
@@ -139,11 +142,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   return (
     <Card className="bg-white/95 backdrop-blur-sm border border-gray-200 shadow-xl">
       <CardHeader className="pb-3">
-        <RouteHeader 
-          language={language}
-          onLanguageChange={onLanguageChange}
-          translations={t}
-        />
+        <RouteHeader translations={t} />
         
         <CardTitle className="flex items-center space-x-2 text-lg">
           <Navigation className="w-5 h-5 text-blue-500" />
@@ -159,14 +158,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
           translations={t}
           onStartCityChange={setStartCity}
           onEndCityChange={setEndCity}
-        />
-
-        <RouteSearchButton
-          startCity={startCity}
-          endCity={endCity}
-          isSearching={isSearching}
-          translations={t}
-          onSearch={handleManualSearch}
         />
 
         <RouteStatus

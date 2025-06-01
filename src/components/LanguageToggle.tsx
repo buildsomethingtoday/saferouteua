@@ -9,12 +9,12 @@ interface LanguageToggleProps {
 
 const LanguageToggle: React.FC<LanguageToggleProps> = ({ language, onLanguageChange }) => {
   return (
-    <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+    <div className="flex items-center space-x-1 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-1 shadow-sm">
       <Button
         variant={language === 'en' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onLanguageChange('en')}
-        className="px-3 py-1 text-xs h-8"
+        className="px-3 py-1 text-xs h-8 font-medium"
       >
         EN
       </Button>
@@ -22,7 +22,7 @@ const LanguageToggle: React.FC<LanguageToggleProps> = ({ language, onLanguageCha
         variant={language === 'ua' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onLanguageChange('ua')}
-        className="px-3 py-1 text-xs h-8"
+        className="px-3 py-1 text-xs h-8 font-medium"
       >
         УА
       </Button>

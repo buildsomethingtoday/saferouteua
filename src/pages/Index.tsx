@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
+import LanguageToggle from '../components/LanguageToggle';
 import { useIsMobile } from '../hooks/use-mobile';
 
 const Index = () => {
@@ -19,15 +20,22 @@ const Index = () => {
         isSearching={isSearching}
       />
 
-      {/* Route Planning Overlay Card - Top Left with Language Toggle */}
+      {/* Route Planning Overlay Card - Top Left */}
       <div className="absolute top-4 left-4 z-40 w-96 max-w-[calc(100vw-2rem)]">
         <RouteInput 
           language={language}
-          onLanguageChange={setLanguage}
           onRouteRequest={setRouteData}
           isSearching={isSearching}
           setIsSearching={setIsSearching}
           routeData={routeData}
+        />
+      </div>
+
+      {/* Language Toggle - Bottom Right */}
+      <div className="absolute bottom-4 right-4 z-40">
+        <LanguageToggle 
+          language={language} 
+          onLanguageChange={setLanguage} 
         />
       </div>
     </div>
