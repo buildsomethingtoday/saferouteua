@@ -63,6 +63,7 @@ class MapboxService {
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
+    console.log('🔑 MapboxService initialized with token:', accessToken ? 'Token present' : 'No token');
   }
 
   async getDirections(
@@ -90,25 +91,30 @@ class MapboxService {
 
     const url = `${this.baseUrl}/directions/v5/mapbox/${profile}/${coordinatesString}?${params}`;
 
-    console.log('Fetching directions from URL:', url);
+    console.log('🛣️ Fetching directions from URL:', url.replace(this.accessToken, 'TOKEN_HIDDEN'));
 
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Mapbox API Error Response:', errorText);
-      throw new Error(`Mapbox Directions API error: ${response.status} ${response.statusText}`);
-    }
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Mapbox API Error Response:', errorText);
+        throw new Error(`Mapbox Directions API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
 
-    const data = await response.json();
-    console.log('Raw Mapbox directions response:', data);
-    
-    if (data.code !== 'Ok') {
-      console.error('Mapbox API returned error code:', data.code, data.message);
-      throw new Error(`Mapbox API error: ${data.code} - ${data.message || 'Unknown error'}`);
+      const data = await response.json();
+      console.log('✅ Raw Mapbox directions response received, routes count:', data.routes?.length || 0);
+      
+      if (data.code !== 'Ok') {
+        console.error('❌ Mapbox API returned error code:', data.code, data.message);
+        throw new Error(`Mapbox API error: ${data.code} - ${data.message || 'Unknown error'}`);
+      }
+      
+      return data;
+    } catch (fetchError) {
+      console.error('❌ Network error fetching directions:', fetchError);
+      throw new Error(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Unknown network error'}`);
     }
-    
-    return data;
   }
 
   async geocodeForward(query: string, proximity?: [number, number]): Promise<GeocodingResponse> {
@@ -125,18 +131,23 @@ class MapboxService {
 
     const url = `${this.baseUrl}/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
 
-    console.log('Geocoding query URL:', url);
+    console.log('🌍 Geocoding query URL:', url.replace(this.accessToken, 'TOKEN_HIDDEN'));
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Geocoding API Error:', errorText);
-      throw new Error(`Mapbox Geocoding API error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Geocoding API Error:', errorText);
+        throw new Error(`Mapbox Geocoding API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Geocoding response received, features count:', data.features?.length || 0);
+      return data;
+    } catch (fetchError) {
+      console.error('❌ Network error in geocoding:', fetchError);
+      throw new Error(`Geocoding network error: ${fetchError instanceof Error ? fetchError.message : 'Unknown network error'}`);
     }
-
-    const data = await response.json();
-    console.log('Geocoding response:', data);
-    return data;
   }
 
   async geocodeReverse(coordinates: [number, number]): Promise<GeocodingResponse> {
@@ -271,31 +282,30 @@ let mapboxService: MapboxService | null = null;
 export const getMapboxService = async (): Promise<MapboxService> => {
   if (!mapboxService) {
     try {
+      console.log('🔄 Fetching Mapbox token from Supabase...');
       // Try to get token from Supabase function
       const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
       
       if (error || !data?.token) {
-        console.warn('Could not fetch token from Supabase, using fallback');
-        // Fallback to hardcoded token if Supabase fails
-        const fallbackToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
-        mapboxService = new MapboxService(fallbackToken);
+        console.warn('⚠️ Could not fetch token from Supabase, error:', error);
+        throw new Error('Failed to get Mapbox token from Supabase');
       } else {
+        console.log('✅ Successfully retrieved Mapbox token from Supabase');
         mapboxService = new MapboxService(data.token);
       }
     } catch (error) {
-      console.warn('Error fetching token from Supabase, using fallback:', error);
-      // Fallback to hardcoded token if there's an error
-      const fallbackToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
-      mapboxService = new MapboxService(fallbackToken);
+      console.error('❌ Error fetching token from Supabase:', error);
+      throw new Error(`Failed to initialize Mapbox service: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   return mapboxService;
 };
 
-// Keep the synchronous version for backward compatibility
+// Keep the synchronous version for backward compatibility with fallback
 export const getMapboxServiceSync = (): MapboxService => {
   if (!mapboxService) {
+    console.warn('⚠️ Using fallback token - this should only be used as a last resort');
     const accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
     mapboxService = new MapboxService(accessToken);
   }

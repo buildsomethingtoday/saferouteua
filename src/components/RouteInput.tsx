@@ -105,7 +105,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   // Auto-trigger route search when both cities are selected (only once)
   useEffect(() => {
     if (startCity && endCity && !isSearching && !hasTriggeredSearch) {
-      console.log('Triggering route search for:', startCity, 'to', endCity);
+      console.log('🎯 Triggering route search for:', startCity, 'to', endCity);
       setHasTriggeredSearch(true);
       const timer = setTimeout(() => {
         handleRouteSearch(startCity, endCity, 'driving');
@@ -212,8 +212,24 @@ const RouteInput: React.FC<RouteInputProps> = ({
           </div>
         )}
 
-        {/* Route Details - Only show when route data exists */}
-        {routeData && !isSearching && (
+        {/* Error State */}
+        {routeData?.error && !isSearching && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs">!</span>
+              </div>
+              <span className="text-sm font-medium text-red-700">Route Error</span>
+            </div>
+            <p className="text-sm text-red-600">{routeData.error}</p>
+            <p className="text-xs text-red-500 mt-1">
+              Please check your internet connection and try again, or try different city names.
+            </p>
+          </div>
+        )}
+
+        {/* Route Details - Only show when route data exists and no error */}
+        {routeData && !routeData.error && !isSearching && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             {/* Route Header */}
             <div className="flex items-center justify-between mb-3">

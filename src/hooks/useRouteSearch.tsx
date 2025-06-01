@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { getMapboxServiceSync } from '../services/mapboxService';
+import { getMapboxService } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
@@ -16,74 +16,85 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
     endCity: string,
     transportMode: 'driving'
   ) => {
-    if (!startCity || !endCity) return;
+    if (!startCity || !endCity) {
+      console.log('Missing start or end city:', { startCity, endCity });
+      return;
+    }
     
-    console.log('Starting route search for:', startCity, 'to', endCity);
+    console.log('🚀 Starting route search for:', startCity, 'to', endCity);
     setIsSearching(true);
     
     try {
-      const mapboxService = getMapboxServiceSync();
+      // Get the async Mapbox service to ensure proper token handling
+      console.log('📡 Initializing Mapbox service...');
+      const mapboxService = await getMapboxService();
+      console.log('✅ Mapbox service initialized successfully');
+      
       const weatherService = getWeatherService();
       
       // Geocode both cities with more specific queries
-      console.log('Geocoding start city:', startCity);
+      console.log('🌍 Geocoding start city:', startCity);
       const startGeocode = await mapboxService.geocodeForward(`${startCity}, Ukraine`);
-      console.log('Start geocode result:', startGeocode);
+      console.log('📍 Start geocode result:', startGeocode);
       
-      console.log('Geocoding end city:', endCity);
+      if (!startGeocode || !startGeocode.features || startGeocode.features.length === 0) {
+        throw new Error(`Could not find start city: ${startCity}`);
+      }
+      
+      console.log('🌍 Geocoding end city:', endCity);
       const endGeocode = await mapboxService.geocodeForward(`${endCity}, Ukraine`);
-      console.log('End geocode result:', endGeocode);
+      console.log('📍 End geocode result:', endGeocode);
       
-      if (startGeocode.features.length === 0 || endGeocode.features.length === 0) {
-        throw new Error('Could not find one or both cities');
+      if (!endGeocode || !endGeocode.features || endGeocode.features.length === 0) {
+        throw new Error(`Could not find end city: ${endCity}`);
       }
       
       const startCoords = startGeocode.features[0].center;
       const endCoords = endGeocode.features[0].center;
       
-      console.log('Start coordinates:', startCoords);
-      console.log('End coordinates:', endCoords);
+      console.log('📍 Start coordinates:', startCoords);
+      console.log('📍 End coordinates:', endCoords);
       
       // Get directions with proper error handling
-      console.log('Fetching directions...');
+      console.log('🛣️ Fetching directions...');
       const directions = await mapboxService.getDirections(
         [startCoords, endCoords], 
         'driving-traffic', 
         true
       );
       
-      console.log('Directions response:', directions);
+      console.log('🛣️ Directions response:', directions);
       
       if (!directions || !directions.routes || directions.routes.length === 0) {
-        throw new Error('No routes found');
+        throw new Error('No routes found between the selected cities');
       }
       
       const route = directions.routes[0];
-      console.log('Selected route:', route);
-      console.log('Route geometry:', route.geometry);
+      console.log('✅ Selected route:', route);
+      console.log('🗺️ Route geometry type:', route.geometry?.type);
+      console.log('🗺️ Route geometry coordinates length:', route.geometry?.coordinates?.length);
       
-      // Fetch weather data
+      // Fetch weather data with better error handling
       let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
       let temperature: number | undefined;
       
       try {
-        console.log('Fetching weather for coordinates:', startCoords);
-        const weatherPromise = weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Weather timeout')), 3000)
-        );
-        
-        const weatherData = await Promise.race([weatherPromise, timeoutPromise]) as any;
+        console.log('🌤️ Fetching weather for coordinates:', startCoords);
+        const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
         weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
         temperature = Math.round(weatherData.main.temp);
-        console.log('Weather data:', weatherCondition, temperature + '°C');
+        console.log('✅ Weather data retrieved:', weatherCondition, temperature + '°C');
       } catch (weatherError) {
-        console.warn('Weather API failed, using fallback:', weatherError);
+        console.warn('⚠️ Weather API failed, using fallback:', weatherError);
+        // Continue with default weather values
       }
       
       // Calculate route metrics
+      console.log('📊 Calculating route metrics...');
       const safetyScore = mapboxService.calculateTrafficBasedSafetyScore(route);
       const routeQuality = mapboxService.analyzeRouteQuality(route);
+      console.log('📊 Safety score:', safetyScore);
+      console.log('📊 Route quality:', routeQuality);
       
       const routeData: RouteData = {
         startCity,
@@ -107,37 +118,23 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         realRoute: true
       };
       
-      console.log('Final route data:', routeData);
+      console.log('✅ Final route data prepared:', routeData);
       onRouteRequest(routeData);
       
     } catch (error) {
-      console.error('Route search error:', error);
+      console.error('❌ Route search error:', error);
       
-      // Provide fallback data without geometry (no visual route)
-      const estimatedDistance = 540; // Kyiv to Lviv approximate distance
-      const estimatedDuration = 7; // Approximate driving time
-      
-      const mockRouteData: RouteData = {
+      // Show the actual error instead of fallback data
+      const errorRouteData: RouteData = {
         startCity,
         endCity,
-        safetyScore: 75,
-        distance: estimatedDistance,
-        duration: estimatedDuration,
-        durationFormatted: `${estimatedDuration}h 30m`,
-        distanceFormatted: `${estimatedDistance} km`,
-        weatherCondition: 'clear',
-        temperature: 15,
-        conflictRisk: 'low',
-        trafficLevel: 'moderate',
-        roadQuality: 'good',
-        estimatedDelay: 15,
         transportMode: 'driving',
-        realRoute: false
-        // No geometry for fallback - will show markers only
+        realRoute: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
       
-      console.log('Using fallback route data:', mockRouteData);
-      onRouteRequest(mockRouteData);
+      console.log('❌ Sending error route data:', errorRouteData);
+      onRouteRequest(errorRouteData);
     } finally {
       setIsSearching(false);
     }
