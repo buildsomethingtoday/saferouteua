@@ -1,0 +1,162 @@
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Shield, Cloud, Clock, AlertTriangle, Share, Bookmark, Star } from 'lucide-react';
+
+interface SafetyPanelProps {
+  language: 'en' | 'ua';
+  routeData: any;
+}
+
+const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
+  const translations = {
+    en: {
+      safetyScore: 'Safety Score',
+      routeDetails: 'Route Details',
+      distance: 'Distance',
+      duration: 'Duration',
+      weather: 'Weather',
+      conflictRisk: 'Conflict Risk',
+      shareRoute: 'Share Route',
+      saveRoute: 'Save Route',
+      alternative: 'Alternative Suggestion',
+      weatherConditions: {
+        clear: 'Clear skies',
+        cloudy: 'Cloudy',
+        light_rain: 'Light rain'
+      },
+      riskLevels: {
+        low: 'Low risk',
+        moderate: 'Moderate risk',
+        high: 'High risk'
+      }
+    },
+    ua: {
+      safetyScore: 'Оцінка безпеки',
+      routeDetails: 'Деталі маршруту',
+      distance: 'Відстань',
+      duration: 'Тривалість',
+      weather: 'Погода',
+      conflictRisk: 'Ризик конфлікту',
+      shareRoute: 'Поділитися маршрутом',
+      saveRoute: 'Зберегти маршрут',
+      alternative: 'Альтернативна пропозиція',
+      weatherConditions: {
+        clear: 'Ясне небо',
+        cloudy: 'Хмарно',
+        light_rain: 'Невеликий дощ'
+      },
+      riskLevels: {
+        low: 'Низький ризик',
+        moderate: 'Помірний ризик',
+        high: 'Високий ризик'
+      }
+    }
+  };
+
+  const t = translations[language];
+
+  const getSafetyColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-100';
+    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
+    return 'text-red-600 bg-red-100';
+  };
+
+  const getSafetyIcon = (score: number) => {
+    if (score >= 80) return <Shield className="w-5 h-5 text-green-600" />;
+    if (score >= 60) return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+    return <AlertTriangle className="w-5 h-5 text-red-600" />;
+  };
+
+  return (
+    <Card className="shadow-lg bg-white border-0">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {getSafetyIcon(routeData.safetyScore)}
+            <span>{t.safetyScore}</span>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-lg font-bold ${getSafetyColor(routeData.safetyScore)}`}>
+            {routeData.safetyScore}%
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Route Summary */}
+        <div className="space-y-3">
+          <h4 className="font-medium text-gray-900">{t.routeDetails}</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="text-xs text-gray-600">{t.distance}</div>
+              <div className="text-lg font-semibold">{routeData.distance} km</div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="text-xs text-gray-600">{t.duration}</div>
+              <div className="text-lg font-semibold">{routeData.duration}h</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conditions */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Cloud className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium">{t.weather}</span>
+            </div>
+            <span className="text-sm text-blue-700">
+              {t.weatherConditions[routeData.weatherCondition]}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-medium">{t.conflictRisk}</span>
+            </div>
+            <span className="text-sm text-yellow-700">
+              {t.riskLevels[routeData.conflictRisk]}
+            </span>
+          </div>
+        </div>
+
+        {/* Alternative Suggestion */}
+        {routeData.alternativeSuggestion && (
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-start space-x-2">
+              <Star className="w-4 h-4 text-green-600 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium text-green-800">{t.alternative}</div>
+                <div className="text-sm text-green-700">{routeData.alternativeSuggestion}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex space-x-3">
+          <Button variant="outline" size="sm" className="flex-1">
+            <Share className="w-4 h-4 mr-2" />
+            {t.shareRoute}
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1">
+            <Bookmark className="w-4 h-4 mr-2" />
+            {t.saveRoute}
+          </Button>
+        </div>
+
+        {/* Safety Tips */}
+        <div className="p-3 bg-gray-50 rounded-lg">
+          <div className="text-xs text-gray-600 space-y-1">
+            <div>• Check route conditions before departure</div>
+            <div>• Keep emergency contacts accessible</div>
+            <div>• Monitor weather updates during travel</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default SafetyPanel;
