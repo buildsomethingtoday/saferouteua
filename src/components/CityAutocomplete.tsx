@@ -7,17 +7,21 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CityAutocompleteProps {
-  value: string;
-  onChange: (value: string) => void;
+  selectedCity: string;
+  onCitySelect: (city: string) => void;
   placeholder: string;
   language: 'en' | 'ua';
+  excludeCity?: string;
+  disabled?: boolean;
 }
 
 const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
-  value,
-  onChange,
+  selectedCity,
+  onCitySelect,
   placeholder,
-  language
+  language,
+  excludeCity,
+  disabled = false
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -46,6 +50,11 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
     { en: 'Zaporizhzhia', ua: 'Запоріжжя', coordinates: [35.1396, 47.8388] }
   ];
 
+  // Filter out excluded city
+  const availableCities = ukrainianCities.filter(city => 
+    !excludeCity || city[language] !== excludeCity
+  );
+
   const translations = {
     en: {
       noResults: 'No cities found.',
@@ -66,12 +75,14 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between text-left font-normal overflow-hidden"
+          disabled={disabled}
+          className={cn(
+            "w-full justify-between text-left font-normal overflow-hidden",
+            disabled && "opacity-50 cursor-not-allowed"
+          )}
         >
           <span className="truncate">
-            {value
-              ? ukrainianCities.find((city) => city[language] === value)?.[language]
-              : placeholder}
+            {selectedCity || placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -82,19 +93,19 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
           <CommandList>
             <CommandEmpty>{t.noResults}</CommandEmpty>
             <CommandGroup>
-              {ukrainianCities.map((city) => (
+              {availableCities.map((city) => (
                 <CommandItem
                   key={city.en}
                   value={city[language]}
                   onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
+                    onCitySelect(currentValue === selectedCity ? "" : currentValue);
                     setOpen(false);
                   }}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === city[language] ? "opacity-100" : "opacity-0"
+                      selectedCity === city[language] ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {city[language]}

@@ -47,7 +47,7 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
           placeholder={translations.startPlaceholder}
           onCitySelect={handleStartCityChange}
           selectedCity={startCity}
-          excludeCity={endCity} // Exclude the end city from start city options
+          excludeCity={endCity}
         />
       </div>
       
@@ -60,8 +60,14 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
           placeholder={translations.endPlaceholder}
           onCitySelect={handleEndCityChange}
           selectedCity={endCity}
-          excludeCity={startCity} // Exclude the start city from end city options
+          excludeCity={startCity}
+          disabled={!startCity} // Disable "To" until "From" is selected
         />
+        {!startCity && (
+          <p className="text-xs text-gray-500 mt-1">
+            {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
+          </p>
+        )}
       </div>
     </div>
   );
