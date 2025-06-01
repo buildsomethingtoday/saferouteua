@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -43,6 +44,33 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   };
 
   const t = translations[language];
+
+  // Helper function to get unique alert types and format them as tags
+  const formatAlertTypesAsTags = (alertTypes: string[]) => {
+    const uniqueTypes = [...new Set(alertTypes)];
+    return uniqueTypes.map(type => {
+      const typeMap = {
+        'air_raid': 'Air Raid',
+        'artillery_shelling': 'Artillery',
+        'urban_fights': 'Urban Fights',
+        'missile_threat': 'Missile',
+        'chemical_threat': 'Chemical'
+      };
+      return typeMap[type] || type.replace(/_/g, ' ');
+    });
+  };
+
+  // Helper function to get alert type color
+  const getAlertTypeColor = (type: string) => {
+    switch (type) {
+      case 'air_raid': return '#DC2626'; // Red
+      case 'artillery_shelling': return '#EA580C'; // Orange
+      case 'urban_fights': return '#9333EA'; // Purple
+      case 'missile_threat': return '#B91C1C'; // Dark red
+      case 'chemical_threat': return '#7C2D12'; // Brown
+      default: return '#6B7280'; // Gray
+    }
+  };
 
   // Fetch Mapbox token from Supabase secrets
   useEffect(() => {
@@ -353,22 +381,33 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               const alertTypes = JSON.parse(properties.alertTypes || '[]');
               const latestAlert = JSON.parse(properties.latestAlert || '{}');
               
+              // Get unique alert types and format as tags
+              const uniqueAlertTypes = formatAlertTypesAsTags(alertTypes);
+              const tagsHtml = uniqueAlertTypes.map(type => {
+                const originalType = alertTypes.find(t => 
+                  formatAlertTypesAsTags([t])[0] === type
+                );
+                const color = getAlertTypeColor(originalType);
+                return `<span class="inline-block px-2 py-1 text-xs rounded-full text-white mr-1 mb-1" style="background-color: ${color}">${type}</span>`;
+              }).join('');
+              
               const popup = new mapboxgl.Popup({
                 closeButton: false,
                 closeOnClick: false
               })
               .setLngLat(e.lngLat)
               .setHTML(`
-                <div class="p-3 bg-gray-900 text-white rounded-lg">
+                <div class="p-3 bg-gray-900 text-white rounded-lg min-w-48">
                   <div class="flex items-center space-x-2 mb-2">
                     <div class="w-3 h-3 rounded-full" style="background-color: ${properties.fillColor}"></div>
                     <strong class="text-sm">${properties.oblast}</strong>
                   </div>
-                  <div class="text-xs text-gray-300 mb-1">
+                  <div class="text-xs text-gray-300 mb-2">
                     <strong>Active Alerts:</strong> ${properties.alertCount}
                   </div>
-                  <div class="text-xs text-gray-300 mb-1">
-                    <strong>Types:</strong> ${alertTypes.join(', ')}
+                  <div class="text-xs text-gray-300 mb-2">
+                    <strong>Types:</strong>
+                    <div class="mt-1">${tagsHtml}</div>
                   </div>
                   <div class="text-xs text-gray-400">
                     <strong>Latest:</strong> ${new Date(latestAlert.started_at).toLocaleString()}
