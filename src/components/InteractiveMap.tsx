@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -15,24 +16,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
   const isMobile = useIsMobile();
-
-  // Set Mapbox access token
-  mapboxgl.accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
-
-  // Initialize map
-  map.current = new mapboxgl.Map({
-    container: mapContainer.current,
-    style: 'mapbox://styles/mapbox/light-v11',
-    center: [31.1656, 48.3794], // Center of Ukraine
-    zoom: 6
-  });
-
-  map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-  // Cleanup function
-  return () => {
-    map.current?.remove();
-  };
 
   const translations = {
     en: {
@@ -121,6 +104,29 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
 
   const t = translations[language];
 
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainer.current) return;
+
+    // Set Mapbox access token
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
+
+    // Initialize map
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [31.1656, 48.3794], // Center of Ukraine
+      zoom: 6
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Cleanup function
+    return () => {
+      map.current?.remove();
+    };
+  }, []);
+
   // Helper function to safely remove route layers and source
   const cleanupRouteVisualization = () => {
     if (!map.current) return;
@@ -168,6 +174,50 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       case 'high': return 'text-red-700';
       default: return 'text-gray-700';
     }
+  };
+
+  // Enhanced coordinate mapping for Ukrainian cities
+  const getCoordinatesForCity = (city: string): [number, number] => {
+    const cityCoords: { [key: string]: [number, number] } = {
+      // Major cities
+      'Kyiv': [30.5234, 50.4501],
+      'Kiev': [30.5234, 50.4501],
+      'Lviv': [24.0232, 49.8397],
+      'Odesa': [30.7233, 46.4825],
+      'Odessa': [30.7233, 46.4825],
+      'Dnipro': [35.0462, 48.4647],
+      'Kharkiv': [36.2304, 49.9935],
+      'Chernivtsi': [25.9358, 48.2916],
+      'Zakarpattia': [22.7202, 48.6208],
+      'Lutsk': [25.3424, 50.7593],
+      'Rivne': [26.2516, 50.6199],
+      'Ternopil': [25.5948, 49.5535],
+      'Ivano-Frankivsk': [24.7111, 48.9226],
+      'Uzhhorod': [22.2879, 48.6208],
+      'Vinnytsia': [28.4682, 49.2331],
+      'Zhytomyr': [28.6587, 50.2547],
+      'Cherkasy': [32.0617, 49.4285],
+      'Poltava': [34.5407, 49.5883],
+      'Sumy': [34.7981, 50.9077],
+      'Chernihiv': [31.2893, 51.4982],
+      'Kropyvnytskyi': [32.2623, 48.5132],
+      'Mykolaiv': [31.9946, 46.9750],
+      'Kherson': [32.6169, 46.6354],
+      'Zaporizhzhia': [35.1396, 47.8388],
+      'Mariupol': [37.5495, 47.0971],
+      'Kramatorsk': [37.5562, 48.7233],
+      'Sloviansk': [37.6198, 48.8671]
+    };
+    
+    const coords = cityCoords[city] || cityCoords[city.toLowerCase()] || cityCoords[city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()];
+    
+    if (coords) {
+      console.log(`Found coordinates for ${city}:`, coords);
+      return coords;
+    }
+    
+    console.warn(`No coordinates found for city: ${city}, using default`);
+    return [31.1656, 48.3794]; // Default to center of Ukraine
   };
 
   useEffect(() => {
@@ -298,50 +348,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
       }
     }
   }, [routeData, isMobile]);
-
-  // Enhanced coordinate mapping for Ukrainian cities
-  const getCoordinatesForCity = (city: string): [number, number] => {
-    const cityCoords: { [key: string]: [number, number] } = {
-      // Major cities
-      'Kyiv': [30.5234, 50.4501],
-      'Kiev': [30.5234, 50.4501],
-      'Lviv': [24.0232, 49.8397],
-      'Odesa': [30.7233, 46.4825],
-      'Odessa': [30.7233, 46.4825],
-      'Dnipro': [35.0462, 48.4647],
-      'Kharkiv': [36.2304, 49.9935],
-      'Chernivtsi': [25.9358, 48.2916],
-      'Zakarpattia': [22.7202, 48.6208],
-      'Lutsk': [25.3424, 50.7593],
-      'Rivne': [26.2516, 50.6199],
-      'Ternopil': [25.5948, 49.5535],
-      'Ivano-Frankivsk': [24.7111, 48.9226],
-      'Uzhhorod': [22.2879, 48.6208],
-      'Vinnytsia': [28.4682, 49.2331],
-      'Zhytomyr': [28.6587, 50.2547],
-      'Cherkasy': [32.0617, 49.4285],
-      'Poltava': [34.5407, 49.5883],
-      'Sumy': [34.7981, 50.9077],
-      'Chernihiv': [31.2893, 51.4982],
-      'Kropyvnytskyi': [32.2623, 48.5132],
-      'Mykolaiv': [31.9946, 46.9750],
-      'Kherson': [32.6169, 46.6354],
-      'Zaporizhzhia': [35.1396, 47.8388],
-      'Mariupol': [37.5495, 47.0971],
-      'Kramatorsk': [37.5562, 48.7233],
-      'Sloviansk': [37.6198, 48.8671]
-    };
-    
-    const coords = cityCoords[city] || cityCoords[city.toLowerCase()] || cityCoords[city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()];
-    
-    if (coords) {
-      console.log(`Found coordinates for ${city}:`, coords);
-      return coords;
-    }
-    
-    console.warn(`No coordinates found for city: ${city}, using default`);
-    return [31.1656, 48.3794]; // Default to center of Ukraine
-  };
 
   return (
     <div className="absolute inset-0 bg-white">
