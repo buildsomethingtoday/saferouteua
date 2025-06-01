@@ -1,8 +1,8 @@
-
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Clock, Cloud, AlertTriangle, MapPin, Gauge } from 'lucide-react';
+import { useIsMobile } from '../hooks/use-mobile';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -14,6 +14,25 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
+  const isMobile = useIsMobile();
+
+  // Set Mapbox access token
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
+
+  // Initialize map
+  map.current = new mapboxgl.Map({
+    container: mapContainer.current,
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [31.1656, 48.3794], // Center of Ukraine
+    zoom: 6
+  });
+
+  map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+  // Cleanup function
+  return () => {
+    map.current?.remove();
+  };
 
   const translations = {
     en: {
@@ -101,28 +120,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
   };
 
   const t = translations[language];
-
-  useEffect(() => {
-    if (!mapContainer.current) return;
-
-    // Set Mapbox access token
-    mapboxgl.accessToken = 'pk.eyJ1Ijoic2hlaWtoaW1yYW4wMSIsImEiOiJjbWJkZDY3enUxNXN1MnFuNnI0bzZwZXc0In0.fb4W6ahWd3Ook2vguHozPA';
-    
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [31.1656, 48.3794], // Center of Ukraine
-      zoom: 6
-    });
-
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // Cleanup function
-    return () => {
-      map.current?.remove();
-    };
-  }, []);
 
   // Helper function to safely remove route layers and source
   const cleanupRouteVisualization = () => {
@@ -285,14 +282,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
           }
         });
 
-        // Fit bounds to show the route
+        // Fit bounds to show the route with mobile-appropriate padding
         const bounds = new mapboxgl.LngLatBounds()
           .extend(startCoords)
           .extend(endCoords);
         
         map.current.fitBounds(bounds, { 
-          padding: 100,
-          maxZoom: 12
+          padding: isMobile ? { top: 150, bottom: 150, left: 50, right: 50 } : 100,
+          maxZoom: isMobile ? 10 : 12
         });
 
         console.log('Route visualization added successfully');
@@ -300,7 +297,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         console.error('Error adding route visualization:', error);
       }
     }
-  }, [routeData]);
+  }, [routeData, isMobile]);
 
   // Enhanced coordinate mapping for Ukrainian cities
   const getCoordinatesForCity = (city: string): [number, number] => {
@@ -367,8 +364,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
         </div>
       )}
 
-      {/* Enhanced Route Info Overlay - With Temperature */}
-      {routeData && !isSearching && (
+      {/* Desktop Route Info Overlay - hide on mobile */}
+      {routeData && !isSearching && !isMobile && (
         <div className="absolute top-3 left-3 bg-white rounded-lg shadow-lg p-3 max-w-xs border border-gray-100">
           {/* Route Header */}
           <div className="flex items-center justify-between mb-2">
