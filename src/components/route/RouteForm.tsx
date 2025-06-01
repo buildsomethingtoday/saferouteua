@@ -30,24 +30,28 @@ const RouteForm: React.FC<RouteFormProps> = ({
         <label className="block text-sm font-medium text-gray-700 mb-2">
           {translations.startCity}
         </label>
-        <CityAutocomplete
-          value={startCity}
-          onChange={onStartCityChange}
-          placeholder={translations.startPlaceholder}
-          language={language}
-        />
+        <div className="w-full">
+          <CityAutocomplete
+            value={startCity}
+            onChange={onStartCityChange}
+            placeholder={translations.startPlaceholder}
+            language={language}
+          />
+        </div>
       </div>
       
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           {translations.endCity}
         </label>
-        <CityAutocomplete
-          value={endCity}
-          onChange={onEndCityChange}
-          placeholder={translations.endPlaceholder}
-          language={language}
-        />
+        <div className="w-full">
+          <CityAutocomplete
+            value={endCity}
+            onChange={onEndCityChange}
+            placeholder={translations.endPlaceholder}
+            language={language}
+          />
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">

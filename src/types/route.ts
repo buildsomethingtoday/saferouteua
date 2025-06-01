@@ -29,7 +29,7 @@ export interface RouteInputTranslations {
   startPlaceholder: string;
   endPlaceholder: string;
   returnRoute: string;
-  findRoute: string;
+  findRoute?: string; // Made optional since we're removing the button
   searching: string;
   transportMode: string;
   driving: string;

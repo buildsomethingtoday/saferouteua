@@ -1,10 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from 'lucide-react';
 import TransportModeSelector from './route/TransportModeSelector';
 import RouteForm from './route/RouteForm';
-import RouteSearchButton from './route/RouteSearchButton';
 import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
@@ -60,9 +59,16 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
-  const onSearchClick = () => {
-    handleRouteSearch(startCity, endCity, transportMode);
-  };
+  // Auto-trigger route search when both cities are selected or transport mode changes
+  useEffect(() => {
+    if (startCity && endCity && !isSearching) {
+      const timer = setTimeout(() => {
+        handleRouteSearch(startCity, endCity, transportMode);
+      }, 500); // Small delay to avoid too many requests while typing
+
+      return () => clearTimeout(timer);
+    }
+  }, [startCity, endCity, transportMode, isSearching]);
 
   return (
     <Card className="bg-white border border-gray-200">
@@ -90,12 +96,14 @@ const RouteInput: React.FC<RouteInputProps> = ({
           onNeedsReturnChange={setNeedsReturn}
         />
 
-        <RouteSearchButton
-          isSearching={isSearching}
-          disabled={!startCity || !endCity || isSearching}
-          translations={t}
-          onClick={onSearchClick}
-        />
+        {isSearching && (
+          <div className="flex items-center justify-center p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-gray-600">{t.searching}</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
