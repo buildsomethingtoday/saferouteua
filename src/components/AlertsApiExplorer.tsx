@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords } from 'lucide-react';
+import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AlertsApiExplorerProps {
@@ -42,14 +43,14 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       error: 'Error',
       success: 'Live Data',
       activeAlerts: 'Active Alerts',
-      longTermAlerts: 'Long-term Alerts',
       noAlerts: 'No active alerts',
       regionFilter: 'Showing alerts for',
       allRegions: 'All regions',
       autoRefresh: 'Auto-refresh',
+      clearFilter: 'Clear filter',
       alertTypes: {
         air_raid: 'Air Raid',
-        artillery_shelling: 'Artillery Shells',
+        artillery_shelling: 'Artillery',
         urban_fights: 'Urban Combat',
         chemical: 'Chemical Threat',
         nuclear: 'Nuclear Threat'
@@ -60,7 +61,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         days: 'd'
       },
       lastUpdated: 'Last updated',
-      alertDuration: 'Duration'
+      alertDuration: 'Duration',
+      clickMapHint: 'Click on the map to filter alerts by region'
     },
     ua: {
       title: compact ? 'Сповіщення безпеки' : 'Сповіщення безпеки України',
@@ -70,14 +72,14 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       error: 'Помилка',
       success: 'Дані онлайн',
       activeAlerts: 'Активні сповіщення',
-      longTermAlerts: 'Довгострокові сповіщень',
       noAlerts: 'Немає активних сповіщень',
       regionFilter: 'Показано сповіщення для',
       allRegions: 'Всі регіони',
       autoRefresh: 'Авто-оновлення',
+      clearFilter: 'Очистити фільтр',
       alertTypes: {
         air_raid: 'Повітряна тривога',
-        artillery_shelling: 'Артилерійський обстріл',
+        artillery_shelling: 'Артилерія',
         urban_fights: 'Вуличні бої',
         chemical: 'Хімічна загроза',
         nuclear: 'Ядерна загроза'
@@ -88,7 +90,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         days: 'д'
       },
       lastUpdated: 'Останнє оновлення',
-      alertDuration: 'Тривалість'
+      alertDuration: 'Тривалість',
+      clickMapHint: 'Натисніть на карту, щоб фільтрувати сповіщення за регіоном'
     }
   };
 
@@ -99,7 +102,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     setError(null);
 
     try {
-      console.log('🔍 Loading alerts data...');
+      console.log('🔍 Loading fresh alerts data...');
       
       const { data, error: functionError } = await supabase.functions.invoke('explore-alerts-api', {
         body: { endpoint: 'alerts' }
@@ -111,7 +114,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         return;
       }
 
-      console.log('✅ Alerts data received:', data);
+      console.log('✅ Fresh alerts data received:', data);
       setApiData(data);
 
     } catch (err) {
@@ -136,10 +139,14 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
   const getFilteredAlerts = (alerts: AlertItem[]) => {
     if (!selectedRegion || !alerts) return alerts;
     
-    return alerts.filter(alert => 
+    const filtered = alerts.filter(alert => 
       alert.location_oblast.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-      alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase())
+      alert.location_title.toLowerCase().includes(selectedRegion.toLowerCase()) ||
+      (alert.location_raion && alert.location_raion.toLowerCase().includes(selectedRegion.toLowerCase()))
     );
+    
+    console.log(`Filtering alerts for region "${selectedRegion}": ${filtered.length} out of ${alerts.length} alerts`);
+    return filtered;
   };
 
   const getAlertIcon = (alertType: string) => {
@@ -170,9 +177,10 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     if (diffDays > 0) {
       return `${diffDays}${t.timeAgo.days} ${diffHours % 24}${t.timeAgo.hours}`;
     } else if (diffHours > 0) {
-      return `${diffHours}${t.timeAgo.hours} ${Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))}${t.timeAgo.minutes}`;
+      return `${diffHours}${t.timeAgo.hours}`;
     } else {
-      return `${Math.floor(diffMs / (1000 * 60))}${t.timeAgo.minutes}`;
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return `${Math.max(1, diffMinutes)}${t.timeAgo.minutes}`;
     }
   };
 
@@ -193,104 +201,59 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       return (
         <div className="text-center py-8 text-gray-400">
           <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
-          <p>{t.noAlerts}</p>
+          <p className="mb-2">{t.noAlerts}</p>
+          {selectedRegion && (
+            <p className="text-xs text-gray-500">{t.clickMapHint}</p>
+          )}
         </div>
       );
     }
 
-    // Separate recent and long-term alerts
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const recentAlerts = filteredAlerts.filter(alert => new Date(alert.started_at) > sevenDaysAgo);
-    const longTermAlerts = filteredAlerts.filter(alert => new Date(alert.started_at) <= sevenDaysAgo);
+    // Sort by most recent first
+    const sortedAlerts = filteredAlerts.sort((a, b) => 
+      new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+    );
 
     return (
-      <div className="space-y-4">
-        {/* Recent Alerts */}
-        {recentAlerts.length > 0 && (
-          <div>
-            {!compact && (
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-                <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
-                {t.activeAlerts}
-              </h3>
-            )}
-            <div className="space-y-2">
-              {recentAlerts.slice(0, compact ? 3 : 10).map((alert) => (
-                <Card key={alert.id} className="bg-gray-800 border-gray-600">
-                  <CardContent className={compact ? "p-3" : "p-4"}>
-                    <div className="flex items-start space-x-3">
-                      <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)}`}>
-                        {getAlertIcon(alert.alert_type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className={`font-medium text-white truncate ${compact ? 'text-sm' : ''}`}>
-                          {alert.location_title}
-                        </h4>
-                        <p className={`text-gray-400 ${compact ? 'text-xs' : 'text-sm'}`}>
-                          {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
-                        </p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-xs text-gray-500">
-                            {formatDate(alert.started_at)}
-                          </span>
-                          <Badge variant="outline" className="text-xs border-gray-500">
-                            {t.alertTypes[alert.alert_type] || alert.alert_type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {formatTimeAgo(alert.started_at)}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Long-term Alerts - only show in non-compact mode */}
-        {!compact && longTermAlerts.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <Clock className="w-5 h-5 mr-2 text-orange-400" />
-              {t.longTermAlerts}
-            </h3>
-            <div className="space-y-2">
-              {longTermAlerts.slice(0, 3).map((alert) => (
-                <Card key={alert.id} className="bg-gray-800/50 border-gray-700">
-                  <CardContent className="p-3">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)} opacity-70`}>
-                        {getAlertIcon(alert.alert_type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h5 className="text-sm font-medium text-gray-300 truncate">
-                          {alert.location_title}
-                        </h5>
-                        <p className="text-xs text-gray-500">
-                          {alert.location_oblast}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-gray-500">
-                          {formatTimeAgo(alert.started_at)}
-                        </div>
-                        <Badge variant="outline" className="text-xs border-gray-600 text-gray-500">
-                          {t.alertTypes[alert.alert_type] || alert.alert_type}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+      <div className="space-y-3">
+        {sortedAlerts.slice(0, compact ? 5 : 15).map((alert) => (
+          <Card key={alert.id} className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors">
+            <CardContent className={compact ? "p-3" : "p-4"}>
+              <div className="flex items-start space-x-3">
+                <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)}`}>
+                  {getAlertIcon(alert.alert_type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`font-medium text-white truncate ${compact ? 'text-sm' : ''}`}>
+                    {alert.location_title}
+                  </h4>
+                  <p className={`text-gray-400 ${compact ? 'text-xs' : 'text-sm'}`}>
+                    {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
+                  </p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className="text-xs text-gray-500">
+                      {formatDate(alert.started_at)}
+                    </span>
+                    <Badge variant="outline" className="text-xs border-gray-500 text-gray-300">
+                      {t.alertTypes[alert.alert_type] || alert.alert_type}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center text-xs text-gray-400">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {formatTimeAgo(alert.started_at)}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        
+        {filteredAlerts.length > (compact ? 5 : 15) && (
+          <p className="text-xs text-gray-500 text-center py-2">
+            {compact ? 'Switch to full view to see all alerts' : `Showing ${compact ? 5 : 15} of ${filteredAlerts.length} alerts`}
+          </p>
         )}
       </div>
     );
@@ -299,13 +262,27 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
   return (
     <Card className="w-full bg-gray-900 border border-gray-700 shadow-xl text-white">
       <CardHeader className={compact ? "pb-2" : "pb-3"}>
-        <CardTitle className={`flex items-center space-x-2 ${compact ? 'text-base' : 'text-lg'} text-white`}>
-          <AlertTriangle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-orange-400`} />
-          <span>{t.title}</span>
+        <CardTitle className={`flex items-center justify-between ${compact ? 'text-base' : 'text-lg'} text-white`}>
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-orange-400`} />
+            <span>{t.title}</span>
+          </div>
         </CardTitle>
+        
         {selectedRegion && (
-          <div className="text-sm text-gray-400">
-            {t.regionFilter}: {selectedRegion}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-2">
+              <MapPin className="w-3 h-3 text-blue-400" />
+              <span className="text-gray-400">{t.regionFilter}: {selectedRegion}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white p-1 h-auto"
+              onClick={() => window.location.reload()} // Simple way to clear region filter
+            >
+              <X className="w-3 h-3" />
+            </Button>
           </div>
         )}
       </CardHeader>
@@ -362,8 +339,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         {apiData && !error && apiData.data?.alerts && (
           <div className="space-y-4">
             {!compact && apiData.data?.meta?.last_updated_at && (
-              <div className="text-sm text-gray-400">
-                {t.lastUpdated}: {new Date(apiData.data.meta.last_updated_at).toLocaleString()}
+              <div className="text-sm text-gray-400 flex items-center space-x-2">
+                <Clock className="w-3 h-3" />
+                <span>{t.lastUpdated}: {new Date(apiData.data.meta.last_updated_at).toLocaleString()}</span>
               </div>
             )}
 

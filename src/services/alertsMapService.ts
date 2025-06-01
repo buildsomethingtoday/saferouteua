@@ -41,15 +41,38 @@ export class AlertsMapService {
   processAlertsForMap(rawAlerts: any[]): AlertMapData[] {
     if (!Array.isArray(rawAlerts)) return [];
 
-    return rawAlerts.map(alert => ({
+    console.log('Processing alerts for map:', rawAlerts.length, 'alerts');
+    
+    // Filter to only show active alerts (where finished_at is null)
+    const activeAlerts = rawAlerts.filter(alert => !alert.finished_at);
+    console.log('Active alerts (finished_at is null):', activeAlerts.length);
+
+    return activeAlerts.map(alert => ({
       id: alert.id,
       location_title: alert.location_title,
       location_oblast: alert.location_oblast,
       alert_type: alert.alert_type,
       started_at: alert.started_at,
-      coordinates: this.oblastCenters[alert.location_oblast] || [31.1656, 48.3794],
+      coordinates: this.getCoordinatesForAlert(alert),
       severity: this.mapAlertSeverity(alert.alert_type)
     }));
+  }
+
+  private getCoordinatesForAlert(alert: any): [number, number] {
+    // First try to get coordinates from the alert data itself
+    if (alert.coordinates && Array.isArray(alert.coordinates) && alert.coordinates.length >= 2) {
+      return [alert.coordinates[0], alert.coordinates[1]];
+    }
+
+    // Fall back to oblast centers
+    const coords = this.oblastCenters[alert.location_oblast];
+    if (coords) {
+      return coords;
+    }
+
+    // Default to center of Ukraine if no coordinates found
+    console.log('No coordinates found for alert:', alert.location_title, alert.location_oblast);
+    return [31.1656, 48.3794];
   }
 
   private mapAlertSeverity(alertType: string): 'low' | 'moderate' | 'high' | 'critical' {
