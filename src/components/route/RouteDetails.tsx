@@ -45,8 +45,15 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
           <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
             <MapPin className="w-3 h-3 text-white" />
           </div>
-          <Badge variant={routeData.realRoute ? "default" : "secondary"} className="text-xs px-3 py-1 bg-blue-600 text-white">
-            <div className={`w-2 h-2 rounded-full mr-2 bg-green-400`} />
+          <Badge variant={routeData.realRoute ? "default" : "secondary"} className="text-xs px-3 py-1 bg-blue-600 text-white relative">
+            <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
+              {routeData.realRoute && (
+                <>
+                  <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
+                  <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </>
+              )}
+            </div>
             {routeData.realRoute ? translations.live : translations.estimated}
           </Badge>
         </div>
