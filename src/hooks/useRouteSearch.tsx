@@ -28,8 +28,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       // Get the async services to ensure proper token handling
       console.log('📡 Initializing services...');
       const mapboxService = await getMapboxService();
-      const weatherService = await getWeatherService();
-      console.log('✅ Services initialized successfully');
+      console.log('✅ Mapbox service initialized successfully');
       
       // Geocode both cities with more specific queries
       console.log('🌍 Geocoding start city:', startCity);
@@ -78,6 +77,8 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       let temperature: number | undefined;
       
       try {
+        console.log('🌤️ Initializing weather service...');
+        const weatherService = await getWeatherService();
         console.log('🌤️ Fetching weather for coordinates:', startCoords);
         const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
         weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
