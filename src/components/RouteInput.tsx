@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Navigation, Star } from 'lucide-react';
+import { Navigation, Star } from 'lucide-react';
 import CityAutocomplete from './CityAutocomplete';
-import { useGeolocation } from '../hooks/useGeolocation';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -22,8 +21,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [needsReturn, setNeedsReturn] = useState(false);
-  
-  const { getCurrentLocation, getNearestCity, loading: locationLoading } = useGeolocation();
 
   const translations = {
     en: {
@@ -34,9 +31,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
       findRoute: 'Find Safe Route',
       searching: 'Analyzing safety...',
       safestDestinations: 'Show Safest Destinations',
-      detectLocation: 'Use My Location',
-      popularRoutes: 'Popular Safe Routes',
-      locationDetected: 'Location detected'
+      popularRoutes: 'Popular Safe Routes'
     },
     ua: {
       title: 'Спланувати маршрут',
@@ -46,9 +41,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
       findRoute: 'Знайти безпечний маршрут',
       searching: 'Аналіз безпеки...',
       safestDestinations: 'Показати найбезпечніші напрямки',
-      detectLocation: 'Використати мою локацію',
-      popularRoutes: 'Популярні безпечні маршрути',
-      locationDetected: 'Локацію визначено'
+      popularRoutes: 'Популярні безпечні маршрути'
     }
   };
 
@@ -84,23 +77,13 @@ const RouteInput: React.FC<RouteInputProps> = ({
     }, 2000);
   };
 
-  const handleUseLocation = () => {
-    getCurrentLocation();
-    setTimeout(() => {
-      const nearestCity = getNearestCity();
-      if (nearestCity) {
-        setStartCity(nearestCity);
-      }
-    }, 1000);
-  };
-
   const handlePopularRoute = (route: any) => {
     setStartCity(route.from);
     setEndCity(route.to);
   };
 
   return (
-    <Card className="shadow-xl bg-white/95 backdrop-blur-sm border-0">
+    <Card className="bg-white border border-gray-200">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center space-x-2">
           <Navigation className="w-5 h-5 text-blue-500" />
@@ -108,17 +91,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Location Detection */}
-        <Button 
-          variant="outline" 
-          className="w-full justify-center space-x-2 hover:bg-blue-50 border-blue-200"
-          onClick={handleUseLocation}
-          disabled={locationLoading}
-        >
-          <MapPin className="w-4 h-4" />
-          <span>{locationLoading ? t.locationDetected : t.detectLocation}</span>
-        </Button>
-
         {/* Route Input */}
         <div className="space-y-4">
           <div>
