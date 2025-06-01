@@ -30,8 +30,22 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Check if there are any safety alerts (active threats) - fix the logic
+  // Enhanced logic to check for active threats in route cities
   const hasActiveThreats = routeData.safetyAlerts && routeData.safetyAlerts.length > 0;
+  
+  // Also check if start or end cities have alerts by name matching
+  const hasCityThreats = routeData.safetyAlerts && routeData.safetyAlerts.some(alert => {
+    const alertLocation = alert.location_name?.toLowerCase() || '';
+    const startCity = routeData.startCity?.toLowerCase() || '';
+    const endCity = routeData.endCity?.toLowerCase() || '';
+    
+    return alertLocation.includes(startCity) || 
+           alertLocation.includes(endCity) ||
+           alertLocation.includes(startCity.split(',')[0]) || 
+           alertLocation.includes(endCity.split(',')[0]);
+  });
+
+  const finalHasThreats = hasActiveThreats || hasCityThreats;
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-700">
@@ -73,7 +87,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       </div>
 
       {/* Safety Alerts Section */}
-      {hasActiveThreats && (
+      {finalHasThreats && (
         <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -83,11 +97,11 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
               </span>
             </div>
             <Badge className="bg-red-600 text-white text-xs">
-              {routeData.safetyAlerts.length} {translations.alertsCount || 'alerts'}
+              {routeData.safetyAlerts?.length || 0} {translations.alertsCount || 'alerts'}
             </Badge>
           </div>
           <div className="space-y-2">
-            {routeData.safetyAlerts.slice(0, 3).map((alert, index) => (
+            {routeData.safetyAlerts?.slice(0, 3).map((alert, index) => (
               <div key={alert.id || index} className="flex items-center justify-between text-xs">
                 <span className="text-gray-300 truncate">{alert.location_name}</span>
                 <Badge className={`text-xs ${getStatusBadgeStyle(alert.severity)}`}>
@@ -95,7 +109,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
                 </Badge>
               </div>
             ))}
-            {routeData.safetyAlerts.length > 3 && (
+            {routeData.safetyAlerts && routeData.safetyAlerts.length > 3 && (
               <div className="text-xs text-gray-400 text-center">
                 +{routeData.safetyAlerts.length - 3} more alerts
               </div>
@@ -115,8 +129,8 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             <span className="text-sm font-medium text-white">Active Threats (72h)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className={`text-sm font-semibold ${hasActiveThreats ? 'bg-red-600 text-white border-none' : 'bg-green-600 text-white border-none'}`}>
-              {hasActiveThreats ? 'YES' : 'NO'}
+            <Badge className={`text-sm font-semibold ${finalHasThreats ? 'bg-red-600 text-white border-none' : 'bg-green-600 text-white border-none'}`}>
+              {finalHasThreats ? 'YES' : 'NO'}
             </Badge>
           </div>
         </div>

@@ -77,17 +77,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     fetchMapboxToken();
   }, []);
 
-  // Fetch alerts data for map overlay
+  // Enhanced alerts data fetching with immediate loading and better caching
   useEffect(() => {
     const fetchAlertsData = async () => {
       try {
-        console.log('Fetching fresh alerts data...');
+        console.log('🔄 Fetching alerts data immediately for map...');
         const { data, error } = await supabase.functions.invoke('explore-alerts-api', {
           body: { endpoint: 'alerts' }
         });
         
         if (!error && data?.data?.alerts) {
-          console.log('Fresh alerts received:', data.data.alerts.length, 'alerts');
+          console.log('✅ Map alerts received:', data.data.alerts.length, 'alerts');
           
           // Store all alerts for historical checking
           setAllAlertsData(data.data.alerts);
@@ -101,19 +101,29 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             return alertDate >= seventyTwoHoursAgo && !alert.finished_at;
           });
           
-          console.log('Recent alerts (last 72 hours):', recentAlerts.length, 'alerts');
+          console.log('📍 Recent alerts for map (last 72 hours):', recentAlerts.length, 'alerts');
           const processedAlerts = alertsMapService.processAlertsForMap(recentAlerts);
           setAlertsData(processedAlerts);
+          
+          // If map is loaded, update markers immediately
+          if (map.current && map.current.loaded()) {
+            console.log('🗺️ Map already loaded, updating markers immediately');
+            updateAlertMarkers();
+            addRegionColoring();
+          }
+        } else {
+          console.error('❌ Error fetching alerts for map:', error);
         }
       } catch (error) {
-        console.error('Error fetching alerts for map:', error);
+        console.error('❌ Error in fetchAlertsData:', error);
       }
     };
 
+    // Fetch immediately when component mounts
     fetchAlertsData();
     
-    // Refresh alerts data every 2 minutes
-    const interval = setInterval(fetchAlertsData, 120000);
+    // Refresh alerts data every 30 seconds for better responsiveness
+    const interval = setInterval(fetchAlertsData, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -182,7 +192,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (!mapContainer.current || !mapboxToken || tokenError) return;
 
     try {
-      console.log('Initializing Mapbox with token...');
+      console.log('🗺️ Initializing Mapbox with token...');
       mapboxgl.accessToken = mapboxToken;
       
       map.current = new mapboxgl.Map({
@@ -190,7 +200,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         style: 'mapbox://styles/mapbox/dark-v11',
         center: [31.1656, 48.3794],
         zoom: 6,
-        // Disable user interactions for dropping pins
         doubleClickZoom: false,
         dragRotate: false,
         pitchWithRotate: false,
@@ -200,16 +209,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
       map.current.on('load', () => {
-        console.log('Map loaded successfully');
+        console.log('🗺️ Map loaded successfully');
         addUkraineRegions();
-        addRegionColoring();
+        
+        // Update alerts immediately when map loads
+        if (alertsData) {
+          console.log('📍 Updating alert markers on map load');
+          updateAlertMarkers();
+          addRegionColoring();
+        }
       });
 
       map.current.on('error', (e) => {
-        console.error('Map error:', e);
+        console.error('❌ Map error:', e);
       });
 
-      console.log('Map initialized successfully');
+      console.log('✅ Map initialized successfully');
 
       return () => {
         clearAlertMarkers();
@@ -218,7 +233,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         map.current?.remove();
       };
     } catch (error) {
-      console.error('Error initializing map:', error);
+      console.error('❌ Error initializing map:', error);
       setTokenError(true);
     }
   }, [mapboxToken, tokenError]);
@@ -432,15 +447,21 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   };
 
   const updateAlertMarkers = () => {
-    if (!map.current || !alertsData) return;
+    if (!map.current || !alertsData) {
+      console.log('⚠️ Cannot update markers: map or alertsData not ready');
+      return;
+    }
 
     // Clear existing markers
     clearAlertMarkers();
 
-    console.log('Adding alert markers for', alertsData.length, 'alerts');
+    console.log('📍 Adding alert markers for', alertsData.length, 'alerts');
 
     alertsData.forEach((alert: any) => {
-      if (!alert.coordinates) return;
+      if (!alert.coordinates) {
+        console.log('⚠️ Alert missing coordinates:', alert.location_title);
+        return;
+      }
 
       const alertColor = alertsMapService.getAlertColor(alert.alert_type);
       
@@ -449,7 +470,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       
       const marker = new mapboxgl.Marker({ 
         color: alertColor,
-        scale: 0.8
+        scale: 0.9
       })
         .setLngLat(alert.coordinates)
         .setPopup(
@@ -463,10 +484,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 <strong>Oblast:</strong> ${alert.location_oblast}
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Current Alert:</strong> ${alert.alert_type.replace('_', ' ')}
+                <strong>Alert Type:</strong> ${alert.alert_type.replace('_', ' ')}
               </div>
               <div class="text-xs text-gray-300 mb-1">
                 <strong>Since:</strong> ${new Date(alert.started_at).toLocaleString()}
+              </div>
+              <div class="text-xs text-orange-400 font-medium">
+                Active for ${Math.floor((Date.now() - new Date(alert.started_at).getTime()) / (1000 * 60 * 60))}h
               </div>
               ${recentAlerts.length > 1 ? `
                 <div class="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
@@ -486,6 +510,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       alertMarkers.current.push(marker);
     });
+
+    console.log('✅ Successfully added', alertMarkers.current.length, 'alert markers to map');
   };
 
   // Handle route data changes
@@ -591,13 +617,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
   }, [routeData]);
 
-  // Update alert markers when alerts data changes
+  // Update alert markers when alerts data changes - ensure immediate update
   useEffect(() => {
-    if (map.current && map.current.loaded() && alertsData) {
+    if (map.current && alertsData) {
+      console.log('🔄 Alert data changed, updating markers...');
       updateAlertMarkers();
       addRegionColoring();
     }
-  }, [alertsData]);
+  }, [alertsData, allAlertsData]);
 
   if (isLoadingToken) {
     return (

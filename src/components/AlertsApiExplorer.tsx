@@ -52,7 +52,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       clearFilter: 'Clear filter',
       alertTypes: {
         air_raid: 'Air Raid',
-        artillery_shelling: 'Artillery',
+        artillery_shelling: 'Artillery Attack',
         urban_fights: 'Urban Combat',
         chemical: 'Chemical Threat',
         nuclear: 'Nuclear Threat'
@@ -66,7 +66,11 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       alertDuration: 'Duration',
       clickMapHint: 'Click on alerts to view region on map',
       clickToFocus: 'Click to focus on map',
-      last72Hours: 'Showing alerts from last 72 hours'
+      last72Hours: 'Active alerts from last 72 hours',
+      timeFormat: {
+        active: 'Active for',
+        since: 'Since'
+      }
     },
     ua: {
       title: compact ? 'Сповіщення безпеки' : 'Сповіщення безпеки України',
@@ -83,7 +87,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       clearFilter: 'Очистити фільтр',
       alertTypes: {
         air_raid: 'Повітряна тривога',
-        artillery_shelling: 'Артилерія',
+        artillery_shelling: 'Артилерійський обстріл',
         urban_fights: 'Вуличні бої',
         chemical: 'Хімічна загроза',
         nuclear: 'Ядерна загроза'
@@ -97,7 +101,11 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       alertDuration: 'Тривалість',
       clickMapHint: 'Натисніть на сповіщення, щоб переглянути регіон на карті',
       clickToFocus: 'Натисніть, щоб сфокусуватися на карті',
-      last72Hours: 'Показано сповіщення за останні 72 години'
+      last72Hours: 'Активні сповіщення за останні 72 години',
+      timeFormat: {
+        active: 'Активне протягом',
+        since: 'З'
+      }
     }
   };
 
@@ -135,7 +143,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     loadAlertsData();
     
     if (autoRefresh) {
-      const interval = setInterval(loadAlertsData, 60000);
+      const interval = setInterval(loadAlertsData, 30000); // Refresh every 30 seconds for faster updates
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);
@@ -213,7 +221,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       return (
         <div className="text-center py-8 text-gray-400">
           <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
-          <p className="mb-2">{t.noAlerts}</p>
+          <p className="mb-2 font-medium">{t.noAlerts}</p>
           <p className="text-xs text-gray-500 mb-2">{t.last72Hours}</p>
         </div>
       );
@@ -223,47 +231,50 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
     );
 
-    // Show more alerts in compact mode and increase max height
-    const alertsToShow = compact ? 15 : 30;
-    const maxHeight = compact ? 'max-h-96' : 'max-h-[500px]';
+    // Show more alerts and increase max height
+    const alertsToShow = compact ? 20 : 40;
+    const maxHeight = compact ? 'max-h-[600px]' : 'max-h-[700px]';
 
     return (
-      <div className={`space-y-3 ${maxHeight} overflow-y-auto pr-2`}>
-        <div className="text-xs text-gray-500 mb-2 px-1">{t.last72Hours}</div>
+      <div className={`space-y-2 ${maxHeight} overflow-y-auto pr-2`}>
+        <div className="text-xs text-gray-500 mb-3 px-1 font-medium">{t.last72Hours}</div>
         {sortedAlerts.slice(0, alertsToShow).map((alert) => (
           <Card 
             key={alert.id} 
-            className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors cursor-pointer"
+            className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-all duration-200 cursor-pointer hover:border-gray-500"
             onClick={() => handleAlertClick(alert)}
           >
             <CardContent className={compact ? "p-3" : "p-4"}>
               <div className="flex items-start space-x-3">
-                <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)}`}>
+                <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)} flex-shrink-0`}>
                   {getAlertIcon(alert.alert_type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className={`font-medium text-white truncate ${compact ? 'text-sm' : ''}`}>
+                  <h4 className={`font-medium text-white truncate ${compact ? 'text-sm' : 'text-base'}`}>
                     {alert.location_title}
                   </h4>
-                  <p className={`text-gray-400 ${compact ? 'text-xs' : 'text-sm'}`}>
+                  <p className={`text-gray-400 ${compact ? 'text-xs' : 'text-sm'} truncate`}>
                     {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
                   </p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="text-xs text-gray-500">
-                      {formatDate(alert.started_at)}
-                    </span>
-                    <Badge variant="outline" className="text-xs border-gray-500 text-gray-300">
+                  <div className="flex items-center flex-wrap gap-2 mt-2">
+                    <Badge variant="outline" className="text-xs border-gray-500 text-gray-300 bg-gray-700/50">
                       {t.alertTypes[alert.alert_type] || alert.alert_type}
                     </Badge>
+                    <span className="text-xs text-gray-500">
+                      {t.timeFormat.since} {formatDate(alert.started_at)}
+                    </span>
                   </div>
-                  <div className="text-xs text-blue-400 mt-1">
+                  <div className="text-xs text-blue-400 mt-2 font-medium">
                     {t.clickToFocus}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   <div className="flex items-center text-xs text-gray-400">
                     <Clock className="w-3 h-3 mr-1" />
                     {formatTimeAgo(alert.started_at)}
+                  </div>
+                  <div className="text-xs text-orange-400 font-medium mt-1">
+                    {t.timeFormat.active}
                   </div>
                 </div>
               </div>
@@ -272,7 +283,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         ))}
         
         {filteredAlerts.length > alertsToShow && (
-          <p className="text-xs text-gray-500 text-center py-2">
+          <p className="text-xs text-gray-500 text-center py-3 font-medium">
             Showing {alertsToShow} of {filteredAlerts.length} alerts
           </p>
         )}
@@ -288,6 +299,11 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
             <AlertTriangle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-orange-400`} />
             <span>{t.title}</span>
           </div>
+          {apiData && !error && (
+            <Badge className="bg-green-600 text-white text-xs">
+              {t.success}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       
