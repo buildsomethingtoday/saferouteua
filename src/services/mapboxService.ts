@@ -1,4 +1,3 @@
-
 interface DirectionsResponse {
   routes: {
     geometry: any; // GeoJSON geometry object
@@ -138,20 +137,28 @@ class MapboxService {
   }
 
   async geocodeForward(query: string, proximity?: [number, number]): Promise<GeocodingResponse> {
+    // Enhance query for Ukrainian cities to prioritize Ukraine results
+    const enhancedQuery = this.enhanceUkrainianCityQuery(query);
+    
     const params = new URLSearchParams({
       access_token: this.accessToken,
       limit: '5',
-      types: 'place,locality,neighborhood,address'
+      types: 'place,locality,neighborhood,address',
+      country: 'ua' // Prioritize Ukrainian results
     });
 
     if (proximity) {
       params.append('proximity', proximity.join(','));
+    } else {
+      // Default proximity to Ukraine center
+      params.append('proximity', '31.1656,48.3794');
     }
 
-    const url = `${this.baseUrl}/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
+    const url = `${this.baseUrl}/geocoding/v5/mapbox.places/${encodeURIComponent(enhancedQuery)}.json?${params}`;
 
     console.log('🌍 Mapbox Geocoding API call:', {
-      query,
+      query: enhancedQuery,
+      originalQuery: query,
       url: url.replace(this.accessToken, 'TOKEN_HIDDEN')
     });
 
@@ -172,8 +179,9 @@ class MapboxService {
 
       const data = await response.json();
       console.log('✅ Mapbox Geocoding response received:', {
-        query,
-        features: data.features?.length || 0
+        query: enhancedQuery,
+        features: data.features?.length || 0,
+        firstResult: data.features?.[0]?.place_name
       });
       
       return data;
@@ -184,6 +192,34 @@ class MapboxService {
       }
       throw error;
     }
+  }
+
+  private enhanceUkrainianCityQuery(query: string): string {
+    // Map of common Ukrainian city names to include Ukraine in the query
+    const ukrainianCityMappings: Record<string, string> = {
+      'Dnipro': 'Dnipro Ukraine',
+      'Дніпро': 'Дніпро Україна',
+      'Kyiv': 'Kyiv Ukraine',
+      'Київ': 'Київ Україна',
+      'Lviv': 'Lviv Ukraine',
+      'Львів': 'Львів Україна',
+      'Odesa': 'Odesa Ukraine',
+      'Одеса': 'Одеса Україна',
+      'Kharkiv': 'Kharkiv Ukraine',
+      'Харків': 'Харків Україна'
+    };
+
+    // Check if the query is a known Ukrainian city
+    const enhancedQuery = ukrainianCityMappings[query] || query;
+    
+    // If it doesn't already contain "Ukraine" or "Україна", and it's likely a Ukrainian city
+    if (!enhancedQuery.toLowerCase().includes('ukraine') && 
+        !enhancedQuery.toLowerCase().includes('україна') &&
+        enhancedQuery === query) {
+      return `${query} Ukraine`;
+    }
+    
+    return enhancedQuery;
   }
 
   async geocodeReverse(coordinates: [number, number]): Promise<GeocodingResponse> {

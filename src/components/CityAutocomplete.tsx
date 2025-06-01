@@ -40,7 +40,10 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
     { en: 'Cherkasy', ua: 'Черкаси', coordinates: [32.0617, 49.4444] },
     { en: 'Poltava', ua: 'Полтава', coordinates: [34.5414, 49.5883] },
     { en: 'Sumy', ua: 'Суми', coordinates: [34.8000, 50.9077] },
-    { en: 'Chernihiv', ua: 'Чернігів', coordinates: [31.2893, 51.4982] }
+    { en: 'Chernihiv', ua: 'Чернігів', coordinates: [31.2893, 51.4982] },
+    { en: 'Kramatorsk', ua: 'Краматорск', coordinates: [37.5556, 48.7233] },
+    { en: 'Mariupol', ua: 'Маріуполь', coordinates: [37.5431, 47.0975] },
+    { en: 'Zaporizhzhia', ua: 'Запоріжжя', coordinates: [35.1396, 47.8388] }
   ];
 
   const translations = {
