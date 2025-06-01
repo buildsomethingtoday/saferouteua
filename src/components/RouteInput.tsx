@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from 'lucide-react';
 import { useRouteSearch } from '../hooks/useRouteSearch';
@@ -26,6 +26,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
 }) => {
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
+  const lastSearchRef = useRef<string>('');
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
     en: {
@@ -108,9 +109,17 @@ const RouteInput: React.FC<RouteInputProps> = ({
   // Automatically trigger route search when both cities are selected
   useEffect(() => {
     if (startCity && endCity && !isSearching) {
+      const searchKey = `${startCity}-${endCity}`;
+      
+      // Prevent duplicate searches
+      if (lastSearchRef.current === searchKey) {
+        return;
+      }
+      
       // Small delay to avoid rapid API calls while typing
       const searchTimer = setTimeout(() => {
         console.log('🎯 Auto-triggering route search for:', startCity, 'to', endCity);
+        lastSearchRef.current = searchKey;
         handleRouteSearch(startCity, endCity, 'driving');
       }, 500);
 
@@ -118,11 +127,14 @@ const RouteInput: React.FC<RouteInputProps> = ({
     }
   }, [startCity, endCity, handleRouteSearch, isSearching]);
 
-  // Clear route data when cities change
+  // Reset last search when cities change significantly
   useEffect(() => {
-    if (routeData && (routeData.startCity !== startCity || routeData.endCity !== endCity)) {
-      console.log('🧹 Clearing route data due to city changes');
-      onRouteRequest(null);
+    if (!startCity || !endCity) {
+      lastSearchRef.current = '';
+      if (routeData) {
+        console.log('🧹 Clearing route data due to empty cities');
+        onRouteRequest(null);
+      }
     }
   }, [startCity, endCity, routeData, onRouteRequest]);
 
