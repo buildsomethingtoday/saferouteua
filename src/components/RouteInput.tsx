@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Navigation, AlertTriangle, Star } from 'lucide-react';
+import { MapPin, Navigation, Star } from 'lucide-react';
+import CityAutocomplete from './CityAutocomplete';
+import { useGeolocation } from '../hooks/useGeolocation';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -21,6 +22,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [needsReturn, setNeedsReturn] = useState(false);
+  
+  const { getCurrentLocation, getNearestCity, loading: locationLoading } = useGeolocation();
 
   const translations = {
     en: {
@@ -32,7 +35,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
       searching: 'Analyzing safety...',
       safestDestinations: 'Show Safest Destinations',
       detectLocation: 'Use My Location',
-      popularRoutes: 'Popular Safe Routes'
+      popularRoutes: 'Popular Safe Routes',
+      locationDetected: 'Location detected'
     },
     ua: {
       title: 'Спланувати маршрут',
@@ -43,7 +47,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
       searching: 'Аналіз безпеки...',
       safestDestinations: 'Показати найбезпечніші напрямки',
       detectLocation: 'Використати мою локацію',
-      popularRoutes: 'Популярні безпечні маршрути'
+      popularRoutes: 'Популярні безпечні маршрути',
+      locationDetected: 'Локацію визначено'
     }
   };
 
@@ -66,7 +71,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
       const mockRouteData = {
         startCity,
         endCity,
-        safetyScore: Math.floor(Math.random() * 40) + 60, // 60-100
+        safetyScore: Math.floor(Math.random() * 40) + 60,
         distance: Math.floor(Math.random() * 500) + 100,
         duration: Math.floor(Math.random() * 8) + 2,
         weatherCondition: ['clear', 'cloudy', 'light_rain'][Math.floor(Math.random() * 3)],
@@ -77,6 +82,16 @@ const RouteInput: React.FC<RouteInputProps> = ({
       onRouteRequest(mockRouteData);
       setIsSearching(false);
     }, 2000);
+  };
+
+  const handleUseLocation = () => {
+    getCurrentLocation();
+    setTimeout(() => {
+      const nearestCity = getNearestCity();
+      if (nearestCity) {
+        setStartCity(nearestCity);
+      }
+    }, 1000);
   };
 
   const handlePopularRoute = (route: any) => {
@@ -97,13 +112,11 @@ const RouteInput: React.FC<RouteInputProps> = ({
         <Button 
           variant="outline" 
           className="w-full justify-center space-x-2 hover:bg-blue-50 border-blue-200"
-          onClick={() => {
-            // In real implementation, this would use geolocation
-            setStartCity('Kyiv');
-          }}
+          onClick={handleUseLocation}
+          disabled={locationLoading}
         >
           <MapPin className="w-4 h-4" />
-          <span>{t.detectLocation}</span>
+          <span>{locationLoading ? t.locationDetected : t.detectLocation}</span>
         </Button>
 
         {/* Route Input */}
@@ -112,11 +125,11 @@ const RouteInput: React.FC<RouteInputProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t.startCity}
             </label>
-            <Input
+            <CityAutocomplete
               value={startCity}
-              onChange={(e) => setStartCity(e.target.value)}
+              onChange={setStartCity}
               placeholder="Kyiv, Lviv, Odesa..."
-              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              language={language}
             />
           </div>
           
@@ -124,11 +137,11 @@ const RouteInput: React.FC<RouteInputProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {t.endCity}
             </label>
-            <Input
+            <CityAutocomplete
               value={endCity}
-              onChange={(e) => setEndCity(e.target.value)}
+              onChange={setEndCity}
               placeholder="Lviv, Chernivtsi, Zakarpattia..."
-              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              language={language}
             />
           </div>
 
@@ -167,7 +180,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
             variant="outline" 
             className="w-full border-green-200 hover:bg-green-50 text-green-700"
             onClick={() => {
-              // Show safest destinations
               console.log('Show safest destinations');
             }}
           >

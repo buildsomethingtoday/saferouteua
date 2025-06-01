@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import RouteInput from '../components/RouteInput';
-import MapDisplay from '../components/MapDisplay';
+import InteractiveMap from '../components/InteractiveMap';
 import SafetyPanel from '../components/SafetyPanel';
 import LanguageToggle from '../components/LanguageToggle';
 import { MapPin, Shield, Navigation } from 'lucide-react';
@@ -86,9 +86,9 @@ const Index = () => {
             )}
           </div>
 
-          {/* Map Display */}
+          {/* Interactive Map Display */}
           <div className="lg:col-span-2">
-            <MapDisplay 
+            <InteractiveMap 
               language={language}
               routeData={routeData}
               isSearching={isSearching}
