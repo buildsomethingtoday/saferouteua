@@ -15,10 +15,10 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 }) => {
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'text-green-600 dark:text-green-400';
-      case 'moderate': return 'text-yellow-600 dark:text-yellow-400';
-      case 'high': return 'text-red-600 dark:text-red-400';
-      default: return 'text-gray-600 dark:text-gray-400';
+      case 'low': return 'text-green-600';
+      case 'moderate': return 'text-yellow-600';
+      case 'high': return 'text-red-600';
+      default: return 'text-gray-600';
     }
   };
 
@@ -32,32 +32,31 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   };
 
   return (
-    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+    <div className="mt-4 pt-4 border-t border-gray-700">
       {/* Route Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
             <MapPin className="w-3 h-3 text-white" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{translations.routeDetails}</h3>
+          <Badge variant={routeData.realRoute ? "default" : "secondary"} className="text-xs px-3 py-1 bg-blue-600 text-white">
+            <div className={`w-2 h-2 rounded-full mr-2 bg-green-400`} />
+            {routeData.realRoute ? translations.live : translations.estimated}
+          </Badge>
         </div>
-        <Badge variant={routeData.realRoute ? "default" : "secondary"} className="text-xs px-2 py-1">
-          <div className={`w-1.5 h-1.5 rounded-full mr-1 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`} />
-          {routeData.realRoute ? translations.live : translations.estimated}
-        </Badge>
       </div>
 
       {/* Distance and Duration Grid */}
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-          <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">{translations.distance}</div>
-          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="text-center p-4 bg-white rounded-xl">
+          <div className="text-sm font-medium text-blue-600 mb-1">{translations.distance}</div>
+          <div className="text-2xl font-bold text-blue-600">
             {routeData.distanceFormatted || `${routeData.distance} km`}
           </div>
         </div>
-        <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-          <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">{translations.duration}</div>
-          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="text-center p-4 bg-white rounded-xl">
+          <div className="text-sm font-medium text-blue-600 mb-1">{translations.duration}</div>
+          <div className="text-2xl font-bold text-blue-600">
             {routeData.durationFormatted || `${routeData.duration}h`}
           </div>
         </div>
@@ -66,10 +65,12 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
       {/* Status Information */}
       <div className="space-y-3">
         {/* Safety Risk */}
-        <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <Shield className="w-4 h-4 text-black dark:text-white" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{translations.conflictRisk}</span>
+        <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-800">{translations.conflictRisk}</span>
           </div>
           <span className={`text-sm font-semibold ${getRiskColor(routeData.conflictRisk)}`}>
             {translations.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
@@ -78,12 +79,14 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         
         {/* Traffic Level */}
         {routeData.trafficLevel && (
-          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Gauge className="w-4 h-4 text-black dark:text-white" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{translations.trafficLevel}</span>
+          <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+                <Gauge className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-gray-800">{translations.trafficLevel}</span>
             </div>
-            <Badge variant={getTrafficBadgeVariant(routeData.trafficLevel)} className="text-xs">
+            <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-800 text-white border-none">
               {translations.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
             </Badge>
           </div>
@@ -91,17 +94,19 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         
         {/* Weather */}
         {routeData.weatherCondition && (
-          <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <Cloud className="w-4 h-4 text-black dark:text-white" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{translations.weather}</span>
+          <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+                <Cloud className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-gray-800">{translations.weather}</span>
             </div>
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <div className="text-sm font-semibold text-gray-900">
                 {translations.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
               </div>
               {routeData.temperature !== undefined && (
-                <div className="text-xs text-gray-600 dark:text-gray-400">{routeData.temperature}°C</div>
+                <div className="text-xs text-gray-600">{routeData.temperature}°C</div>
               )}
             </div>
           </div>
@@ -109,12 +114,14 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         
         {/* Estimated Delay */}
         {routeData.estimatedDelay > 0 && (
-          <div className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-4 h-4 text-black dark:text-white" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Delay</span>
+          <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Delay</span>
             </div>
-            <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+            <span className="text-sm font-semibold text-orange-600">
               +{routeData.estimatedDelay}min
             </span>
           </div>

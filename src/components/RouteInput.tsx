@@ -152,7 +152,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   }, [routeData]);
 
   return (
-    <Card className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 shadow-xl text-white">
+    <Card className="bg-gray-900 border border-gray-700 shadow-xl text-white">
       <CardHeader className="pb-3">
         <RouteHeader translations={t} />
         
