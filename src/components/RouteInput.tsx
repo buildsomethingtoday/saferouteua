@@ -5,6 +5,7 @@ import { Navigation } from 'lucide-react';
 import RouteForm from './route/RouteForm';
 import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
+import { useIsMobile } from '../hooks/use-mobile';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -22,6 +23,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [needsReturn, setNeedsReturn] = useState(false);
+  const isMobile = useIsMobile();
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
     en: {
@@ -59,7 +61,36 @@ const RouteInput: React.FC<RouteInputProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [startCity, endCity]); // Removed transportMode since it's always 'driving'
+  }, [startCity, endCity]);
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <RouteForm
+          startCity={startCity}
+          endCity={endCity}
+          needsReturn={needsReturn}
+          language={language}
+          translations={t}
+          onStartCityChange={setStartCity}
+          onEndCityChange={setEndCity}
+          onNeedsReturnChange={setNeedsReturn}
+        />
+
+        {isSearching && (
+          <div className="flex items-center justify-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div>
+                <div className="text-lg font-bold text-blue-900">{t.searching}</div>
+                <div className="text-sm text-blue-600">Analyzing traffic & safety data</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Card className="bg-white border border-gray-200 shadow-sm">
