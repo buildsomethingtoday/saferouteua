@@ -49,6 +49,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
       trafficLevel: 'Traffic',
       live: 'Live',
       estimated: 'Est.',
+      safetyAlerts: 'Safety Alerts',
+      alertsCount: 'alerts',
       riskLevels: {
         low: 'Safe',
         moderate: 'Caution',
@@ -85,6 +87,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
       trafficLevel: 'Трафік',
       live: 'Онлайн',
       estimated: 'Оцін.',
+      safetyAlerts: 'Сповіщення безпеки',
+      alertsCount: 'сповіщень',
       riskLevels: {
         low: 'Безпечно',
         moderate: 'Обережно',

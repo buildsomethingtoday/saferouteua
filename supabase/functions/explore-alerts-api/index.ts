@@ -20,13 +20,17 @@ serve(async (req) => {
     
     if (!alertsApiKey) {
       console.error('❌ ALERTS_IN_UA_API_KEY not found');
-      return new Response(JSON.stringify({ error: 'API key not configured' }), {
+      return new Response(JSON.stringify({ 
+        error: 'API key not configured',
+        message: 'ALERTS_IN_UA_API_KEY environment variable is missing'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { endpoint = 'regions' } = await req.json().catch(() => ({}));
+    const requestBody = await req.json().catch(() => ({}));
+    const { endpoint = 'regions' } = requestBody;
     
     // Base URL for Alerts.in.ua API
     const baseUrl = 'https://api.alerts.in.ua/v1';
@@ -42,6 +46,7 @@ serve(async (req) => {
     const targetUrl = endpoints[endpoint] || endpoints.regions;
     console.log('📡 Fetching from:', targetUrl);
 
+    // Try Bearer token first (most common)
     const response = await fetch(targetUrl, {
       method: 'GET',
       headers: {
@@ -51,11 +56,11 @@ serve(async (req) => {
       },
     });
 
-    console.log('📊 Response status:', response.status);
+    console.log('📊 Response status:', response.status, response.statusText);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API Error:', errorText);
+      console.error('❌ Bearer token failed:', errorText);
       
       // Try without Bearer prefix
       console.log('🔄 Retrying without Bearer prefix...');
@@ -67,6 +72,8 @@ serve(async (req) => {
           'User-Agent': 'SafeRoute-UA/1.0',
         },
       });
+
+      console.log('📊 Retry response status:', retryResponse.status, retryResponse.statusText);
 
       if (!retryResponse.ok) {
         // Try as query parameter
@@ -80,14 +87,19 @@ serve(async (req) => {
           },
         });
 
+        console.log('📊 Query param response status:', queryResponse.status, queryResponse.statusText);
+
         if (!queryResponse.ok) {
           const queryErrorText = await queryResponse.text();
           console.error('❌ All auth methods failed:', queryErrorText);
+          
           return new Response(JSON.stringify({ 
             error: 'API request failed with all authentication methods',
             status: queryResponse.status,
+            statusText: queryResponse.statusText,
             details: queryErrorText,
-            triedMethods: ['Bearer token', 'Direct header', 'Query parameter']
+            triedMethods: ['Bearer token', 'Direct header', 'Query parameter'],
+            url: targetUrl
           }), {
             status: queryResponse.status,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -138,7 +150,8 @@ serve(async (req) => {
     console.error('❌ Error in explore-alerts-api function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      stack: error.stack 
+      stack: error.stack,
+      type: 'function_error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
