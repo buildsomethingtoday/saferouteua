@@ -20,7 +20,7 @@ const RouteSearchButton: React.FC<RouteSearchButtonProps> = ({
     <Button 
       onClick={onClick}
       disabled={disabled}
-      className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white"
+      className="w-full bg-gradient-to-r from-blue-600 to-yellow-400 hover:from-blue-700 hover:to-yellow-500 text-white font-bold"
     >
       {isSearching ? (
         <div className="flex items-center space-x-2">

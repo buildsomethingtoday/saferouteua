@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import RouteInput from '../components/RouteInput';
 import InteractiveMap from '../components/InteractiveMap';
@@ -38,6 +37,11 @@ const Index = () => {
 
   const t = translations[language];
 
+  // Ukraine flag emoji component
+  const UkraineFlag = () => (
+    <span className="text-lg" role="img" aria-label="Ukraine flag">🇺🇦</span>
+  );
+
   // Handle route data changes - open drawer on mobile when route is loaded
   const handleRouteRequest = (data: any) => {
     setRouteData(data);
@@ -53,11 +57,14 @@ const Index = () => {
         <header className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 shadow-xl">
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-yellow-400 rounded-xl flex items-center justify-center shadow-lg">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">{t.title}</h1>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-xl font-bold text-white">{t.title}</h1>
+                  <UkraineFlag />
+                </div>
                 <p className="text-xs text-blue-100">{t.subtitle}</p>
               </div>
             </div>
@@ -78,7 +85,7 @@ const Index = () => {
         <div className="absolute top-24 left-4 right-4 z-20">
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden backdrop-blur-sm">
             {/* Bold Header Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-yellow-400 p-6 text-white">
               <div className="flex items-center space-x-3 mb-2">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                   <Navigation className="w-5 h-5" />
@@ -107,7 +114,7 @@ const Index = () => {
             <div className="p-6 bg-white">
               <div className="mb-4">
                 <div className="flex items-center space-x-2 mb-3">
-                  <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-yellow-400 rounded-lg flex items-center justify-center">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">{t.quickSearch}</span>
@@ -127,7 +134,7 @@ const Index = () => {
         {routeData && (
           <div className="absolute bottom-6 left-4 right-4 z-20">
             <div 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-2xl shadow-2xl cursor-pointer transform transition-all duration-300 hover:scale-105"
+              className="bg-gradient-to-r from-blue-600 to-yellow-400 text-white p-4 rounded-2xl shadow-2xl cursor-pointer transform transition-all duration-300 hover:scale-105"
               onClick={() => setMobileDrawerOpen(true)}
             >
               <div className="flex items-center justify-between">
@@ -161,18 +168,21 @@ const Index = () => {
     );
   }
 
-  // Desktop Layout (unchanged)
+  // Desktop Layout
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Compact Header */}
       <header className="bg-white border-b border-gray-200 flex-shrink-0 z-50">
         <div className="flex items-center justify-between h-14 px-6">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-yellow-400 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">{t.title}</h1>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-lg font-semibold text-gray-900">{t.title}</h1>
+                <UkraineFlag />
+              </div>
               <p className="text-xs text-gray-600">{t.subtitle}</p>
             </div>
           </div>
