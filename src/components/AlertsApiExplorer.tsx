@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, MapPin, Clock, Artillery, Plane, Swords } from 'lucide-react';
+import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AlertsApiExplorerProps {
@@ -124,7 +123,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({ language }) => {
   const getAlertIcon = (alertType: string) => {
     switch (alertType) {
       case 'air_raid': return <Plane className="w-4 h-4" />;
-      case 'artillery_shelling': return <Artillery className="w-4 h-4" />;
+      case 'artillery_shelling': return <Zap className="w-4 h-4" />;
       case 'urban_fights': return <Swords className="w-4 h-4" />;
       default: return <AlertTriangle className="w-4 h-4" />;
     }
