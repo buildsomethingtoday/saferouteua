@@ -1,15 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
 import LanguageToggle from '../components/LanguageToggle';
 import { useIsMobile } from '../hooks/use-mobile';
+import { useLanguageDetection } from '../hooks/useLanguageDetection';
 
 const Index = () => {
-  const [language, setLanguage] = useState<'en' | 'ua'>('en');
+  const detectedLanguage = useLanguageDetection();
+  const [language, setLanguage] = useState<'en' | 'ua'>(detectedLanguage);
   const [routeData, setRouteData] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const isMobile = useIsMobile();
+
+  // Update language when detection completes
+  useEffect(() => {
+    setLanguage(detectedLanguage);
+  }, [detectedLanguage]);
 
   return (
     <div className="min-h-screen relative">
