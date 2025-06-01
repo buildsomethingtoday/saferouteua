@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Clock, MapPin, Navigation, Gauge, Cloud, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Clock, MapPin, Navigation, Gauge, Cloud, AlertTriangle, Zap, Shield, Car, Bus } from 'lucide-react';
 import { RouteData } from '@/types/route';
 
 interface MobileRouteDrawerProps {
@@ -30,6 +31,8 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
       roadQuality: 'Road Quality',
       estimatedDelay: 'Delay',
       fastestRoute: 'Fastest route now due to traffic conditions',
+      realTimeData: 'Real-time Data',
+      fallbackData: 'Estimated Data',
       transportModes: {
         driving: 'Driving',
         bus: 'Bus'
@@ -67,6 +70,8 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
       roadQuality: 'Дороги',
       estimatedDelay: 'Затримка',
       fastestRoute: 'Найшвидший маршрут зараз через умови руху',
+      realTimeData: 'Дані в реальному часі',
+      fallbackData: 'Оціночні дані',
       transportModes: {
         driving: 'Автомобіль',
         bus: 'Автобус'
@@ -98,116 +103,187 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
 
   if (!routeData) return null;
 
-  const getTrafficColor = (level: string) => {
-    switch (level) {
-      case 'light': return 'text-green-600 bg-green-100';
-      case 'moderate': return 'text-yellow-600 bg-yellow-100';
-      case 'heavy': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+  const getTransportIcon = (mode: string) => {
+    switch (mode) {
+      case 'driving': return <Car className="w-4 h-4" />;
+      case 'bus': return <Bus className="w-4 h-4" />;
+      default: return <Car className="w-4 h-4" />;
     }
   };
 
-  const getRiskColor = (risk: string) => {
+  const getTrafficBadgeVariant = (level: string) => {
+    switch (level) {
+      case 'light': return 'default';
+      case 'moderate': return 'secondary';
+      case 'heavy': return 'destructive';
+      default: return 'outline';
+    }
+  };
+
+  const getRiskBadgeVariant = (risk: string) => {
     switch (risk) {
-      case 'low': return 'text-green-600 bg-green-100';
-      case 'moderate': return 'text-yellow-600 bg-yellow-100';
-      case 'high': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'low': return 'default';
+      case 'moderate': return 'secondary';
+      case 'high': return 'destructive';
+      default: return 'outline';
     }
   };
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[60vh]">
-        <DrawerHeader className="pb-2">
-          <DrawerTitle className="flex items-center space-x-2">
-            <Navigation className="w-5 h-5 text-blue-600" />
-            <span>{t.routeDetails}</span>
+      <DrawerContent className="max-h-[75vh] bg-gradient-to-br from-white to-gray-50/50">
+        <DrawerHeader className="pb-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-[10px]">
+          <DrawerTitle className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <Navigation className="w-5 h-5" />
+            </div>
+            <span className="text-lg font-semibold">{t.routeDetails}</span>
           </DrawerTitle>
         </DrawerHeader>
 
-        <div className="px-6 pb-6 space-y-4">
-          {/* Route Summary */}
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+        <div className="px-6 pb-6 space-y-4 overflow-y-auto">
+          {/* Data Source Status */}
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-blue-600 rounded-full" />
-              <span className="text-sm font-medium text-blue-900">
-                {routeData.durationFormatted || `${routeData.duration}h`} ({routeData.distanceFormatted || `${routeData.distance} km`})
-              </span>
+              <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <span className="text-sm font-medium text-emerald-800">
+                  {routeData.realRoute ? t.realTimeData : t.fallbackData}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <Clock className="w-4 h-4 text-blue-600" />
-              <span className="text-xs text-blue-700">
+            <Badge variant={routeData.realRoute ? "default" : "secondary"} className="px-2 py-1 text-xs">
+              <div className={`w-1.5 h-1.5 rounded-full mr-1 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`} />
+              {routeData.realRoute ? 'Live' : 'Est.'}
+            </Badge>
+          </div>
+
+          {/* Route Summary Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+              <div className="flex items-center space-x-2 mb-1">
+                <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <MapPin className="w-3 h-3 text-white" />
+                </div>
+                <div className="text-xs font-medium text-blue-700">{t.distance}</div>
+              </div>
+              <div className="text-lg font-bold text-blue-900">
+                {routeData.distanceFormatted || `${routeData.distance} km`}
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+              <div className="flex items-center space-x-2 mb-1">
+                <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <Clock className="w-3 h-3 text-white" />
+                </div>
+                <div className="text-xs font-medium text-purple-700">{t.duration}</div>
+              </div>
+              <div className="text-lg font-bold text-purple-900">
+                {routeData.durationFormatted || `${routeData.duration}h`}
+              </div>
+            </div>
+          </div>
+
+          {/* Transport Mode */}
+          {routeData.transportMode && (
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                  {getTransportIcon(routeData.transportMode)}
+                </div>
+                <span className="text-sm font-medium text-gray-800">{t.transportMode}</span>
+              </div>
+              <span className="text-sm text-gray-700">
                 {t.transportModes[routeData.transportMode]}
               </span>
             </div>
-          </div>
+          )}
 
           {/* Traffic Info */}
-          <div className="text-xs text-gray-600 px-3">
+          <div className="text-xs text-gray-600 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
             {t.fastestRoute}
           </div>
 
-          {/* Route Details Grid */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Conditions */}
+          <div className="space-y-2">
             {/* Traffic Level */}
             {routeData.trafficLevel && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center space-x-2">
-                  <Gauge className="w-4 h-4 text-gray-600" />
-                  <span className="text-xs font-medium">{t.trafficLevel}</span>
+                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                    <Gauge className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-medium">{t.trafficLevel}</span>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${getTrafficColor(routeData.trafficLevel)}`}>
+                <Badge variant={getTrafficBadgeVariant(routeData.trafficLevel)} className="px-2 py-1 text-xs">
                   {t.trafficLevels[routeData.trafficLevel]}
-                </span>
+                </Badge>
               </div>
             )}
 
             {/* Safety Risk */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-4 h-4 text-gray-600" />
-                <span className="text-xs font-medium">{t.conflictRisk}</span>
+                <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium">{t.conflictRisk}</span>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full ${getRiskColor(routeData.conflictRisk)}`}>
+              <Badge variant={getRiskBadgeVariant(routeData.conflictRisk)} className="px-2 py-1 text-xs">
                 {t.riskLevels[routeData.conflictRisk]}
-              </span>
+              </Badge>
             </div>
 
             {/* Weather */}
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center space-x-2">
-                <Cloud className="w-4 h-4 text-gray-600" />
-                <span className="text-xs font-medium">{t.weather}</span>
+                <div className="w-8 h-8 bg-sky-500 rounded-full flex items-center justify-center">
+                  <Cloud className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-medium">{t.weather}</span>
               </div>
-              <span className="text-xs text-gray-700">
-                {t.weatherConditions[routeData.weatherCondition]}
-                {routeData.temperature && ` ${routeData.temperature}°C`}
-              </span>
+              <div className="text-right">
+                <div className="text-sm text-gray-700">
+                  {t.weatherConditions[routeData.weatherCondition]}
+                </div>
+                {routeData.temperature && (
+                  <div className="text-xs text-gray-600">{routeData.temperature}°C</div>
+                )}
+              </div>
             </div>
 
             {/* Road Quality */}
             {routeData.roadQuality && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-gray-600" />
-                  <span className="text-xs font-medium">{t.roadQuality}</span>
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm font-medium">{t.roadQuality}</span>
                 </div>
-                <span className="text-xs text-gray-700">
+                <Badge variant="outline" className="px-2 py-1 text-xs">
                   {t.roadQualities[routeData.roadQuality]}
-                </span>
+                </Badge>
               </div>
             )}
           </div>
 
-          {/* Delay Info */}
+          {/* Delay Alert */}
           {routeData.estimatedDelay !== undefined && routeData.estimatedDelay > 0 && (
-            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <div className="p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200">
               <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-800">
-                  {t.estimatedDelay}: +{routeData.estimatedDelay} min
-                </span>
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-orange-800">
+                    {t.estimatedDelay}: +{routeData.estimatedDelay} min
+                  </span>
+                  <div className="text-xs text-orange-700">Due to traffic conditions</div>
+                </div>
               </div>
             </div>
           )}
