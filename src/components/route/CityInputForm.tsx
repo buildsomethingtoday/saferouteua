@@ -39,7 +39,7 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           {translations.startCity}
         </label>
         <CityAutocomplete
@@ -52,7 +52,7 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           {translations.endCity}
         </label>
         <CityAutocomplete
@@ -61,10 +61,10 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
           onCitySelect={handleEndCityChange}
           selectedCity={endCity}
           excludeCity={startCity}
-          disabled={!startCity} // Disable "To" until "From" is selected
+          disabled={!startCity}
         />
         {!startCity && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
           </p>
         )}

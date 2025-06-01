@@ -19,10 +19,10 @@ const RouteHeader: React.FC<RouteHeaderProps> = ({ translations }) => {
       </div>
       <div>
         <div className="flex items-center space-x-1">
-          <h1 className="text-sm font-bold text-gray-900">{translations.appTitle}</h1>
+          <h1 className="text-sm font-bold text-white">{translations.appTitle}</h1>
           <UkraineFlag />
         </div>
-        <p className="text-xs text-gray-600">{translations.appSubtitle}</p>
+        <p className="text-xs text-gray-400">{translations.appSubtitle}</p>
       </div>
     </div>
   );
