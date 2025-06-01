@@ -114,7 +114,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ language, routeData, is
     // Initialize map
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [31.1656, 48.3794], // Center of Ukraine
       zoom: 6
     });
