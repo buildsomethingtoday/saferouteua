@@ -30,7 +30,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Check if there are any safety alerts (active threats)
+  // Check if there are any safety alerts (active threats) - fix the logic
   const hasActiveThreats = routeData.safetyAlerts && routeData.safetyAlerts.length > 0;
 
   return (
@@ -106,7 +106,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
       {/* Status Information */}
       <div className="space-y-3">
-        {/* Active Threats Status */}
+        {/* Active Threats Status - always show this */}
         <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">

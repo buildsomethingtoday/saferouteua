@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,7 +152,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       return !alert.finished_at && alertDate >= seventyTwoHoursAgo;
     });
     
-    // Don't filter by region anymore - show all alerts
     console.log(`Showing all alerts: ${activeAlerts.length} active alerts`);
     return activeAlerts;
   };
@@ -223,10 +223,14 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
     );
 
+    // Show more alerts in compact mode and increase max height
+    const alertsToShow = compact ? 15 : 30;
+    const maxHeight = compact ? 'max-h-96' : 'max-h-[500px]';
+
     return (
-      <div className={`space-y-3 ${compact ? 'max-h-80' : 'max-h-96'} overflow-y-auto pr-2`}>
+      <div className={`space-y-3 ${maxHeight} overflow-y-auto pr-2`}>
         <div className="text-xs text-gray-500 mb-2 px-1">{t.last72Hours}</div>
-        {sortedAlerts.slice(0, compact ? 5 : 20).map((alert) => (
+        {sortedAlerts.slice(0, alertsToShow).map((alert) => (
           <Card 
             key={alert.id} 
             className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-colors cursor-pointer"
@@ -267,9 +271,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
           </Card>
         ))}
         
-        {filteredAlerts.length > (compact ? 5 : 20) && (
+        {filteredAlerts.length > alertsToShow && (
           <p className="text-xs text-gray-500 text-center py-2">
-            {compact ? 'Switch to full view to see all alerts' : `Showing ${compact ? 5 : 20} of ${filteredAlerts.length} alerts`}
+            Showing {alertsToShow} of {filteredAlerts.length} alerts
           </p>
         )}
       </div>
