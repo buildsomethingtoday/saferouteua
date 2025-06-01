@@ -123,7 +123,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
   };
 
   return (
-    <Card className="shadow-xl bg-gradient-to-br from-white to-gray-50/50 border-0 overflow-hidden">
+    <Card className="shadow-xl bg-gray-900/95 backdrop-blur-sm border border-gray-700 text-white overflow-hidden">
       <CardHeader className="pb-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <CardTitle className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -135,16 +135,16 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
       
       <CardContent className="p-6 space-y-6">
         {/* Data Source Status */}
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
+        <div className="flex items-center justify-between p-4 bg-gray-800/60 rounded-xl border border-gray-600">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-semibold text-emerald-800">
+              <div className="font-semibold text-emerald-400">
                 {routeData.realRoute ? t.realTimeData : t.fallbackData}
               </div>
-              <div className="text-sm text-emerald-600">Live traffic & weather</div>
+              <div className="text-sm text-emerald-300">Live traffic & weather</div>
             </div>
           </div>
           <Badge variant={routeData.realRoute ? "default" : "secondary"} className="px-3 py-1">
@@ -155,26 +155,26 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
 
         {/* Main Route Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200">
+          <div className="bg-gray-800/60 p-6 rounded-2xl border border-gray-600">
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <MapPin className="w-4 h-4 text-white" />
               </div>
-              <div className="text-sm font-medium text-blue-700">{t.distance}</div>
+              <div className="text-sm font-medium text-blue-400">{t.distance}</div>
             </div>
-            <div className="text-2xl font-bold text-blue-900">
+            <div className="text-2xl font-bold text-blue-400">
               {routeData.distanceFormatted || `${routeData.distance} km`}
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl border border-purple-200">
+          <div className="bg-gray-800/60 p-6 rounded-2xl border border-gray-600">
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
                 <Clock className="w-4 h-4 text-white" />
               </div>
-              <div className="text-sm font-medium text-purple-700">{t.duration}</div>
+              <div className="text-sm font-medium text-purple-400">{t.duration}</div>
             </div>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-purple-400">
               {routeData.durationFormatted || `${routeData.duration}h`}
             </div>
           </div>
@@ -182,14 +182,14 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
 
         {/* Transport Mode */}
         {routeData.transportMode && (
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between p-4 bg-gray-800/60 rounded-xl border border-gray-600">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
                 {getTransportIcon(routeData.transportMode)}
               </div>
               <div>
-                <div className="font-semibold text-gray-800">{t.transportMode}</div>
-                <div className="text-sm text-gray-600">
+                <div className="font-semibold text-gray-200">{t.transportMode}</div>
+                <div className="text-sm text-gray-400">
                   {t.transportModes[routeData.transportMode] || routeData.transportMode}
                 </div>
               </div>
@@ -201,12 +201,12 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
         <div className="space-y-3">
           {/* Traffic Level */}
           {routeData.trafficLevel && (
-            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-gray-800/60 rounded-xl border border-gray-600 shadow-sm">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
                   <Gauge className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-medium text-gray-800">{t.trafficLevel}</span>
+                <span className="font-medium text-gray-200">{t.trafficLevel}</span>
               </div>
               <Badge variant={getTrafficBadgeVariant(routeData.trafficLevel)} className="px-3 py-1">
                 {t.trafficLevels[routeData.trafficLevel] || routeData.trafficLevel}
@@ -215,12 +215,12 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
           )}
 
           {/* Safety Risk */}
-          <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between p-4 bg-gray-800/60 rounded-xl border border-gray-600 shadow-sm">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="font-medium text-gray-800">{t.conflictRisk}</span>
+              <span className="font-medium text-gray-200">{t.conflictRisk}</span>
             </div>
             <Badge variant={getRiskBadgeVariant(routeData.conflictRisk)} className="px-3 py-1">
               {t.riskLevels[routeData.conflictRisk] || routeData.conflictRisk}
@@ -228,33 +228,33 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
           </div>
 
           {/* Weather */}
-          <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between p-4 bg-gray-800/60 rounded-xl border border-gray-600 shadow-sm">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center">
                 <Cloud className="w-5 h-5 text-white" />
               </div>
-              <span className="font-medium text-gray-800">{t.weather}</span>
+              <span className="font-medium text-gray-200">{t.weather}</span>
             </div>
             <div className="text-right">
-              <div className="font-medium text-gray-800">
+              <div className="font-medium text-gray-200">
                 {t.weatherConditions[routeData.weatherCondition] || routeData.weatherCondition}
               </div>
               {routeData.temperature !== undefined && (
-                <div className="text-sm text-gray-600">{routeData.temperature}°C</div>
+                <div className="text-sm text-gray-400">{routeData.temperature}°C</div>
               )}
             </div>
           </div>
 
           {/* Road Quality */}
           {routeData.roadQuality && (
-            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-gray-800/60 rounded-xl border border-gray-600 shadow-sm">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
                   <MapPin className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-medium text-gray-800">{t.roadQuality}</span>
+                <span className="font-medium text-gray-200">{t.roadQuality}</span>
               </div>
-              <Badge variant="outline" className="px-3 py-1">
+              <Badge variant="outline" className="px-3 py-1 border-gray-500 text-gray-300">
                 {t.roadQualities[routeData.roadQuality] || routeData.roadQuality}
               </Badge>
             </div>
@@ -263,14 +263,14 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
 
         {/* Traffic Delay Alert */}
         {routeData.estimatedDelay !== undefined && routeData.estimatedDelay > 0 && (
-          <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200">
+          <div className="p-4 bg-orange-900/40 rounded-xl border border-orange-700">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="font-semibold text-orange-800">{t.estimatedDelay}</div>
-                <div className="text-orange-700">+{routeData.estimatedDelay} minutes due to traffic</div>
+                <div className="font-semibold text-orange-400">{t.estimatedDelay}</div>
+                <div className="text-orange-300">+{routeData.estimatedDelay} minutes due to traffic</div>
               </div>
             </div>
           </div>
@@ -278,12 +278,12 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
 
         {/* Error Message */}
         {routeData.error && (
-          <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+          <div className="p-4 bg-amber-900/40 rounded-xl border border-amber-700">
             <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5" />
               <div>
-                <div className="font-semibold text-amber-800">API Notice</div>
-                <div className="text-amber-700 text-sm">{routeData.error}</div>
+                <div className="font-semibold text-amber-400">API Notice</div>
+                <div className="text-amber-300 text-sm">{routeData.error}</div>
               </div>
             </div>
           </div>
@@ -291,23 +291,23 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language, routeData }) => {
 
         {/* Action Buttons */}
         <div className="flex space-x-3 pt-4">
-          <Button variant="outline" size="sm" className="flex-1 bg-white hover:bg-blue-50 border-blue-200 hover:border-blue-300">
+          <Button variant="outline" size="sm" className="flex-1 bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-gray-500 text-gray-200">
             <Share className="w-4 h-4 mr-2" />
             {t.shareRoute}
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 bg-white hover:bg-green-50 border-green-200 hover:border-green-300">
+          <Button variant="outline" size="sm" className="flex-1 bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-gray-500 text-gray-200">
             <Bookmark className="w-4 h-4 mr-2" />
             {t.saveRoute}
           </Button>
         </div>
 
         {/* Enhanced Safety Tips */}
-        <div className="p-4 bg-gradient-to-r from-slate-50 to-gray-100 rounded-xl border border-slate-200">
-          <div className="text-sm font-medium text-slate-800 mb-2 flex items-center">
+        <div className="p-4 bg-gray-800/60 rounded-xl border border-gray-600">
+          <div className="text-sm font-medium text-gray-200 mb-2 flex items-center">
             <Shield className="w-4 h-4 mr-2" />
             Safety Tips
           </div>
-          <div className="text-xs text-slate-700 space-y-1">
+          <div className="text-xs text-gray-400 space-y-1">
             <div>• Check route conditions before departure</div>
             <div>• Keep emergency contacts accessible</div>
             <div>• Monitor weather updates during travel</div>
