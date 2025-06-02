@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Navigation } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Navigation, AlertTriangle } from 'lucide-react';
 import { useRouteSearch } from '../hooks/useRouteSearch';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 import RouteHeader from './route/RouteHeader';
 import CityInputForm from './route/CityInputForm';
 import RouteStatus from './route/RouteStatus';
 import RouteDetails from './route/RouteDetails';
+import AlertsApiExplorer from './AlertsApiExplorer';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -14,6 +16,8 @@ interface RouteInputProps {
   isSearching: boolean;
   setIsSearching: (searching: boolean) => void;
   routeData?: RouteData | null;
+  selectedRegion?: string | null;
+  onAlertClick?: (alert: any) => void;
 }
 
 const RouteInput: React.FC<RouteInputProps> = ({ 
@@ -21,10 +25,13 @@ const RouteInput: React.FC<RouteInputProps> = ({
   onRouteRequest, 
   isSearching, 
   setIsSearching,
-  routeData
+  routeData,
+  selectedRegion,
+  onAlertClick
 }) => {
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
+  const [activeTab, setActiveTab] = useState('route');
   const lastSearchRef = useRef<string>('');
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
@@ -109,6 +116,19 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const t = translations[language];
   const { handleRouteSearch } = useRouteSearch({ translations: t, setIsSearching, onRouteRequest });
 
+  const tabTranslations = {
+    en: {
+      routeTab: 'Plan Route',
+      alertsTab: 'Alerts'
+    },
+    ua: {
+      routeTab: 'Маршрут',
+      alertsTab: 'Сповіщення'
+    }
+  };
+
+  const tabT = tabTranslations[language];
+
   // Automatically trigger route search when both cities are selected
   useEffect(() => {
     if (startCity && endCity && !isSearching) {
@@ -159,34 +179,64 @@ const RouteInput: React.FC<RouteInputProps> = ({
       <CardHeader className="pb-3">
         <RouteHeader translations={t} />
         
-        <CardTitle className="flex items-center space-x-2 text-lg text-white">
-          <Navigation className="w-5 h-5 text-blue-400" />
-          <span>{t.title}</span>
-        </CardTitle>
+        {/* Tabs moved here */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-600">
+            <TabsTrigger 
+              value="route" 
+              className="text-white data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+            >
+              <Navigation className="w-4 h-4 mr-2" />
+              {tabT.routeTab}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="alerts"
+              className="text-white data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              {tabT.alertsTab}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <CityInputForm
-          startCity={startCity}
-          endCity={endCity}
-          language={language}
-          translations={t}
-          onStartCityChange={setStartCity}
-          onEndCityChange={setEndCity}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsContent value="route" className="mt-0">
+            <div className="space-y-4">
+              <CityInputForm
+                startCity={startCity}
+                endCity={endCity}
+                language={language}
+                translations={t}
+                onStartCityChange={setStartCity}
+                onEndCityChange={setEndCity}
+              />
 
-        <RouteStatus
-          isSearching={isSearching}
-          routeData={routeData}
-          translations={t}
-        />
+              <RouteStatus
+                isSearching={isSearching}
+                routeData={routeData}
+                translations={t}
+              />
 
-        {routeData && !routeData.error && !isSearching && (
-          <RouteDetails
-            routeData={routeData}
-            translations={t}
-          />
-        )}
+              {routeData && !routeData.error && !isSearching && (
+                <RouteDetails
+                  routeData={routeData}
+                  translations={t}
+                />
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="alerts" className="mt-0">
+            <AlertsApiExplorer 
+              language={language}
+              selectedRegion={selectedRegion}
+              compact={true}
+              onAlertClick={onAlertClick}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
