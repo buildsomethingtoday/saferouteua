@@ -26,6 +26,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [tokenError, setTokenError] = useState(false);
   const [alertsData, setAlertsData] = useState<any>(null);
   const [allAlertsData, setAllAlertsData] = useState<any>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
   const routeSource = useRef<string>('route-source');
   const startMarker = useRef<mapboxgl.Marker | null>(null);
   const endMarker = useRef<mapboxgl.Marker | null>(null);
@@ -140,13 +141,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           console.log('📍 Recent alerts for map (last 72 hours):', recentAlerts.length, 'alerts');
           const processedAlerts = alertsMapService.processAlertsForMap(recentAlerts);
           setAlertsData(processedAlerts);
-          
-          // If map is loaded, update markers immediately
-          if (map.current && map.current.loaded()) {
-            console.log('🗺️ Map already loaded, updating markers immediately');
-            updateAlertMarkers();
-            addRegionColoring();
-          }
         } else {
           console.error('❌ Error fetching alerts for map:', error);
         }
@@ -165,7 +159,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Handle focusing on specific alerts
   useEffect(() => {
-    if (focusAlert && map.current) {
+    if (focusAlert && map.current && isMapLoaded) {
       console.log('Focusing map on alert:', focusAlert);
       
       // Get oblast center coordinates
@@ -222,7 +216,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         onRegionSelect?.(oblast);
       }
     }
-  }, [focusAlert, onRegionSelect]);
+  }, [focusAlert, onRegionSelect, isMapLoaded]);
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || tokenError) return;
@@ -246,14 +240,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       map.current.on('load', () => {
         console.log('🗺️ Map loaded successfully');
+        setIsMapLoaded(true);
         addUkraineRegions();
-        
-        // Update alerts immediately when map loads
-        if (alertsData) {
-          console.log('📍 Updating alert markers on map load');
-          updateAlertMarkers();
-          addRegionColoring();
-        }
       });
 
       map.current.on('error', (e) => {
@@ -267,6 +255,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         clearAlertMarkers();
         if (startMarker.current) startMarker.current.remove();
         if (endMarker.current) endMarker.current.remove();
+        setIsMapLoaded(false);
         map.current?.remove();
       };
     } catch (error) {
@@ -282,7 +271,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Add region coloring based on alert types
   const addRegionColoring = () => {
-    if (!map.current || !alertsData) return;
+    if (!map.current || !alertsData || !isMapLoaded) {
+      console.log('⚠️ Cannot add region coloring: map not loaded or no alerts data');
+      return;
+    }
+
+    console.log('🎨 Adding region coloring for', alertsData.length, 'alerts');
 
     // Create a region alert mapping
     const regionAlerts = {};
@@ -314,7 +308,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         fillOpacity = 0.2;
       }
 
-      // Get oblast center for approximate region highlighting
+      // Get oblast center coordinates
       const oblastCenters = {
         'Київська область': [30.5234, 50.4501],
         'Харківська область': [36.2310, 49.9935],
@@ -455,7 +449,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Add Ukraine regions and alert overlays
   const addUkraineRegions = () => {
-    if (!map.current) return;
+    if (!map.current || !isMapLoaded) return;
+
+    console.log('🗺️ Adding Ukraine regions to map');
 
     // Add clickable regions (but prevent pin dropping)
     map.current.on('click', async (e) => {
@@ -487,13 +483,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     });
 
-    // Add alert markers
-    updateAlertMarkers();
+    // Add alert markers and regions when map loads and alerts are available
+    if (alertsData) {
+      updateAlertMarkers();
+      addRegionColoring();
+    }
   };
 
   const updateAlertMarkers = () => {
-    if (!map.current || !alertsData) {
-      console.log('⚠️ Cannot update markers: map or alertsData not ready');
+    if (!map.current || !alertsData || !isMapLoaded) {
+      console.log('⚠️ Cannot update markers: map not loaded or alertsData not ready');
       return;
     }
 
@@ -547,7 +546,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Handle route data changes
   useEffect(() => {
-    if (!map.current || !routeData) {
+    if (!map.current || !routeData || !isMapLoaded) {
       return;
     }
 
@@ -646,16 +645,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         maxZoom: 10
       });
     }
-  }, [routeData]);
+  }, [routeData, isMapLoaded]);
 
   // Update alert markers when alerts data changes - ensure immediate update
   useEffect(() => {
-    if (map.current && alertsData) {
+    if (map.current && alertsData && isMapLoaded) {
       console.log('🔄 Alert data changed, updating markers...');
       updateAlertMarkers();
       addRegionColoring();
     }
-  }, [alertsData, allAlertsData]);
+  }, [alertsData, allAlertsData, isMapLoaded]);
 
   if (isLoadingToken) {
     return (
