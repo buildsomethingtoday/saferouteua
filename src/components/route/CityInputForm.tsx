@@ -1,9 +1,8 @@
-
 import React from 'react';
 import CityAutocomplete from '../CityAutocomplete';
 import { RouteInputTranslations } from '@/types/route';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 
 interface CityInputFormProps {
   startCity: string;
@@ -73,7 +72,7 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
             className="h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50"
             title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}
           >
-            <ArrowLeftRight className="h-4 w-4" />
+            <ArrowRightLeft className="h-4 w-4" />
           </Button>
         </div>
         
