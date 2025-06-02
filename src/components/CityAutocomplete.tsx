@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -76,7 +77,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full min-w-0 max-w-none xl:max-w-[148px] justify-between text-left font-normal overflow-hidden",
+            "w-full 2xl:max-w-[148px] justify-between text-left font-normal overflow-hidden",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
