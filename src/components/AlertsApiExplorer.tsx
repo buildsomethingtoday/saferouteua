@@ -219,8 +219,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     
     if (!filteredAlerts || filteredAlerts.length === 0) {
       return (
-        <div className="text-center py-8 text-gray-400">
-          <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
+        <div className="text-center py-6 text-gray-400">
+          <Shield className="w-10 h-10 mx-auto mb-3 text-green-400" />
           <p className="mb-2 font-medium">{t.noAlerts}</p>
           <p className="text-xs text-gray-500 mb-2">{t.last72Hours}</p>
         </div>
@@ -236,35 +236,35 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     const maxHeight = compact ? 'max-h-[600px]' : 'max-h-[700px]';
 
     return (
-      <div className={`space-y-2 ${maxHeight} overflow-y-auto pr-2`}>
-        <div className="text-xs text-gray-500 mb-3 px-1 font-medium">{t.last72Hours}</div>
+      <div className={`space-y-1.5 ${maxHeight} overflow-y-auto`}>
+        <div className="text-xs text-gray-500 mb-2 px-1 font-medium">{t.last72Hours}</div>
         {sortedAlerts.slice(0, alertsToShow).map((alert) => (
           <Card 
             key={alert.id} 
             className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-all duration-200 cursor-pointer hover:border-gray-500"
             onClick={() => handleAlertClick(alert)}
           >
-            <CardContent className={compact ? "p-3" : "p-4"}>
-              <div className="flex items-start space-x-3">
-                <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)} flex-shrink-0`}>
+            <CardContent className="p-2.5">
+              <div className="flex items-start space-x-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)} flex-shrink-0`}>
                   {getAlertIcon(alert.alert_type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className={`font-medium text-white truncate ${compact ? 'text-sm' : 'text-base'}`}>
+                  <h4 className="font-medium text-white truncate text-sm">
                     {alert.location_title}
                   </h4>
-                  <p className={`text-gray-400 ${compact ? 'text-xs' : 'text-sm'} truncate`}>
+                  <p className="text-gray-400 text-xs truncate">
                     {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
                   </p>
-                  <div className="flex items-center flex-wrap gap-2 mt-2">
-                    <Badge variant="outline" className="text-xs border-gray-500 text-gray-300 bg-gray-700/50">
+                  <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+                    <Badge variant="outline" className="text-xs border-gray-500 text-gray-300 bg-gray-700/50 px-2 py-0.5">
                       {t.alertTypes[alert.alert_type] || alert.alert_type}
                     </Badge>
                     <span className="text-xs text-gray-500">
                       {t.timeFormat.since} {formatDate(alert.started_at)}
                     </span>
                   </div>
-                  <div className="text-xs text-blue-400 mt-2 font-medium">
+                  <div className="text-xs text-blue-400 mt-1.5 font-medium">
                     {t.clickToFocus}
                   </div>
                 </div>
@@ -283,7 +283,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         ))}
         
         {filteredAlerts.length > alertsToShow && (
-          <p className="text-xs text-gray-500 text-center py-3 font-medium">
+          <p className="text-xs text-gray-500 text-center py-2 font-medium">
             Showing {alertsToShow} of {filteredAlerts.length} alerts
           </p>
         )}
@@ -307,7 +307,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <div className="flex items-center justify-between">
           <Button
             onClick={loadAlertsData}
@@ -336,7 +336,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         </div>
 
         {isLoading && (
-          <div className="flex items-center justify-center p-4">
+          <div className="flex items-center justify-center p-3">
             <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="ml-3 text-gray-300">{t.loading}</span>
           </div>
@@ -353,7 +353,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         )}
 
         {apiData && !error && apiData.data?.alerts && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {!compact && apiData.data?.meta?.last_updated_at && (
               <div className="text-sm text-gray-400 flex items-center space-x-2">
                 <Clock className="w-3 h-3" />
@@ -361,7 +361,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
               </div>
             )}
 
-            <div className="bg-gray-800 rounded-lg p-3">
+            <div className="bg-gray-800 rounded-lg p-2">
               {renderAlerts(apiData.data.alerts)}
             </div>
           </div>
