@@ -9,9 +9,9 @@ import CityInputForm from './route/CityInputForm';
 import RouteStatus from './route/RouteStatus';
 import RouteDetails from './route/RouteDetails';
 import AlertsApiExplorer from './AlertsApiExplorer';
-import MobileAlertsDrawer from './mobile/MobileAlertsDrawer';
 import { useIsMobile } from '../hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import MobileAlertsDisplay from '../components/mobile/MobileAlertsDisplay';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -47,7 +47,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
   const [activeTab, setActiveTab] = useState('route');
-  const [showMobileAlertsDrawer, setShowMobileAlertsDrawer] = useState(false);
   const [alertsData, setAlertsData] = useState<AlertItem[]>([]);
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
   const lastSearchRef = useRef<string>('');
@@ -179,13 +178,11 @@ const RouteInput: React.FC<RouteInputProps> = ({
     }
   };
 
-  // Handle alerts tab click on mobile
-  const handleAlertsTabClick = () => {
-    if (isMobile) {
-      setShowMobileAlertsDrawer(true);
+  // Load alerts when switching to alerts tab
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === 'alerts' && isMobile) {
       loadAlertsData();
-    } else {
-      setActiveTab('alerts');
     }
   };
 
@@ -245,7 +242,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
         <CardHeader className="pb-3">
           <RouteHeader translations={t} />
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-600">
               <TabsTrigger 
                 value="route" 
@@ -257,7 +254,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
               <TabsTrigger 
                 value="alerts"
                 className="text-white data-[state=active]:bg-gray-700 data-[state=active]:text-white"
-                onClick={isMobile ? handleAlertsTabClick : undefined}
               >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 {tabT.alertsTab}
@@ -266,9 +262,9 @@ const RouteInput: React.FC<RouteInputProps> = ({
           </Tabs>
         </CardHeader>
         
-        <CardContent className={`space-y-4 ${isMobile ? 'flex-1 overflow-y-auto' : ''}`}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsContent value="route" className="mt-0">
+        <CardContent className={`space-y-4 ${isMobile ? 'flex-1 overflow-hidden' : ''}`}>
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full h-full">
+            <TabsContent value="route" className="mt-0 h-full">
               <div className="space-y-4">
                 <CityInputForm
                   startCity={startCity}
@@ -294,32 +290,27 @@ const RouteInput: React.FC<RouteInputProps> = ({
               </div>
             </TabsContent>
             
-            {!isMobile && (
-              <TabsContent value="alerts" className="mt-0">
+            <TabsContent value="alerts" className="mt-0 h-full">
+              {isMobile ? (
+                <MobileAlertsDisplay
+                  alerts={alertsData}
+                  language={language}
+                  isLoading={isLoadingAlerts}
+                  onRefresh={loadAlertsData}
+                  onAlertClick={handleMobileAlertClick}
+                />
+              ) : (
                 <AlertsApiExplorer 
                   language={language}
                   selectedRegion={selectedRegion}
                   compact={true}
                   onAlertClick={onAlertClick}
                 />
-              </TabsContent>
-            )}
+              )}
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
-
-      {/* Mobile Alerts Drawer */}
-      {isMobile && (
-        <MobileAlertsDrawer
-          isOpen={showMobileAlertsDrawer}
-          onClose={() => setShowMobileAlertsDrawer(false)}
-          alerts={alertsData}
-          language={language}
-          isLoading={isLoadingAlerts}
-          onRefresh={loadAlertsData}
-          onAlertClick={handleMobileAlertClick}
-        />
-      )}
     </>
   );
 };
