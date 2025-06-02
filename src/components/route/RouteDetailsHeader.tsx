@@ -10,13 +10,26 @@ interface RouteDetailsHeaderProps {
 }
 
 const RouteDetailsHeader: React.FC<RouteDetailsHeaderProps> = ({ routeData, translations }) => {
+  const routeInfoText = {
+    en: 'Route Information',
+    ua: 'Інформація про маршрут'
+  };
+
+  const liveDataText = {
+    en: 'Live Data',
+    ua: 'Прямий ефір'
+  };
+
+  // Extract language from translations to determine which language to use
+  const language = translations.live === 'Live' ? 'en' : 'ua';
+
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center space-x-2">
         <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
           <MapPin className="w-3 h-3 text-white" />
         </div>
-        <span className="text-sm font-medium text-gray-300 mr-2">Route Information</span>
+        <span className="text-sm font-medium text-gray-300 mr-2">{routeInfoText[language]}</span>
       </div>
       <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-green-600' : 'bg-blue-600'} text-white border-none`}>
         <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
@@ -27,7 +40,7 @@ const RouteDetailsHeader: React.FC<RouteDetailsHeaderProps> = ({ routeData, tran
             </>
           )}
         </div>
-        {routeData.realRoute ? 'Live Data' : translations.estimated}
+        {routeData.realRoute ? liveDataText[language] : translations.estimated}
       </Badge>
     </div>
   );

@@ -10,6 +10,14 @@ interface SafetyAlertsSectionProps {
 }
 
 const SafetyAlertsSection: React.FC<SafetyAlertsSectionProps> = ({ relevantAlerts, translations }) => {
+  // Extract language from translations to determine which language to use
+  const language = translations.live === 'Live' ? 'en' : 'ua';
+  
+  const highAlertActivityText = {
+    en: 'High alert activity detected on this route',
+    ua: 'Виявлено високу активність сповіщень на цьому маршруті'
+  };
+
   const getSeverityBadgeStyle = (severity: string) => {
     switch (severity) {
       case 'low':
@@ -59,7 +67,7 @@ const SafetyAlertsSection: React.FC<SafetyAlertsSectionProps> = ({ relevantAlert
       {/* Additional info if there are many alerts */}
       {relevantAlerts.length > 5 && (
         <div className="text-xs text-red-300 text-center mt-2 pt-2 border-t border-red-700/50">
-          High alert activity detected on this route
+          {highAlertActivityText[language]}
         </div>
       )}
     </div>

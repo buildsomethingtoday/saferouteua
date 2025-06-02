@@ -11,6 +11,19 @@ interface RouteStatusInfoProps {
 }
 
 const RouteStatusInfo: React.FC<RouteStatusInfoProps> = ({ routeData, translations, hasActiveThreats }) => {
+  // Extract language from translations to determine which language to use
+  const language = translations.live === 'Live' ? 'en' : 'ua';
+  
+  const activeThreatsText = {
+    en: 'Active Threats (72h)',
+    ua: 'Активні загрози (72г)'
+  };
+
+  const yesNoText = {
+    en: { yes: 'YES', no: 'NO' },
+    ua: { yes: 'ТАК', no: 'НІ' }
+  };
+
   return (
     <div className="space-y-3 mb-4">
       {/* Active Threats Status */}
@@ -19,11 +32,11 @@ const RouteStatusInfo: React.FC<RouteStatusInfoProps> = ({ routeData, translatio
           <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
             <Shield className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-medium text-white">Active Threats (72h)</span>
+          <span className="text-sm font-medium text-white">{activeThreatsText[language]}</span>
         </div>
         <div className="flex items-center space-x-2">
           <Badge className={`text-sm font-semibold border-none ${hasActiveThreats ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-            {hasActiveThreats ? 'YES' : 'NO'}
+            {hasActiveThreats ? yesNoText[language].yes : yesNoText[language].no}
           </Badge>
         </div>
       </div>

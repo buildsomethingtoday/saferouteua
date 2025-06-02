@@ -60,15 +60,28 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   const distance = routeData.distanceFormatted || `${routeData.distance} km`;
   const duration = routeData.durationFormatted || formatDuration(routeData.duration || 0);
 
+  // Extract language from translations to determine which language to use
+  const language = translations.live === 'Live' ? 'en' : 'ua';
+  
+  const travelInfoText = {
+    en: 'Travel Information',
+    ua: 'Інформація про подорож'
+  };
+
+  const willTakeText = {
+    en: 'will take',
+    ua: 'займе'
+  };
+
   return (
     <div className="mt-4 pt-4 border-t border-gray-700">
       <RouteDetailsHeader routeData={routeData} translations={translations} />
       
       {/* Travel Info - Weather Style */}
       <div className="mb-4 p-4 bg-gray-800/60 rounded-xl border border-gray-600">
-        <div className="text-sm text-gray-400 mb-2">Travel Information</div>
+        <div className="text-sm text-gray-400 mb-2">{travelInfoText[language]}</div>
         <div className="text-lg font-semibold text-white">
-          {distance} will take {duration}
+          {distance} {willTakeText[language]} {duration}
         </div>
       </div>
 
