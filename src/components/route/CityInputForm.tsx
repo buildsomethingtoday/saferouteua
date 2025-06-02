@@ -48,8 +48,8 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* From and To in one row with flip button */}
-      <div className="grid grid-cols-2 gap-4 items-end">
+      {/* From, flip button, and To in one row */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
             {translations.startCity}
@@ -61,6 +61,20 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
             selectedCity={startCity}
             excludeCity={endCity}
           />
+        </div>
+        
+        {/* Flip button in the middle */}
+        <div className="flex justify-center pb-1">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleFlipCities}
+            disabled={!startCity || !endCity}
+            className="h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50"
+            title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+          </Button>
         </div>
         
         <div>
@@ -76,20 +90,6 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
             disabled={!startCity}
           />
         </div>
-      </div>
-      
-      {/* Flip button centered below */}
-      <div className="flex justify-center">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleFlipCities}
-          disabled={!startCity || !endCity}
-          className="h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50"
-          title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}
-        >
-          <ArrowLeftRight className="h-4 w-4" />
-        </Button>
       </div>
       
       {!startCity && (
