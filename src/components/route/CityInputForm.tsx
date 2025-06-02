@@ -2,6 +2,8 @@
 import React from 'react';
 import CityAutocomplete from '../CityAutocomplete';
 import { RouteInputTranslations } from '@/types/route';
+import { Button } from '@/components/ui/button';
+import { ArrowLeftRight } from 'lucide-react';
 
 interface CityInputFormProps {
   startCity: string;
@@ -36,10 +38,18 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
     }
   };
 
+  // Handle flip/swap cities
+  const handleFlipCities = () => {
+    if (startCity && endCity) {
+      onStartCityChange(endCity);
+      onEndCityChange(startCity);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* From and To in one row */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* From and To with flip button */}
+      <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
             {translations.startCity}
@@ -51,6 +61,20 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
             selectedCity={startCity}
             excludeCity={endCity}
           />
+        </div>
+        
+        {/* Flip button */}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleFlipCities}
+            disabled={!startCity || !endCity}
+            className="h-8 w-8 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50"
+            title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+          </Button>
         </div>
         
         <div>
