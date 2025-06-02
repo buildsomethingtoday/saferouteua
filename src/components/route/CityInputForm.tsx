@@ -3,6 +3,7 @@ import CityAutocomplete from '../CityAutocomplete';
 import { RouteInputTranslations } from '@/types/route';
 import { Button } from '@/components/ui/button';
 import { ArrowRightLeft } from 'lucide-react';
+
 interface CityInputFormProps {
   startCity: string;
   endCity: string;
@@ -11,6 +12,7 @@ interface CityInputFormProps {
   onStartCityChange: (city: string) => void;
   onEndCityChange: (city: string) => void;
 }
+
 const CityInputForm: React.FC<CityInputFormProps> = ({
   startCity,
   endCity,
@@ -42,34 +44,59 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
       onEndCityChange(startCity);
     }
   };
-  return <div className="space-y-4">
-      {/* From, flip button, and To in one row with more width for button */}
-      <div className="grid grid-cols-[1fr_40px_1fr] gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+  return (
+    <div className="space-y-4">
+      {/* From, flip button, and To in one row with proper alignment */}
+      <div className="grid grid-cols-[1fr_50px_1fr] gap-4 items-start">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">
             {translations.startCity}
           </label>
-          <CityAutocomplete language={language} placeholder={translations.startPlaceholder} onCitySelect={handleStartCityChange} selectedCity={startCity} excludeCity={endCity} />
+          <CityAutocomplete 
+            language={language} 
+            placeholder={translations.startPlaceholder} 
+            onCitySelect={handleStartCityChange} 
+            selectedCity={startCity} 
+            excludeCity={endCity} 
+          />
         </div>
         
-        {/* Flip button in the middle with more space */}
-        <div className="flex justify-center pb-1">
-          <Button variant="outline" size="icon" onClick={handleFlipCities} disabled={!startCity || !endCity} className="h-10 w-10 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50" title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}>
+        {/* Flip button in the middle with proper vertical alignment */}
+        <div className="flex justify-center pt-6">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleFlipCities} 
+            disabled={!startCity || !endCity} 
+            className="h-10 w-10 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50" 
+            title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}
+          >
             <ArrowRightLeft className="h-4 w-4" />
           </Button>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-300">
             {translations.endCity}
           </label>
-          <CityAutocomplete language={language} placeholder={translations.endPlaceholder} onCitySelect={handleEndCityChange} selectedCity={endCity} excludeCity={startCity} disabled={!startCity} />
+          <CityAutocomplete 
+            language={language} 
+            placeholder={translations.endPlaceholder} 
+            onCitySelect={handleEndCityChange} 
+            selectedCity={endCity} 
+            excludeCity={startCity} 
+            disabled={!startCity} 
+          />
         </div>
       </div>
       
-      {!startCity && <p className="text-xs text-gray-400 mt-1">
+      {!startCity && (
+        <p className="text-xs text-gray-400 mt-1">
           {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
-        </p>}
-    </div>;
+        </p>
+      )}
+    </div>
+  );
 };
+
 export default CityInputForm;
