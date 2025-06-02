@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { getMapboxService } from '../services/mapboxService';
 import { getWeatherService } from '../services/weatherService';
@@ -229,15 +230,46 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       // Combine traffic safety and alerts safety (weighted average)
       const combinedSafetyScore = Math.round((trafficSafetyScore * 0.3) + (alertsSafetyScore * 0.7));
       
-      // Step 8: Create clean, serializable route data
+      // Step 8: Create clean, serializable route data with better data cleaning
       console.log('📋 Step 8: Creating route data object...');
       
-      // Create a completely clean geometry object to avoid DataCloneError
+      // Helper function to deeply clean objects and make them serializable
+      const cleanForSerialization = (obj: any): any => {
+        if (obj === null || obj === undefined) {
+          return obj;
+        }
+        
+        if (typeof obj === 'function') {
+          return undefined;
+        }
+        
+        if (obj instanceof Date) {
+          return obj.toISOString();
+        }
+        
+        if (Array.isArray(obj)) {
+          return obj.map(cleanForSerialization).filter(item => item !== undefined);
+        }
+        
+        if (typeof obj === 'object') {
+          const cleaned: any = {};
+          for (const [key, value] of Object.entries(obj)) {
+            const cleanedValue = cleanForSerialization(value);
+            if (cleanedValue !== undefined) {
+              cleaned[key] = cleanedValue;
+            }
+          }
+          return cleaned;
+        }
+        
+        return obj;
+      };
+      
+      // Create a completely clean geometry object
       let cleanGeometry;
       if (route.geometry) {
         try {
-          // Use JSON stringify/parse to create a clean copy
-          cleanGeometry = JSON.parse(JSON.stringify(route.geometry));
+          cleanGeometry = cleanForSerialization(route.geometry);
           console.log('✅ Route geometry cleaned successfully');
         } catch (geometryError) {
           console.warn('⚠️ Failed to clean geometry, omitting:', geometryError);
@@ -245,30 +277,41 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         }
       }
       
+      // Clean safety alerts to ensure they're serializable
+      const cleanSafetyAlerts = routeAlerts.map(alert => ({
+        id: String(alert.id),
+        location_name: String(alert.location_name || ''),
+        location_oblast: String(alert.location_oblast || ''),
+        alert_type: String(alert.alert_type || ''),
+        severity: String(alert.severity || 'moderate'),
+        start_time: String(alert.start_time || ''),
+        end_time: alert.end_time ? String(alert.end_time) : undefined
+      }));
+      
       const routeData: RouteData = {
-        startCity,
-        endCity,
-        startCoords,
-        endCoords,
-        safetyScore: combinedSafetyScore,
-        distance: Math.round(route.distance / 1000),
-        duration: Math.round(route.duration / 3600),
-        durationFormatted: mapboxService.formatDuration(route.duration),
-        distanceFormatted: mapboxService.formatDistance(route.distance),
+        startCity: String(startCity),
+        endCity: String(endCity),
+        startCoords: [Number(startCoords[0]), Number(startCoords[1])],
+        endCoords: [Number(endCoords[0]), Number(endCoords[1])],
+        safetyScore: Number(combinedSafetyScore),
+        distance: Number(Math.round(route.distance / 1000)),
+        duration: Number(Math.round(route.duration / 3600)),
+        durationFormatted: String(mapboxService.formatDuration(route.duration)),
+        distanceFormatted: String(mapboxService.formatDistance(route.distance)),
         geometry: cleanGeometry,
         transportMode: 'driving',
-        trafficLevel: routeQuality.trafficLevel,
-        roadQuality: routeQuality.roadQuality,
-        estimatedDelay: routeQuality.estimatedDelay,
+        trafficLevel: String(routeQuality.trafficLevel),
+        roadQuality: String(routeQuality.roadQuality),
+        estimatedDelay: Number(routeQuality.estimatedDelay),
         weatherCondition,
-        temperature,
+        temperature: temperature !== undefined ? Number(temperature) : undefined,
         conflictRisk: combinedSafetyScore > 80 ? 'low' : combinedSafetyScore > 60 ? 'moderate' : 'high',
         alternativeRoutes: directions.routes.slice(1, 3).map(r => ({
-          distance: r.distance,
-          duration: r.duration,
-          geometry: r.geometry ? JSON.parse(JSON.stringify(r.geometry)) : undefined
+          distance: Number(r.distance),
+          duration: Number(r.duration),
+          geometry: r.geometry ? cleanForSerialization(r.geometry) : undefined
         })),
-        safetyAlerts: routeAlerts,
+        safetyAlerts: cleanSafetyAlerts,
         realRoute: true
       };
       
@@ -278,7 +321,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         distance: routeData.distanceFormatted,
         duration: routeData.durationFormatted,
         safety: routeData.safetyScore,
-        alertsCount: routeAlerts.length,
+        alertsCount: cleanSafetyAlerts.length,
         hasGeometry: !!routeData.geometry
       });
       
@@ -300,13 +343,13 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       
       console.log('📤 Sending error route data with message:', errorMessage);
       
-      // Create error route data
+      // Create error route data with clean serializable data
       const errorRouteData: RouteData = {
-        startCity,
-        endCity,
+        startCity: String(startCity),
+        endCity: String(endCity),
         transportMode: 'driving',
         realRoute: false,
-        error: errorMessage
+        error: String(errorMessage)
       };
       
       onRouteRequest(errorRouteData);
