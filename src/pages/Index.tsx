@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
@@ -45,7 +46,7 @@ const Index = () => {
     );
   }
 
-  // Desktop Layout (unchanged)
+  // Desktop Layout - Increased card width from w-96 to w-[420px]
   return (
     <div className="min-h-screen relative">
       <InteractiveMap 
@@ -56,7 +57,7 @@ const Index = () => {
         focusAlert={focusAlert}
       />
 
-      <div className="absolute top-4 left-4 z-40 w-96 max-w-[calc(100vw-2rem)]">
+      <div className="absolute top-4 left-4 z-40 w-[420px] max-w-[calc(100vw-2rem)]">
         <RouteInput 
           language={language}
           onRouteRequest={setRouteData}
