@@ -7,6 +7,7 @@ import RouteDetails from './route/RouteDetails';
 import MobileAlertsDisplay from './mobile/MobileAlertsDisplay';
 import AlertsStatistics from './AlertsStatistics';
 import { RouteInputTranslations, RouteData } from '@/types/route';
+import { useAlertsData } from '@/hooks/useAlertsData';
 
 interface RouteInputProps {
   translations: RouteInputTranslations;
@@ -32,6 +33,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [activeTab, setActiveTab] = useState('route');
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
+  const { alerts, isLoading, onRefresh } = useAlertsData();
 
   const tabTranslations = {
     route: translations?.planRoute || 'Plan Route',
@@ -84,8 +86,11 @@ const RouteInput: React.FC<RouteInputProps> = ({
 
         <TabsContent value="alerts" className="mt-0">
           <MobileAlertsDisplay 
+            alerts={alerts}
             language={language}
-            onAlertClick={onAlertClick}
+            isLoading={isLoading}
+            onRefresh={onRefresh}
+            onAlertClick={onAlertClick || (() => {})}
           />
         </TabsContent>
 

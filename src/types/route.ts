@@ -54,6 +54,11 @@ export interface RouteData {
   roadQuality?: string;
   estimatedDelay?: number;
   error?: string;
+  alternativeRoutes?: Array<{
+    distance: number;
+    duration: number;
+    geometry?: any;
+  }>;
 }
 
 export interface AlertData {

@@ -63,7 +63,16 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language = 'en' }) => {
       cloudy: language === 'en' ? 'Cloudy' : 'Хмарно',
       rainy: language === 'en' ? 'Rainy' : 'Дощ',
       snowy: language === 'en' ? 'Snowy' : 'Сніг'
-    }
+    },
+    alertsByType: language === 'en' ? 'Alerts by Type' : 'Сповіщення за типом',
+    alertsByRegion: language === 'en' ? 'Alerts by Region' : 'Сповіщення за регіоном',
+    timeFilter: language === 'en' ? 'Time Period' : 'Період часу',
+    last7Days: language === 'en' ? 'Last 7 Days' : 'Останні 7 днів',
+    last30Days: language === 'en' ? 'Last 30 Days' : 'Останні 30 днів',
+    last90Days: language === 'en' ? 'Last 90 Days' : 'Останні 90 днів',
+    allTime: language === 'en' ? 'All Time' : 'Весь час',
+    noData: language === 'en' ? 'No data available' : 'Дані відсутні',
+    loadingStats: language === 'en' ? 'Loading statistics...' : 'Завантаження статистики...'
   };
 
   const handleRouteUpdate = (newRouteData: RouteData) => {
