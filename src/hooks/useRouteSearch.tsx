@@ -265,6 +265,22 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         return obj;
       };
       
+      // Helper function to ensure valid traffic level
+      const ensureValidTrafficLevel = (level: string): 'light' | 'moderate' | 'heavy' => {
+        if (level === 'light' || level === 'moderate' || level === 'heavy') {
+          return level;
+        }
+        return 'moderate'; // Default fallback
+      };
+      
+      // Helper function to ensure valid road quality
+      const ensureValidRoadQuality = (quality: string): 'excellent' | 'good' | 'fair' => {
+        if (quality === 'excellent' || quality === 'good' || quality === 'fair') {
+          return quality;
+        }
+        return 'good'; // Default fallback
+      };
+      
       // Create a completely clean geometry object
       let cleanGeometry;
       if (route.geometry) {
@@ -277,13 +293,16 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         }
       }
       
-      // Clean safety alerts to ensure they're serializable
+      // Clean safety alerts to ensure they're serializable and have all required properties
       const cleanSafetyAlerts = routeAlerts.map(alert => ({
         id: String(alert.id),
+        region_id: String(alert.region_id || alert.id), // Use id as fallback for region_id
         location_name: String(alert.location_name || ''),
         location_oblast: String(alert.location_oblast || ''),
         alert_type: String(alert.alert_type || ''),
-        severity: String(alert.severity || 'moderate'),
+        severity: (alert.severity === 'low' || alert.severity === 'moderate' || alert.severity === 'high' || alert.severity === 'critical') 
+          ? alert.severity 
+          : 'moderate' as const,
         start_time: String(alert.start_time || ''),
         end_time: alert.end_time ? String(alert.end_time) : undefined
       }));
@@ -300,8 +319,8 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         distanceFormatted: String(mapboxService.formatDistance(route.distance)),
         geometry: cleanGeometry,
         transportMode: 'driving',
-        trafficLevel: String(routeQuality.trafficLevel),
-        roadQuality: String(routeQuality.roadQuality),
+        trafficLevel: ensureValidTrafficLevel(String(routeQuality.trafficLevel)),
+        roadQuality: ensureValidRoadQuality(String(routeQuality.roadQuality)),
         estimatedDelay: Number(routeQuality.estimatedDelay),
         weatherCondition,
         temperature: temperature !== undefined ? Number(temperature) : undefined,
