@@ -31,8 +31,8 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Enhanced threat detection logic with better debugging
-  console.log('🎯 RouteDetails - Enhanced threat analysis:', {
+  // Enhanced threat detection with better debugging and matching
+  console.log('🎯 RouteDetails - Starting threat analysis:', {
     startCity: routeData.startCity,
     endCity: routeData.endCity,
     totalAlerts: routeData.safetyAlerts?.length || 0,
@@ -47,113 +47,126 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
   const relevantAlerts = routeData.safetyAlerts || [];
   
-  // Check specifically for destination threats with enhanced matching
-  const destinationThreats = relevantAlerts.filter(alert => {
-    const endCity = routeData.endCity?.toLowerCase() || '';
-    const alertLocation = (alert.location_name || '').toLowerCase();
-    const alertOblast = (alert.location_oblast || '').toLowerCase();
-    
-    console.log('🔍 Checking destination threat:', {
-      endCity,
-      alertLocation,
-      alertOblast,
-      alertId: alert.id
-    });
-    
-    // Direct city name check
-    if (alertLocation.includes(endCity)) {
-      console.log('✅ Direct city match found');
-      return true;
-    }
-    
-    // Enhanced oblast-level matching for major cities
-    const cityOblastMap = {
-      'dnipro': ['дніпропетровська область', 'dnipropetrovska oblast', 'дніпропетровська', 'dnipropetrovska'],
-      'kyiv': ['київська область', 'kyivska oblast', 'київська', 'kyivska', 'м. київ'],
-      'kharkiv': ['харківська область', 'kharkivska oblast', 'харківська', 'kharkivska'],
-      'odesa': ['одеська область', 'odeska oblast', 'одеська', 'odeska'],
-      'lviv': ['львівська область', 'lvivska oblast', 'львівська', 'lvivska']
-    };
-    
-    const oblastVariations = cityOblastMap[endCity] || [];
-    const matchesOblast = oblastVariations.some(variation => 
-      alertOblast.includes(variation) || alertLocation.includes(variation)
-    );
-    
-    if (matchesOblast) {
-      console.log('✅ Oblast-level match found:', {
-        endCity,
-        matchedVariation: oblastVariations.find(v => alertOblast.includes(v) || alertLocation.includes(v))
-      });
-      return true;
-    }
-    
-    // Use the existing alert matcher as fallback
-    const fallbackMatch = doesAlertMatchCity(
-      alert.location_name || '', 
-      alert.location_oblast || '', 
-      routeData.endCity || ''
-    );
-    
-    if (fallbackMatch) {
-      console.log('✅ Fallback matcher found match');
-    }
-    
-    return fallbackMatch;
-  });
-
-  // Check for any route threats (start or end city)
+  // More aggressive threat detection - check for ANY alerts that could affect the route
   const routeThreats = relevantAlerts.filter(alert => {
     const startCity = routeData.startCity?.toLowerCase() || '';
     const endCity = routeData.endCity?.toLowerCase() || '';
     const alertLocation = (alert.location_name || '').toLowerCase();
     const alertOblast = (alert.location_oblast || '').toLowerCase();
     
-    // Quick check for either city
+    console.log('🔍 Checking alert for route relevance:', {
+      alertId: alert.id,
+      alertLocation: alert.location_name,
+      alertOblast: alert.location_oblast,
+      startCity,
+      endCity
+    });
+    
+    // Check if alert matches start city or oblast
+    const matchesStartCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', startCity);
+    
+    // Check if alert matches end city or oblast
+    const matchesEndCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', endCity);
+    
+    // Additional direct matching for common cases
+    let directMatch = false;
+    
+    // Direct city name matching
     if (alertLocation.includes(startCity) || alertLocation.includes(endCity)) {
+      directMatch = true;
+      console.log('✅ Direct city name match found');
+    }
+    
+    // Oblast-level matching with expanded coverage
+    const oblastKeywords = {
+      'kyiv': ['київська', 'kyivska', 'київ', 'kyiv'],
+      'dnipro': ['дніпропетровська', 'dnipropetrovska', 'дніпро', 'dnipro', 'днепропетровская'],
+      'kharkiv': ['харківська', 'kharkivska', 'харків', 'kharkiv'],
+      'odesa': ['одеська', 'odeska', 'одеса', 'odesa'],
+      'lviv': ['львівська', 'lvivska', 'львів', 'lviv']
+    };
+    
+    // Check if alert oblast matches any city's oblast
+    const startOblasts = oblastKeywords[startCity] || [];
+    const endOblasts = oblastKeywords[endCity] || [];
+    
+    const matchesStartOblast = startOblasts.some(keyword => 
+      alertOblast.includes(keyword) || alertLocation.includes(keyword)
+    );
+    
+    const matchesEndOblast = endOblasts.some(keyword => 
+      alertOblast.includes(keyword) || alertLocation.includes(keyword)
+    );
+    
+    if (matchesStartOblast || matchesEndOblast) {
+      directMatch = true;
+      console.log('✅ Oblast keyword match found:', {
+        matchesStartOblast,
+        matchesEndOblast,
+        startOblasts,
+        endOblasts
+      });
+    }
+    
+    const isRelevant = matchesStartCity || matchesEndCity || directMatch;
+    
+    if (isRelevant) {
+      console.log('✅ Alert is relevant to route:', {
+        alertLocation: alert.location_name,
+        alertOblast: alert.location_oblast,
+        matchesStart: matchesStartCity,
+        matchesEnd: matchesEndCity,
+        directMatch,
+        alertType: alert.alert_type,
+        severity: alert.severity
+      });
+    } else {
+      console.log('❌ Alert not relevant to route');
+    }
+    
+    return isRelevant;
+  });
+
+  // Check specifically for destination threats
+  const destinationThreats = routeThreats.filter(alert => {
+    const endCity = routeData.endCity?.toLowerCase() || '';
+    const alertLocation = (alert.location_name || '').toLowerCase();
+    const alertOblast = (alert.location_oblast || '').toLowerCase();
+    
+    // Direct destination matching
+    if (alertLocation.includes(endCity)) {
       return true;
     }
     
-    // Oblast-level check for both cities
-    const cityOblastMap = {
-      'dnipro': ['дніпропетровська'],
-      'kyiv': ['київська', 'м. київ'],
-      'kharkiv': ['харківська'],
-      'odesa': ['одеська'],
-      'lviv': ['львівська']
+    // Oblast-level destination matching
+    const endCityOblasts = {
+      'dnipro': ['дніпропетровська', 'dnipropetrovska'],
+      'kyiv': ['київська', 'kyivska', 'київ'],
+      'kharkiv': ['харківська', 'kharkivska'],
+      'odesa': ['одеська', 'odeska'],
+      'lviv': ['львівська', 'lvivska']
     };
     
-    const startOblasts = cityOblastMap[startCity] || [];
-    const endOblasts = cityOblastMap[endCity] || [];
-    
-    const matchesStartOblast = startOblasts.some(oblast => 
-      alertOblast.includes(oblast) || alertLocation.includes(oblast)
+    const oblastVariations = endCityOblasts[endCity] || [];
+    return oblastVariations.some(variation => 
+      alertOblast.includes(variation) || alertLocation.includes(variation)
     );
-    
-    const matchesEndOblast = endOblasts.some(oblast => 
-      alertOblast.includes(oblast) || alertLocation.includes(oblast)
-    );
-    
-    return matchesStartOblast || matchesEndOblast;
   });
 
   const hasDestinationThreats = destinationThreats.length > 0;
   const hasRouteThreats = routeThreats.length > 0;
   const finalHasThreats = hasDestinationThreats || hasRouteThreats;
   
-  console.log('🎯 Final enhanced threat analysis result:', {
+  console.log('🎯 Final threat analysis result:', {
     endCity: routeData.endCity,
+    startCity: routeData.startCity,
     destinationThreatsCount: destinationThreats.length,
     routeThreatsCount: routeThreats.length,
     hasDestinationThreats,
     hasRouteThreats,
     finalHasThreats,
-    destinationThreatDetails: destinationThreats.map(alert => ({
-      id: alert.id,
-      location: alert.location_name,
-      oblast: alert.location_oblast,
-      severity: alert.severity
-    }))
+    allAlertLocations: routeData.safetyAlerts?.map(a => a.location_name),
+    allAlertOblasts: routeData.safetyAlerts?.map(a => a.location_oblast)
   });
 
   return (
