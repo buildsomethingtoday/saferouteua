@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CityAutocompleteProps {
   selectedCity: string;
@@ -24,6 +25,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
   disabled = false
 }) => {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const ukrainianCities = [
     { en: 'Kyiv', ua: 'Київ', coordinates: [30.5234, 50.4501] },
@@ -58,34 +60,101 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
   const translations = {
     en: {
       noResults: 'No cities found.',
-      searchPlaceholder: 'Search cities...'
+      searchPlaceholder: 'Search cities...',
+      selectCity: 'Select a city',
+      cancel: 'Cancel'
     },
     ua: {
       noResults: 'Міста не знайдено.',
-      searchPlaceholder: 'Пошук міст...'
+      searchPlaceholder: 'Пошук міст...',
+      selectCity: 'Оберіть місто',
+      cancel: 'Скасувати'
     }
   };
 
   const t = translations[language];
 
+  const handleCitySelect = (cityName: string) => {
+    onCitySelect(cityName === selectedCity ? "" : cityName);
+    setOpen(false);
+  };
+
+  const TriggerButton = (
+    <Button
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      disabled={disabled}
+      className={cn(
+        "w-full justify-between text-left font-normal overflow-hidden",
+        isMobile ? "h-12 text-base" : "2xl:max-w-[148px]",
+        disabled && "opacity-50 cursor-not-allowed"
+      )}
+    >
+      <span className="truncate">
+        {selectedCity || placeholder}
+      </span>
+      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+    </Button>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>
+          {TriggerButton}
+        </DrawerTrigger>
+        <DrawerContent className="bg-gray-900 border-gray-700">
+          <DrawerHeader className="text-left">
+            <div className="flex items-center justify-between">
+              <DrawerTitle className="text-white text-lg">
+                {t.selectCity}
+              </DrawerTitle>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+                  <X className="h-4 w-4" />
+                </Button>
+              </DrawerClose>
+            </div>
+          </DrawerHeader>
+          <div className="px-4 pb-6">
+            <Command className="bg-gray-800 border-gray-600">
+              <CommandInput 
+                placeholder={t.searchPlaceholder} 
+                className="text-white placeholder:text-gray-400 border-none"
+              />
+              <CommandList className="max-h-[50vh]">
+                <CommandEmpty className="text-gray-400 py-6 text-center">
+                  {t.noResults}
+                </CommandEmpty>
+                <CommandGroup>
+                  {availableCities.map((city) => (
+                    <CommandItem
+                      key={city.en}
+                      value={city[language]}
+                      onSelect={() => handleCitySelect(city[language])}
+                      className="flex items-center justify-between py-4 px-4 text-white hover:bg-gray-700 cursor-pointer"
+                    >
+                      <span className="text-base">{city[language]}</span>
+                      {selectedCity === city[language] && (
+                        <Check className="h-5 w-5 text-green-500" />
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop version - keep existing popover
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn(
-            "w-full 2xl:max-w-[148px] justify-between text-left font-normal overflow-hidden",
-            disabled && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <span className="truncate">
-            {selectedCity || placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        {TriggerButton}
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 z-50 bg-white shadow-lg border" align="start">
         <Command>
@@ -97,10 +166,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
                 <CommandItem
                   key={city.en}
                   value={city[language]}
-                  onSelect={(currentValue) => {
-                    onCitySelect(currentValue === selectedCity ? "" : currentValue);
-                    setOpen(false);
-                  }}
+                  onSelect={() => handleCitySelect(city[language])}
                 >
                   <Check
                     className={cn(
