@@ -1,3 +1,4 @@
+
 import React from 'react';
 import CityAutocomplete from '../CityAutocomplete';
 import { RouteInputTranslations } from '@/types/route';
@@ -46,8 +47,8 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
   };
   return (
     <div className="space-y-4">
-      {/* From, flip button, and To in one row with proper alignment */}
-      <div className="grid grid-cols-[1fr_50px_1fr] gap-4 items-start">
+      {/* From and To in one row without the flip button */}
+      <div className="grid grid-cols-2 gap-4 items-start">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-300">
             {translations.startCity}
@@ -59,20 +60,6 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
             selectedCity={startCity} 
             excludeCity={endCity} 
           />
-        </div>
-        
-        {/* Flip button in the middle with proper vertical alignment */}
-        <div className="flex justify-center pt-6">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleFlipCities} 
-            disabled={!startCity || !endCity} 
-            className="h-10 w-10 rounded-full bg-gray-800 border-gray-600 hover:bg-gray-700 disabled:opacity-50" 
-            title={language === 'en' ? 'Swap cities' : 'Поміняти місця'}
-          >
-            <ArrowRightLeft className="h-4 w-4" />
-          </Button>
         </div>
         
         <div className="space-y-2">
