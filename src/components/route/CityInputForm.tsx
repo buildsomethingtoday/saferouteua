@@ -1,4 +1,3 @@
-
 import React from 'react';
 import CityAutocomplete from '../CityAutocomplete';
 import { RouteInputTranslations } from '@/types/route';
@@ -47,6 +46,12 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
   };
   return (
     <div className="space-y-4">
+      {!startCity && (
+        <p className="text-xs text-gray-400">
+          {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
+        </p>
+      )}
+      
       {/* From and To in one row without the flip button */}
       <div className="grid grid-cols-2 gap-4 items-start">
         <div className="space-y-2">
@@ -76,12 +81,6 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
           />
         </div>
       </div>
-      
-      {!startCity && (
-        <p className="text-xs text-gray-400 mt-1">
-          {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
-        </p>
-      )}
     </div>
   );
 };
