@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { RouteData, RouteInputTranslations } from '@/types/route';
-import RouteHeader from './RouteHeader';
+import RouteDetailsHeader from './RouteDetailsHeader';
 import RouteStats from './RouteStats';
 import SafetyAlertsSection from './SafetyAlertsSection';
 import RouteStatusInfo from './RouteStatusInfo';
@@ -46,7 +46,7 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-700">
-      <RouteHeader routeData={routeData} translations={translations} />
+      <RouteDetailsHeader routeData={routeData} translations={translations} />
       
       <RouteStats routeData={routeData} translations={translations} />
 

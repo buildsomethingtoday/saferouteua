@@ -4,12 +4,12 @@ import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
-interface RouteHeaderProps {
+interface RouteDetailsHeaderProps {
   routeData: RouteData;
   translations: RouteInputTranslations;
 }
 
-const RouteHeader: React.FC<RouteHeaderProps> = ({ routeData, translations }) => {
+const RouteDetailsHeader: React.FC<RouteDetailsHeaderProps> = ({ routeData, translations }) => {
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center space-x-2">
@@ -33,4 +33,4 @@ const RouteHeader: React.FC<RouteHeaderProps> = ({ routeData, translations }) =>
   );
 };
 
-export default RouteHeader;
+export default RouteDetailsHeader;
