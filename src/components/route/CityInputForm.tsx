@@ -1,3 +1,4 @@
+
 import React from 'react';
 import CityAutocomplete from '../CityAutocomplete';
 import { RouteInputTranslations } from '@/types/route';
@@ -44,11 +45,17 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
       onEndCityChange(startCity);
     }
   };
+
+  const helperText = {
+    en: 'Please select a starting city first',
+    ua: 'Спочатку оберіть місто відправлення'
+  };
+
   return (
     <div className="space-y-4">
       {!startCity && (
         <p className="text-xs text-gray-400">
-          {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
+          {helperText[language]}
         </p>
       )}
       
