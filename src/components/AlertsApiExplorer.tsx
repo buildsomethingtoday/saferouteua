@@ -219,10 +219,10 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
     
     if (!filteredAlerts || filteredAlerts.length === 0) {
       return (
-        <div className="text-center py-6 text-gray-400">
-          <Shield className="w-10 h-10 mx-auto mb-3 text-green-400" />
-          <p className="mb-2 font-medium">{t.noAlerts}</p>
-          <p className="text-xs text-gray-500 mb-2">{t.last72Hours}</p>
+        <div className="text-center py-8 text-gray-400">
+          <Shield className="w-12 h-12 mx-auto mb-4 text-green-400" />
+          <p className="mb-2 font-medium text-lg">{t.noAlerts}</p>
+          <p className="text-sm text-gray-500">{t.last72Hours}</p>
         </div>
       );
     }
@@ -231,61 +231,76 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
     );
 
-    // Show more alerts and increase max height
     const alertsToShow = compact ? 20 : 40;
-    const maxHeight = compact ? 'max-h-[600px]' : 'max-h-[700px]';
+    const maxHeight = compact ? 'max-h-[500px]' : 'max-h-[600px]';
 
     return (
-      <div className={`space-y-1.5 ${maxHeight} overflow-y-auto`}>
-        <div className="text-xs text-gray-500 mb-2 px-1 font-medium">{t.last72Hours}</div>
-        {sortedAlerts.slice(0, alertsToShow).map((alert) => (
-          <Card 
-            key={alert.id} 
-            className="bg-gray-800 border-gray-600 hover:bg-gray-750 transition-all duration-200 cursor-pointer hover:border-gray-500"
-            onClick={() => handleAlertClick(alert)}
-          >
-            <CardContent className="p-2.5">
-              <div className="flex items-start space-x-2.5">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getAlertColor(alert.alert_type)} flex-shrink-0`}>
+      <div className="space-y-0">
+        <div className="text-xs text-gray-400 mb-4 px-3 font-medium">{t.last72Hours}</div>
+        <div className={`${maxHeight} overflow-y-auto`}>
+          {sortedAlerts.slice(0, alertsToShow).map((alert, index) => (
+            <div
+              key={alert.id}
+              className="group p-4 hover:bg-gray-800/50 transition-all duration-200 cursor-pointer border-b border-gray-800/50 last:border-b-0"
+              onClick={() => handleAlertClick(alert)}
+            >
+              <div className="flex items-start space-x-4">
+                {/* Alert Icon */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getAlertColor(alert.alert_type)} flex-shrink-0 shadow-lg`}>
                   {getAlertIcon(alert.alert_type)}
                 </div>
+                
+                {/* Alert Content */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-white truncate text-sm">
-                    {alert.location_title}
-                  </h4>
-                  <p className="text-gray-400 text-xs truncate">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-white text-base leading-tight">
+                      {alert.location_title}
+                    </h4>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <div className="flex items-center text-sm text-gray-400 mb-1">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {formatTimeAgo(alert.started_at)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-400 text-sm mb-3 leading-relaxed">
                     {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
                   </p>
-                  <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
-                    <Badge variant="outline" className="text-xs border-gray-500 text-gray-300 bg-gray-700/50 px-2 py-0.5">
-                      {t.alertTypes[alert.alert_type] || alert.alert_type}
-                    </Badge>
-                    <span className="text-xs text-gray-500">
-                      {t.timeFormat.since} {formatDate(alert.started_at)}
-                    </span>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Badge 
+                        variant="outline" 
+                        className="text-sm border-gray-600 text-gray-300 bg-gray-700/30 px-3 py-1 font-medium"
+                      >
+                        {t.alertTypes[alert.alert_type] || alert.alert_type}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {formatDate(alert.started_at)}
+                      </span>
+                    </div>
+                    
+                    <div className="text-sm text-orange-400 font-medium">
+                      {t.timeFormat.active}
+                    </div>
                   </div>
-                  <div className="text-xs text-blue-400 mt-1.5 font-medium">
+                  
+                  <div className="text-sm text-blue-400 mt-3 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                     {t.clickToFocus}
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="flex items-center text-xs text-gray-400">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {formatTimeAgo(alert.started_at)}
-                  </div>
-                  <div className="text-xs text-orange-400 font-medium mt-1">
-                    {t.timeFormat.active}
-                  </div>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          ))}
+        </div>
         
         {filteredAlerts.length > alertsToShow && (
-          <p className="text-xs text-gray-500 text-center py-2 font-medium">
-            Showing {alertsToShow} of {filteredAlerts.length} alerts
-          </p>
+          <div className="text-center py-4 border-t border-gray-800/50">
+            <p className="text-sm text-gray-500 font-medium">
+              Showing {alertsToShow} of {filteredAlerts.length} alerts
+            </p>
+          </div>
         )}
       </div>
     );
@@ -293,57 +308,59 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
 
   return (
     <Card className="w-full bg-gray-900 border border-gray-700 shadow-xl text-white">
-      <CardHeader className={compact ? "pb-2" : "pb-3"}>
-        <CardTitle className={`flex items-center justify-between ${compact ? 'text-base' : 'text-lg'} text-white`}>
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-orange-400`} />
+      <CardHeader className={compact ? "pb-4" : "pb-4"}>
+        <CardTitle className={`flex items-center justify-between ${compact ? 'text-lg' : 'text-xl'} text-white`}>
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} text-orange-400`} />
             <span>{t.title}</span>
           </div>
           {apiData && !error && (
-            <Badge className="bg-green-600 text-white text-xs border-none">
+            <Badge className="bg-green-600 text-white text-sm border-none px-3 py-1">
               {t.success}
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Button
-            onClick={loadAlertsData}
-            disabled={isLoading}
-            variant="outline"
-            size={compact ? "sm" : "default"}
-            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
-          >
-            {isLoading ? t.loading : t.loadData}
-          </Button>
-          
-          {!compact && (
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="autoRefresh"
-                checked={autoRefresh}
-                onChange={(e) => setAutoRefresh(e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="autoRefresh" className="text-sm text-gray-300">
-                {t.autoRefresh}
-              </label>
-            </div>
-          )}
+      <CardContent className="p-0">
+        <div className="px-6 pb-4">
+          <div className="flex items-center justify-between">
+            <Button
+              onClick={loadAlertsData}
+              disabled={isLoading}
+              variant="outline"
+              size={compact ? "sm" : "default"}
+              className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+            >
+              {isLoading ? t.loading : t.loadData}
+            </Button>
+            
+            {!compact && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="autoRefresh"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="autoRefresh" className="text-sm text-gray-300">
+                  {t.autoRefresh}
+                </label>
+              </div>
+            )}
+          </div>
         </div>
 
         {isLoading && (
-          <div className="flex items-center justify-center p-3">
+          <div className="flex items-center justify-center py-8 px-6">
             <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="ml-3 text-gray-300">{t.loading}</span>
           </div>
         )}
 
         {error && (
-          <div className="p-3 bg-red-900/20 border border-red-700 rounded-lg">
+          <div className="mx-6 mb-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
             <div className="flex items-center space-x-2">
               <AlertTriangle className="w-4 h-4 text-red-400" />
               <span className="font-medium text-red-400">{t.error}</span>
@@ -353,15 +370,17 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         )}
 
         {apiData && !error && apiData.data?.alerts && (
-          <div className="space-y-3">
+          <div className="space-y-0">
             {!compact && apiData.data?.meta?.last_updated_at && (
-              <div className="text-sm text-gray-400 flex items-center space-x-2">
-                <Clock className="w-3 h-3" />
-                <span>{t.lastUpdated}: {new Date(apiData.data.meta.last_updated_at).toLocaleString()}</span>
+              <div className="px-6 pb-4">
+                <div className="text-sm text-gray-400 flex items-center space-x-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{t.lastUpdated}: {new Date(apiData.data.meta.last_updated_at).toLocaleString()}</span>
+                </div>
               </div>
             )}
 
-            <div className="bg-gray-800 rounded-lg p-2">
+            <div className="bg-gray-800/30 border-t border-gray-700/50">
               {renderAlerts(apiData.data.alerts)}
             </div>
           </div>
