@@ -6,19 +6,37 @@ import CityInputForm from './route/CityInputForm';
 import RouteDetails from './route/RouteDetails';
 import MobileAlertsDisplay from './mobile/MobileAlertsDisplay';
 import AlertsStatistics from './AlertsStatistics';
-import { RouteInputTranslations } from '@/types/route';
+import { RouteInputTranslations, RouteData } from '@/types/route';
 
 interface RouteInputProps {
   translations: RouteInputTranslations;
+  language?: 'en' | 'ua';
+  onRouteRequest?: (routeData: any) => void;
+  isSearching?: boolean;
+  setIsSearching?: (searching: boolean) => void;
+  routeData?: RouteData | null;
+  selectedRegion?: string | null;
+  onAlertClick?: (alert: any) => void;
 }
 
-const RouteInput: React.FC<RouteInputProps> = ({ translations }) => {
+const RouteInput: React.FC<RouteInputProps> = ({ 
+  translations,
+  language = 'en',
+  onRouteRequest,
+  isSearching = false,
+  setIsSearching,
+  routeData,
+  selectedRegion,
+  onAlertClick
+}) => {
   const [activeTab, setActiveTab] = useState('route');
+  const [startCity, setStartCity] = useState('');
+  const [endCity, setEndCity] = useState('');
 
   const tabTranslations = {
-    route: translations.planRoute || 'Plan Route',
-    alerts: translations.alerts || 'Alerts',
-    statistics: translations.statistics || 'Statistics'
+    route: translations?.planRoute || 'Plan Route',
+    alerts: translations?.alerts || 'Alerts',
+    statistics: translations?.statistics || 'Statistics'
   };
 
   return (
@@ -50,13 +68,26 @@ const RouteInput: React.FC<RouteInputProps> = ({ translations }) => {
 
         <TabsContent value="route" className="mt-0">
           <div className="space-y-4">
-            <CityInputForm translations={translations} />
-            <RouteDetails translations={translations} />
+            <CityInputForm 
+              startCity={startCity}
+              endCity={endCity}
+              language={language}
+              translations={translations}
+              onStartCityChange={setStartCity}
+              onEndCityChange={setEndCity}
+            />
+            {routeData && (
+              <RouteDetails routeData={routeData} translations={translations} />
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="alerts" className="mt-0">
-          <MobileAlertsDisplay translations={translations} />
+          <MobileAlertsDisplay 
+            language={language}
+            selectedRegion={selectedRegion}
+            onAlertClick={onAlertClick}
+          />
         </TabsContent>
 
         <TabsContent value="statistics" className="mt-0">

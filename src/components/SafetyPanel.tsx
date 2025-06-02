@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import RouteInput from './RouteInput';
 import SafetyAlertsSection from './route/SafetyAlertsSection';
@@ -12,8 +13,8 @@ interface SafetyPanelProps {
 
 const SafetyPanel: React.FC<SafetyPanelProps> = ({ language = 'en' }) => {
   const [routeData, setRouteData] = useState<RouteData>({
-    fromCity: '',
-    toCity: '',
+    startCity: '',
+    endCity: '',
     realRoute: false,
     weatherCondition: 'clear',
     temperature: 20
@@ -23,9 +24,9 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language = 'en' }) => {
 
   useEffect(() => {
     const fetchAlerts = async () => {
-      if (routeData.fromCity && routeData.toCity) {
+      if (routeData.startCity && routeData.endCity) {
         const alertsService = getAlertsService();
-        const alerts = await alertsService.getAlertsForCities(routeData.fromCity, routeData.toCity);
+        const alerts = await alertsService.getAlertsForCities(routeData.startCity, routeData.endCity);
         setRelevantAlerts(alerts);
         setHasActiveThreats(alerts.length > 0);
       } else {
@@ -35,15 +36,22 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language = 'en' }) => {
     };
 
     fetchAlerts();
-  }, [routeData.fromCity, routeData.toCity]);
+  }, [routeData.startCity, routeData.endCity]);
 
   const translations: RouteInputTranslations = {
     from: language === 'en' ? 'From' : 'Звідки',
     to: language === 'en' ? 'To' : 'Куди',
+    startCity: language === 'en' ? 'From' : 'Звідки',
+    endCity: language === 'en' ? 'To' : 'Куди',
+    startPlaceholder: language === 'en' ? 'Enter starting city...' : 'Введіть місто відправлення...',
+    endPlaceholder: language === 'en' ? 'Enter destination city...' : 'Введіть місто призначення...',
     planRoute: language === 'en' ? 'Plan Route' : 'Планувати маршрут',
     alerts: language === 'en' ? 'Alerts' : 'Сповіщення',
     statistics: language === 'en' ? 'Statistics' : 'Статистика',
     searchPlaceholder: language === 'en' ? 'Search cities...' : 'Пошук міст...',
+    searching: language === 'en' ? 'Searching route...' : 'Пошук маршруту...',
+    distance: language === 'en' ? 'Distance' : 'Відстань',
+    duration: language === 'en' ? 'Duration' : 'Тривалість',
     routeInformation: language === 'en' ? 'Route Information' : 'Інформація про маршрут',
     safetyAlerts: language === 'en' ? 'Safety Alerts' : 'Сповіщення безпеки',
     alertsCount: language === 'en' ? 'alerts' : 'сповіщень',
@@ -69,9 +77,12 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language = 'en' }) => {
           {translations.routeInformation}
         </h1>
 
-        <RouteInput translations={translations} onRouteUpdate={handleRouteUpdate} />
+        <RouteInput 
+          translations={translations} 
+          language={language}
+        />
 
-        {routeData.fromCity && routeData.toCity && (
+        {routeData.startCity && routeData.endCity && (
           <div className="mt-6">
             <RouteDetailsHeader routeData={routeData} translations={translations} />
             <RouteStatusInfo routeData={routeData} translations={translations} hasActiveThreats={hasActiveThreats} />

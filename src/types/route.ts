@@ -1,10 +1,18 @@
+
 export interface RouteInputTranslations {
   from: string;
   to: string;
+  startCity: string;
+  endCity: string;
+  startPlaceholder: string;
+  endPlaceholder: string;
   planRoute: string;
   alerts: string;
-  statistics: string; // Add this new field
+  statistics: string;
   searchPlaceholder: string;
+  searching: string;
+  distance: string;
+  duration: string;
   routeInformation: string;
   safetyAlerts: string;
   alertsCount: string;
@@ -19,9 +27,24 @@ export interface RouteInputTranslations {
 export interface RouteData {
   startCity: string;
   endCity: string;
+  startCoords?: [number, number];
+  endCoords?: [number, number];
   realRoute: boolean;
   weatherCondition?: string;
   temperature?: number;
+  distance?: number;
+  distanceFormatted?: string;
+  duration?: number;
+  durationFormatted?: string;
+  safetyScore?: number;
+  safetyAlerts?: AlertData[];
+  geometry?: any;
+  transportMode?: string;
+  conflictRisk?: string;
+  trafficLevel?: string;
+  roadQuality?: string;
+  estimatedDelay?: number;
+  error?: string;
 }
 
 export interface AlertData {
