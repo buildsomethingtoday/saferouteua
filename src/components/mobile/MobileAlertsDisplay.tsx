@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Shield, Clock, Plane, Zap, Swords, RefreshCw } from 'lucide-react';
@@ -47,8 +46,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
         minutes: 'min',
         hours: 'h',
         days: 'd'
-      },
-      clickToFocus: 'Click to focus on map'
+      }
     },
     ua: {
       noAlerts: 'Немає активних сповіщень',
@@ -64,8 +62,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
         minutes: 'хв',
         hours: 'г',
         days: 'д'
-      },
-      clickToFocus: 'Натисніть, щоб сфокусуватися на карті'
+      }
     }
   };
 
@@ -202,10 +199,6 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
                         {formatDate(alert.started_at)}
                       </span>
                     </div>
-                  </div>
-                  
-                  <div className="text-sm text-blue-400 mt-2 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                    {t.clickToFocus}
                   </div>
                 </div>
               </div>
