@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
 import LanguageToggle from '../components/LanguageToggle';
+import MobileNavBar from '../components/MobileNavBar';
 import { useLanguageDetection } from '../hooks/useLanguageDetection';
+import { useIsMobile } from '../hooks/use-mobile';
 
 const Index = () => {
   const detectedLanguage = useLanguageDetection();
@@ -12,6 +13,7 @@ const Index = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [focusAlert, setFocusAlert] = useState<any>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setLanguage(detectedLanguage);
@@ -22,6 +24,28 @@ const Index = () => {
     setFocusAlert(alert);
   };
 
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <MobileNavBar language={language} onLanguageChange={setLanguage} />
+        
+        {/* Mobile Layout - Full screen route input with top padding for navbar */}
+        <div className="pt-16 p-4 min-h-screen">
+          <RouteInput 
+            language={language}
+            onRouteRequest={setRouteData}
+            isSearching={isSearching}
+            setIsSearching={setIsSearching}
+            routeData={routeData}
+            selectedRegion={selectedRegion}
+            onAlertClick={handleAlertClick}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout (unchanged)
   return (
     <div className="min-h-screen relative">
       <InteractiveMap 

@@ -9,6 +9,7 @@ import CityInputForm from './route/CityInputForm';
 import RouteStatus from './route/RouteStatus';
 import RouteDetails from './route/RouteDetails';
 import AlertsApiExplorer from './AlertsApiExplorer';
+import { useIsMobile } from '../hooks/use-mobile';
 
 interface RouteInputProps {
   language: 'en' | 'ua';
@@ -33,6 +34,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [endCity, setEndCity] = useState('');
   const [activeTab, setActiveTab] = useState('route');
   const lastSearchRef = useRef<string>('');
+  const isMobile = useIsMobile();
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
     en: {
@@ -175,7 +177,9 @@ const RouteInput: React.FC<RouteInputProps> = ({
   }, [routeData]);
 
   return (
-    <Card className="bg-gray-900 border border-gray-700 shadow-xl text-white">
+    <Card className={`bg-gray-900 border border-gray-700 shadow-xl text-white ${
+      isMobile ? 'h-full min-h-[calc(100vh-6rem)]' : ''
+    }`}>
       <CardHeader className="pb-3">
         <RouteHeader translations={t} />
         
@@ -200,7 +204,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
         </Tabs>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 ${isMobile ? 'flex-1 overflow-y-auto' : ''}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="route" className="mt-0">
             <div className="space-y-4">
