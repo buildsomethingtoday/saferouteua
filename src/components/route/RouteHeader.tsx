@@ -1,29 +1,34 @@
 
 import React from 'react';
-import { Shield } from 'lucide-react';
-import { RouteInputTranslations } from '@/types/route';
+import { MapPin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { RouteData, RouteInputTranslations } from '@/types/route';
 
 interface RouteHeaderProps {
+  routeData: RouteData;
   translations: RouteInputTranslations;
 }
 
-const RouteHeader: React.FC<RouteHeaderProps> = ({ translations }) => {
-  const UkraineFlag = () => (
-    <span className="text-lg" role="img" aria-label="Ukraine flag">🇺🇦</span>
-  );
-
+const RouteHeader: React.FC<RouteHeaderProps> = ({ routeData, translations }) => {
   return (
-    <div className="flex items-center space-x-3 mb-3">
-      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-yellow-400 rounded-lg flex items-center justify-center">
-        <Shield className="w-5 h-5 text-white" />
-      </div>
-      <div>
-        <div className="flex items-center space-x-1">
-          <h1 className="text-sm font-bold text-white">{translations.appTitle}</h1>
-          <UkraineFlag />
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center space-x-2">
+        <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
+          <MapPin className="w-3 h-3 text-white" />
         </div>
-        <p className="text-xs text-gray-400">{translations.appSubtitle}</p>
+        <span className="text-sm font-medium text-gray-300 mr-2">Route Information</span>
       </div>
+      <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-green-600' : 'bg-blue-600'} text-white border-none`}>
+        <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
+          {routeData.realRoute && (
+            <>
+              <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
+              <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            </>
+          )}
+        </div>
+        {routeData.realRoute ? 'Live Data' : translations.estimated}
+      </Badge>
     </div>
   );
 };
