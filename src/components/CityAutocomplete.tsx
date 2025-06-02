@@ -77,7 +77,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full max-w-[110px] justify-between text-left font-normal overflow-hidden",
+            "w-full max-w-[150px] justify-between text-left font-normal overflow-hidden",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
