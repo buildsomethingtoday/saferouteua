@@ -85,7 +85,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
         <TabsContent value="alerts" className="mt-0">
           <MobileAlertsDisplay 
             language={language}
-            selectedRegion={selectedRegion}
             onAlertClick={onAlertClick}
           />
         </TabsContent>

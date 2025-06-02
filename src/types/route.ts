@@ -22,6 +22,15 @@ export interface RouteInputTranslations {
   weatherConditions: {
     [key: string]: string;
   };
+  alertsByType: string;
+  alertsByRegion: string;
+  timeFilter: string;
+  last7Days: string;
+  last30Days: string;
+  last90Days: string;
+  allTime: string;
+  noData: string;
+  loadingStats: string;
 }
 
 export interface RouteData {
