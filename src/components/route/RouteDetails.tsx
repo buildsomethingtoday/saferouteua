@@ -31,7 +31,6 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }
   };
 
-  // Enhanced threat detection with better debugging and matching
   console.log('🎯 RouteDetails - Starting threat analysis:', {
     startCity: routeData.startCity,
     endCity: routeData.endCity,
@@ -47,126 +46,18 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
 
   const relevantAlerts = routeData.safetyAlerts || [];
   
-  // More aggressive threat detection - check for ANY alerts that could affect the route
-  const routeThreats = relevantAlerts.filter(alert => {
-    const startCity = routeData.startCity?.toLowerCase() || '';
-    const endCity = routeData.endCity?.toLowerCase() || '';
-    const alertLocation = (alert.location_name || '').toLowerCase();
-    const alertOblast = (alert.location_oblast || '').toLowerCase();
-    
-    console.log('🔍 Checking alert for route relevance:', {
-      alertId: alert.id,
-      alertLocation: alert.location_name,
-      alertOblast: alert.location_oblast,
-      startCity,
-      endCity
-    });
-    
-    // Check if alert matches start city or oblast
-    const matchesStartCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', startCity);
-    
-    // Check if alert matches end city or oblast
-    const matchesEndCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', endCity);
-    
-    // Additional direct matching for common cases
-    let directMatch = false;
-    
-    // Direct city name matching
-    if (alertLocation.includes(startCity) || alertLocation.includes(endCity)) {
-      directMatch = true;
-      console.log('✅ Direct city name match found');
-    }
-    
-    // Oblast-level matching with expanded coverage
-    const oblastKeywords = {
-      'kyiv': ['київська', 'kyivska', 'київ', 'kyiv'],
-      'dnipro': ['дніпропетровська', 'dnipropetrovska', 'дніпро', 'dnipro', 'днепропетровская'],
-      'kharkiv': ['харківська', 'kharkivska', 'харків', 'kharkiv'],
-      'odesa': ['одеська', 'odeska', 'одеса', 'odesa'],
-      'lviv': ['львівська', 'lvivska', 'львів', 'lviv']
-    };
-    
-    // Check if alert oblast matches any city's oblast
-    const startOblasts = oblastKeywords[startCity] || [];
-    const endOblasts = oblastKeywords[endCity] || [];
-    
-    const matchesStartOblast = startOblasts.some(keyword => 
-      alertOblast.includes(keyword) || alertLocation.includes(keyword)
-    );
-    
-    const matchesEndOblast = endOblasts.some(keyword => 
-      alertOblast.includes(keyword) || alertLocation.includes(keyword)
-    );
-    
-    if (matchesStartOblast || matchesEndOblast) {
-      directMatch = true;
-      console.log('✅ Oblast keyword match found:', {
-        matchesStartOblast,
-        matchesEndOblast,
-        startOblasts,
-        endOblasts
-      });
-    }
-    
-    const isRelevant = matchesStartCity || matchesEndCity || directMatch;
-    
-    if (isRelevant) {
-      console.log('✅ Alert is relevant to route:', {
-        alertLocation: alert.location_name,
-        alertOblast: alert.location_oblast,
-        matchesStart: matchesStartCity,
-        matchesEnd: matchesEndCity,
-        directMatch,
-        alertType: alert.alert_type,
-        severity: alert.severity
-      });
-    } else {
-      console.log('❌ Alert not relevant to route');
-    }
-    
-    return isRelevant;
-  });
-
-  // Check specifically for destination threats
-  const destinationThreats = routeThreats.filter(alert => {
-    const endCity = routeData.endCity?.toLowerCase() || '';
-    const alertLocation = (alert.location_name || '').toLowerCase();
-    const alertOblast = (alert.location_oblast || '').toLowerCase();
-    
-    // Direct destination matching
-    if (alertLocation.includes(endCity)) {
-      return true;
-    }
-    
-    // Oblast-level destination matching
-    const endCityOblasts = {
-      'dnipro': ['дніпропетровська', 'dnipropetrovska'],
-      'kyiv': ['київська', 'kyivska', 'київ'],
-      'kharkiv': ['харківська', 'kharkivska'],
-      'odesa': ['одеська', 'odeska'],
-      'lviv': ['львівська', 'lvivska']
-    };
-    
-    const oblastVariations = endCityOblasts[endCity] || [];
-    return oblastVariations.some(variation => 
-      alertOblast.includes(variation) || alertLocation.includes(variation)
-    );
-  });
-
-  const hasDestinationThreats = destinationThreats.length > 0;
-  const hasRouteThreats = routeThreats.length > 0;
-  const finalHasThreats = hasDestinationThreats || hasRouteThreats;
+  // SIMPLIFIED: If we have ANY safety alerts for this route, there are threats
+  const hasActiveThreats = relevantAlerts.length > 0;
   
-  console.log('🎯 Final threat analysis result:', {
-    endCity: routeData.endCity,
-    startCity: routeData.startCity,
-    destinationThreatsCount: destinationThreats.length,
-    routeThreatsCount: routeThreats.length,
-    hasDestinationThreats,
-    hasRouteThreats,
-    finalHasThreats,
-    allAlertLocations: routeData.safetyAlerts?.map(a => a.location_name),
-    allAlertOblasts: routeData.safetyAlerts?.map(a => a.location_oblast)
+  console.log('🎯 SIMPLIFIED threat analysis result:', {
+    alertsCount: relevantAlerts.length,
+    hasActiveThreats,
+    alertDetails: relevantAlerts.map(alert => ({
+      id: alert.id,
+      location: alert.location_name,
+      oblast: alert.location_oblast,
+      severity: alert.severity
+    }))
   });
 
   return (
@@ -208,8 +99,8 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         </div>
       </div>
 
-      {/* Safety Alerts Section - show if there are any route threats */}
-      {finalHasThreats && (
+      {/* Safety Alerts Section - show if there are any alerts */}
+      {hasActiveThreats && (
         <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -219,11 +110,11 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
               </span>
             </div>
             <Badge className="bg-red-600 text-white text-xs border-none">
-              {routeThreats.length} {translations.alertsCount || 'alerts'}
+              {relevantAlerts.length} {translations.alertsCount || 'alerts'}
             </Badge>
           </div>
           <div className="space-y-2">
-            {routeThreats.slice(0, 3).map((alert, index) => (
+            {relevantAlerts.slice(0, 3).map((alert, index) => (
               <div key={alert.id || index} className="flex items-center justify-between text-xs">
                 <span className="text-gray-300 truncate">{alert.location_name}</span>
                 <Badge className={`text-xs ${getStatusBadgeStyle(alert.severity)}`}>
@@ -231,9 +122,9 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
                 </Badge>
               </div>
             ))}
-            {routeThreats.length > 3 && (
+            {relevantAlerts.length > 3 && (
               <div className="text-xs text-gray-400 text-center">
-                +{routeThreats.length - 3} more alerts
+                +{relevantAlerts.length - 3} more alerts
               </div>
             )}
           </div>
@@ -251,8 +142,8 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
             <span className="text-sm font-medium text-white">Active Threats (72h)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className={`text-sm font-semibold border-none ${finalHasThreats ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-              {finalHasThreats ? 'YES' : 'NO'}
+            <Badge className={`text-sm font-semibold border-none ${hasActiveThreats ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+              {hasActiveThreats ? 'YES' : 'NO'}
             </Badge>
           </div>
         </div>
