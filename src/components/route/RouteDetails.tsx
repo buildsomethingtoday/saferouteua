@@ -2,7 +2,6 @@
 import React from 'react';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 import RouteDetailsHeader from './RouteDetailsHeader';
-import RouteStats from './RouteStats';
 import SafetyAlertsSection from './SafetyAlertsSection';
 import RouteStatusInfo from './RouteStatusInfo';
 
@@ -48,7 +47,22 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     <div className="mt-4 pt-4 border-t border-gray-700">
       <RouteDetailsHeader routeData={routeData} translations={translations} />
       
-      <RouteStats routeData={routeData} translations={translations} />
+      {/* Compact Distance & Duration */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-gray-800/60 p-4 rounded-xl border border-gray-600">
+          <div className="text-sm text-blue-400 mb-1">{translations.distance}</div>
+          <div className="text-xl font-bold text-blue-400">
+            {routeData.distanceFormatted || `${routeData.distance} km`}
+          </div>
+        </div>
+        
+        <div className="bg-gray-800/60 p-4 rounded-xl border border-gray-600">
+          <div className="text-sm text-purple-400 mb-1">{translations.duration}</div>
+          <div className="text-xl font-bold text-purple-400">
+            {routeData.durationFormatted || `${routeData.duration}h`}
+          </div>
+        </div>
+      </div>
 
       <SafetyAlertsSection relevantAlerts={relevantAlerts} translations={translations} />
 
