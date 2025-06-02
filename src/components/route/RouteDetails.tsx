@@ -72,13 +72,15 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         </div>
       </div>
 
-      <SafetyAlertsSection relevantAlerts={relevantAlerts} translations={translations} />
-
+      {/* Active Threats Status - Show BEFORE Safety Alerts */}
       <RouteStatusInfo 
         routeData={routeData} 
         translations={translations} 
         hasActiveThreats={hasActiveThreats} 
       />
+
+      {/* Safety Alerts Section - Show AFTER Active Threats */}
+      <SafetyAlertsSection relevantAlerts={relevantAlerts} translations={translations} />
     </div>
   );
 };

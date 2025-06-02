@@ -12,7 +12,7 @@ interface RouteStatusInfoProps {
 
 const RouteStatusInfo: React.FC<RouteStatusInfoProps> = ({ routeData, translations, hasActiveThreats }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 mb-4">
       {/* Active Threats Status */}
       <div className="flex items-center justify-between p-3 bg-gray-800 rounded-xl">
         <div className="flex items-center space-x-3">

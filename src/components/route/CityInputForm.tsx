@@ -38,37 +38,41 @@ const CityInputForm: React.FC<CityInputFormProps> = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          {translations.startCity}
-        </label>
-        <CityAutocomplete
-          language={language}
-          placeholder={translations.startPlaceholder}
-          onCitySelect={handleStartCityChange}
-          selectedCity={startCity}
-          excludeCity={endCity}
-        />
+      {/* From and To in one row */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {translations.startCity}
+          </label>
+          <CityAutocomplete
+            language={language}
+            placeholder={translations.startPlaceholder}
+            onCitySelect={handleStartCityChange}
+            selectedCity={startCity}
+            excludeCity={endCity}
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {translations.endCity}
+          </label>
+          <CityAutocomplete
+            language={language}
+            placeholder={translations.endPlaceholder}
+            onCitySelect={handleEndCityChange}
+            selectedCity={endCity}
+            excludeCity={startCity}
+            disabled={!startCity}
+          />
+        </div>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          {translations.endCity}
-        </label>
-        <CityAutocomplete
-          language={language}
-          placeholder={translations.endPlaceholder}
-          onCitySelect={handleEndCityChange}
-          selectedCity={endCity}
-          excludeCity={startCity}
-          disabled={!startCity}
-        />
-        {!startCity && (
-          <p className="text-xs text-gray-400 mt-1">
-            {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
-          </p>
-        )}
-      </div>
+      {!startCity && (
+        <p className="text-xs text-gray-400 mt-1">
+          {language === 'en' ? 'Please select a starting city first' : 'Спочатку оберіть місто відправлення'}
+        </p>
+      )}
     </div>
   );
 };
