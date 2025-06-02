@@ -14,19 +14,43 @@ export class AlertsDataProcessor {
   }
 
   static processAlertsData(rawData: any): AlertData[] {
-    if (!Array.isArray(rawData)) return [];
+    console.log('🔧 AlertsDataProcessor - Processing raw alerts data:', rawData);
     
-    return rawData.map(alert => ({
-      id: alert.id || Math.random().toString(),
-      region_id: alert.region_id || alert.regionId || '',
-      alert_type: alert.type || alert.alert_type || 'unknown',
-      start_time: alert.start_time || alert.startTime || new Date().toISOString(),
-      end_time: alert.end_time || alert.endTime,
-      location_name: alert.location || alert.location_name || 'Unknown Location',
-      location_oblast: alert.oblast || alert.location_oblast || alert.region_name || '',
-      coordinates: AlertsDataProcessor.extractCoordinates(alert),
-      severity: AlertsDataProcessor.mapSeverity(alert.severity || alert.level)
-    }));
+    if (!Array.isArray(rawData)) {
+      console.log('❌ AlertsDataProcessor - Raw data is not an array:', typeof rawData);
+      return [];
+    }
+    
+    console.log('📊 AlertsDataProcessor - Processing', rawData.length, 'raw alerts');
+    
+    const processedAlerts = rawData.map((alert, index) => {
+      console.log(`🔧 Processing alert ${index}:`, {
+        id: alert.id,
+        location_title: alert.location_title,
+        location_oblast: alert.location_oblast,
+        started_at: alert.started_at,
+        finished_at: alert.finished_at,
+        alert_type: alert.alert_type
+      });
+      
+      const processedAlert: AlertData = {
+        id: String(alert.id || Math.random().toString()),
+        region_id: String(alert.location_oblast_uid || alert.region_id || alert.id || ''),
+        alert_type: alert.alert_type || 'unknown',
+        start_time: alert.started_at || alert.start_time || new Date().toISOString(),
+        end_time: alert.finished_at || alert.end_time || undefined,
+        location_name: alert.location_title || alert.location_name || 'Unknown Location',
+        location_oblast: alert.location_oblast || alert.oblast || alert.region_name || '',
+        coordinates: AlertsDataProcessor.extractCoordinates(alert),
+        severity: AlertsDataProcessor.mapSeverity(alert.severity || alert.level || alert.alert_type)
+      };
+      
+      console.log(`✅ Processed alert ${index}:`, processedAlert);
+      return processedAlert;
+    });
+    
+    console.log('📊 AlertsDataProcessor - Processed', processedAlerts.length, 'alerts successfully');
+    return processedAlerts;
   }
 
   static extractCoordinates(item: any): [number, number] {
@@ -49,6 +73,9 @@ export class AlertsDataProcessor {
       if (lower.includes('critical') || lower.includes('urgent')) return 'critical';
       if (lower.includes('high') || lower.includes('severe')) return 'high';
       if (lower.includes('moderate') || lower.includes('medium')) return 'moderate';
+      // Map alert types to severity levels
+      if (lower.includes('urban_fights') || lower.includes('artillery_shelling')) return 'high';
+      if (lower.includes('air_raid')) return 'moderate';
     }
     return 'low';
   }

@@ -26,18 +26,29 @@ export class AlertsService {
 
   async getActiveAlerts(): Promise<AlertData[]> {
     try {
+      console.log('🔄 AlertsService - Fetching active alerts from API...');
+      
       const { data, error } = await supabase.functions.invoke('explore-alerts-api', {
         body: { endpoint: 'alerts' }
       });
 
       if (error) {
-        console.error('Error fetching alerts:', error);
+        console.error('❌ Error fetching alerts:', error);
         return [];
       }
 
-      return AlertsDataProcessor.processAlertsData(data.data);
+      console.log('📡 AlertsService - Raw API response:', data);
+      
+      // The API response structure is { alerts: [...] }
+      const alertsArray = data.data?.alerts || data.data || [];
+      console.log('📊 AlertsService - Extracted alerts array:', alertsArray);
+      
+      const processedAlerts = AlertsDataProcessor.processAlertsData(alertsArray);
+      console.log('✅ AlertsService - Processed alerts:', processedAlerts.length);
+      
+      return processedAlerts;
     } catch (error) {
-      console.error('Error in getActiveAlerts:', error);
+      console.error('❌ Error in getActiveAlerts:', error);
       return [];
     }
   }
@@ -66,36 +77,54 @@ export class AlertsService {
   }
 
   async getAlertsForCities(startCity: string, endCity: string): Promise<AlertData[]> {
-    console.log('🔍 Getting alerts for cities:', { startCity, endCity });
+    console.log('🔍 AlertsService - Getting alerts for cities:', { startCity, endCity });
     
     const allAlerts = await this.getActiveAlerts();
-    console.log('📊 Total active alerts found:', allAlerts.length);
+    console.log('📊 AlertsService - Total active alerts found:', allAlerts.length);
     
     // Filter to only active alerts from the last 72 hours
     const now = new Date();
     const seventyTwoHoursAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
     
+    console.log('⏰ AlertsService - Filtering for last 72 hours. Current time:', now.toISOString());
+    console.log('⏰ AlertsService - 72 hours ago:', seventyTwoHoursAgo.toISOString());
+    
     const recentAlerts = allAlerts.filter(alert => {
-      const alertDate = new Date(alert.start_time);
-      const isActive = !alert.end_time;
-      const isRecent = alertDate >= seventyTwoHoursAgo;
-      return isActive && isRecent;
+      try {
+        const alertDate = new Date(alert.start_time);
+        const isActive = !alert.end_time || alert.end_time === null;
+        const isRecent = alertDate >= seventyTwoHoursAgo;
+        
+        console.log('🕐 Alert time check:', {
+          alertId: alert.id,
+          alertLocation: alert.location_name,
+          startTime: alert.start_time,
+          alertDate: alertDate.toISOString(),
+          endTime: alert.end_time,
+          isActive,
+          isRecent,
+          included: isActive && isRecent
+        });
+        
+        return isActive && isRecent;
+      } catch (dateError) {
+        console.warn('⚠️ Error parsing alert date:', alert.start_time, dateError);
+        return false;
+      }
     });
     
-    console.log('📊 Recent active alerts (72h):', recentAlerts.length);
-    console.log('📋 Recent alerts details:', recentAlerts.map(alert => ({
+    console.log('📊 AlertsService - Recent active alerts (72h):', recentAlerts.length);
+    console.log('📋 AlertsService - Recent alerts details:', recentAlerts.map(alert => ({
       id: alert.id,
       location: alert.location_name,
       oblast: alert.location_oblast,
       type: alert.alert_type,
-      severity: alert.severity
+      severity: alert.severity,
+      startTime: alert.start_time
     })));
     
     const routeAlerts = recentAlerts.filter(alert => {
-      const alertLocation = alert.location_name?.toLowerCase() || '';
-      const alertOblast = alert.location_oblast?.toLowerCase() || '';
-      
-      console.log('🔍 Checking alert:', {
+      console.log('🔍 AlertsService - Checking alert against cities:', {
         alertId: alert.id,
         alertLocation: alert.location_name,
         alertOblast: alert.location_oblast,
@@ -109,8 +138,10 @@ export class AlertsService {
       // Check if alert matches end city  
       const matchesEndCity = doesAlertMatchCity(alert.location_name || '', alert.location_oblast || '', endCity);
       
-      if (matchesStartCity || matchesEndCity) {
-        console.log('✅ Alert matches route:', {
+      const matches = matchesStartCity || matchesEndCity;
+      
+      if (matches) {
+        console.log('✅ AlertsService - Alert matches route:', {
           alertLocation: alert.location_name,
           alertOblast: alert.location_oblast,
           startCity,
@@ -120,15 +151,15 @@ export class AlertsService {
           alertType: alert.alert_type,
           severity: alert.severity
         });
-        return true;
+      } else {
+        console.log('❌ AlertsService - Alert does not match route');
       }
       
-      console.log('❌ Alert does not match route');
-      return false;
+      return matches;
     });
     
-    console.log('📊 Final route-specific alerts found:', routeAlerts.length);
-    console.log('📋 Final alerts details:', routeAlerts.map(alert => ({
+    console.log('📊 AlertsService - Final route-specific alerts found:', routeAlerts.length);
+    console.log('📋 AlertsService - Final alerts details:', routeAlerts.map(alert => ({
       id: alert.id,
       location: alert.location_name,
       oblast: alert.location_oblast,

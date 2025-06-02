@@ -5,7 +5,14 @@ import { cityToOblastMapping } from '@/data/cityOblastData';
  * Enhanced function to check if an alert location matches a city
  */
 export function doesAlertMatchCity(alertLocation: string, alertOblast: string, cityName: string): boolean {
-  console.log('🔍 AlertMatcher - Checking match:', { alertLocation, alertOblast, cityName });
+  console.log('🔍 AlertMatcher - Checking match:', { 
+    alertLocation, 
+    alertOblast, 
+    cityName,
+    alertLocationLower: alertLocation.toLowerCase(),
+    alertOblastLower: alertOblast.toLowerCase(),
+    cityNameLower: cityName.toLowerCase()
+  });
   
   const normalizedAlertLocation = alertLocation.toLowerCase().trim();
   const normalizedAlertOblast = alertOblast.toLowerCase().trim();
@@ -17,21 +24,32 @@ export function doesAlertMatchCity(alertLocation: string, alertOblast: string, c
     return true;
   }
   
-  // Step 2: Special city handling
-  if (normalizedCity === 'kyiv' && (normalizedAlertLocation.includes('київ') || normalizedAlertLocation.includes('м. київ'))) {
-    console.log('✅ Kyiv special match found');
-    return true;
-  }
+  // Step 2: Check if city name is in alert location with Ukrainian variations
+  const cityVariations = [
+    normalizedCity,
+    normalizedCity.replace('kyiv', 'київ'),
+    normalizedCity.replace('kiev', 'київ'),
+    normalizedCity.replace('dnipro', 'дніпро'),
+    normalizedCity.replace('kharkiv', 'харків'),
+    normalizedCity.replace('lviv', 'львів'),
+    normalizedCity.replace('odesa', 'одеса'),
+    normalizedCity.replace('zaporizhzhia', 'запоріжжя'),
+    normalizedCity.replace('poltava', 'полтава'),
+    normalizedCity.replace('sumy', 'суми'),
+    normalizedCity.replace('chernihiv', 'чернігів')
+  ];
   
-  if (normalizedCity === 'dnipro' && (normalizedAlertLocation.includes('дніпро') || normalizedAlertLocation.includes('днипро'))) {
-    console.log('✅ Dnipro special match found');
-    return true;
+  for (const variation of cityVariations) {
+    if (normalizedAlertLocation.includes(variation)) {
+      console.log('✅ City variation match found:', variation);
+      return true;
+    }
   }
   
   // Step 3: Oblast-level matching for major cities
   const cityOblastKeywords = {
-    'kyiv': ['київська область', 'kyivska oblast', 'київська', 'kyivska', 'м. київ'],
-    'dnipro': ['дніпропетровська область', 'dnipropetrovska oblast', 'дніпропетровська', 'dnipropetrovska', 'днепропетровская'],
+    'kyiv': ['київська область', 'kyivska oblast', 'київська', 'kyivska', 'м. київ', 'kyiv'],
+    'dnipro': ['дніпропетровська область', 'dnipropetrovska oblast', 'дніпропетровська', 'dnipropetrovska'],
     'kharkiv': ['харківська область', 'kharkivska oblast', 'харківська', 'kharkivska'],
     'odesa': ['одеська область', 'odeska oblast', 'одеська', 'odeska'],
     'lviv': ['львівська область', 'lvivska oblast', 'львівська', 'lvivska'],
