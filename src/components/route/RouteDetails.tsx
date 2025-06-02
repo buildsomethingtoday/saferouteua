@@ -43,24 +43,32 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }))
   });
 
+  // Format duration from hours to hours and minutes
+  const formatDuration = (duration: number) => {
+    const hours = Math.floor(duration);
+    const minutes = Math.round((duration - hours) * 60);
+    
+    if (hours === 0) {
+      return `${minutes}M`;
+    } else if (minutes === 0) {
+      return `${hours}H`;
+    } else {
+      return `${hours}H ${minutes}M`;
+    }
+  };
+
+  const distance = routeData.distanceFormatted || `${routeData.distance} km`;
+  const duration = routeData.durationFormatted || formatDuration(routeData.duration || 0);
+
   return (
     <div className="mt-4 pt-4 border-t border-gray-700">
       <RouteDetailsHeader routeData={routeData} translations={translations} />
       
-      {/* Compact Distance & Duration */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-gray-800/60 p-4 rounded-xl border border-gray-600">
-          <div className="text-sm text-blue-400 mb-1">{translations.distance}</div>
-          <div className="text-xl font-bold text-blue-400">
-            {routeData.distanceFormatted || `${routeData.distance} km`}
-          </div>
-        </div>
-        
-        <div className="bg-gray-800/60 p-4 rounded-xl border border-gray-600">
-          <div className="text-sm text-purple-400 mb-1">{translations.duration}</div>
-          <div className="text-xl font-bold text-purple-400">
-            {routeData.durationFormatted || `${routeData.duration}h`}
-          </div>
+      {/* Travel Info - Weather Style */}
+      <div className="mb-4 p-4 bg-gray-800/60 rounded-xl border border-gray-600">
+        <div className="text-sm text-gray-400 mb-2">Travel Information</div>
+        <div className="text-lg font-semibold text-white">
+          {distance} will take {duration}
         </div>
       </div>
 

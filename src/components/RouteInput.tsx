@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigation } from 'lucide-react';
@@ -30,7 +29,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
 
   const translations: Record<'en' | 'ua', RouteInputTranslations> = {
     en: {
-      title: 'Plan Your Route',
+      title: 'Plan Your Safe Route',
       startCity: 'From',
       endCity: 'To',
       startPlaceholder: 'Starting city',
@@ -68,7 +67,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
       }
     },
     ua: {
-      title: 'Спланувати маршрут',
+      title: 'Спланувати безпечний маршрут',
       startCity: 'Звідки',
       endCity: 'Куди',
       startPlaceholder: 'Місто відправлення',
