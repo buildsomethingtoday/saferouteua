@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -279,10 +278,6 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
                       <span className="text-sm text-gray-500">
                         {formatDate(alert.started_at)}
                       </span>
-                    </div>
-                    
-                    <div className="text-sm text-orange-400 font-medium">
-                      {t.timeFormat.active}
                     </div>
                   </div>
                   
