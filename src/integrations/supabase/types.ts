@@ -9,7 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          alert_id: string
+          alert_type: string
+          coordinates: unknown | null
+          created_at: string
+          end_time: string | null
+          id: string
+          location_name: string
+          location_oblast: string
+          location_raion: string | null
+          notes: string | null
+          region_id: string | null
+          severity: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          alert_id: string
+          alert_type: string
+          coordinates?: unknown | null
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location_name: string
+          location_oblast: string
+          location_raion?: string | null
+          notes?: string | null
+          region_id?: string | null
+          severity?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          alert_id?: string
+          alert_type?: string
+          coordinates?: unknown | null
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location_name?: string
+          location_oblast?: string
+          location_raion?: string | null
+          notes?: string | null
+          region_id?: string | null
+          severity?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
