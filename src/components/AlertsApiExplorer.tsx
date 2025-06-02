@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X } from 'lucide-react';
+import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AlertsApiExplorerProps {
@@ -309,11 +310,15 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
             <AlertTriangle className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} text-orange-400`} />
             <span>{t.title}</span>
           </div>
-          {apiData && !error && (
-            <Badge className="bg-green-600 text-white text-sm border-none px-3 py-1">
-              {t.success}
-            </Badge>
-          )}
+          <Button
+            onClick={loadAlertsData}
+            disabled={isLoading}
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-gray-800"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
         </CardTitle>
       </CardHeader>
       
