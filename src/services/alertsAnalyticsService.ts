@@ -102,7 +102,17 @@ export class AlertsAnalyticsService {
 
     alerts.forEach(alert => {
       const alertDate = new Date(alert.start_time);
-      const hour = alertDate.getHours();
+      
+      // Convert to Ukraine timezone (UTC+2 in winter, UTC+3 in summer - Europe/Kiev)
+      // Ukraine uses Eastern European Time (EET) UTC+2 and Eastern European Summer Time (EEST) UTC+3
+      const ukraineTime = new Date(alertDate.toLocaleString("en-US", {timeZone: "Europe/Kiev"}));
+      const hour = ukraineTime.getHours();
+
+      console.log('🕐 Alert timing analysis:', {
+        originalUTC: alertDate.toISOString(),
+        ukraineLocal: ukraineTime.toLocaleString(),
+        hour: hour
+      });
 
       if (hour >= 6 && hour < 12) {
         morningCount++;
