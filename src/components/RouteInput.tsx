@@ -80,7 +80,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   }, [startCity, endCity]);
 
   const tabTranslations = {
-    route: translations?.planRoute || 'Plan Route',
+    route: translations?.planRoute?.replace('Plan ', '') || 'Route',
     alerts: translations?.alerts || 'Alerts',
     statistics: translations?.statistics || 'Statistics'
   };
