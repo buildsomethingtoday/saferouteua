@@ -61,7 +61,24 @@ const Index = () => {
     last90Days: language === 'en' ? 'Last 90 Days' : 'Останні 90 днів',
     allTime: language === 'en' ? 'All Time' : 'Весь час',
     noData: language === 'en' ? 'No data available' : 'Дані відсутні',
-    loadingStats: language === 'en' ? 'Loading statistics...' : 'Завантаження статистики...'
+    loadingStats: language === 'en' ? 'Loading statistics...' : 'Завантаження статистики...',
+    // New statistics translations
+    statisticsTitle: language === 'en' ? 'Statistics' : 'Статистика',
+    syncData: language === 'en' ? 'Sync Data' : 'Синхронізувати дані',
+    syncing: language === 'en' ? 'Syncing...' : 'Синхронізація...',
+    syncCompleted: language === 'en' ? 'Sync Completed' : 'Синхронізація завершена',
+    syncFailed: language === 'en' ? 'Sync Failed' : 'Помилка синхронізації',
+    syncError: language === 'en' ? 'Sync Error' : 'Помилка синхронізації',
+    totalAlerts: language === 'en' ? 'Total Alerts' : 'Всього сповіщень',
+    activeAlerts: language === 'en' ? 'Active Alerts' : 'Активні сповіщення',
+    averageDaily: language === 'en' ? 'Daily Average' : 'Щоденне середнє',
+    alertsOverTime: language === 'en' ? 'Alerts Over Time' : 'Сповіщення за часом',
+    attackTiming: language === 'en' ? 'Attack Timing' : 'Час атак',
+    morning: language === 'en' ? 'Morning (6-12)' : 'Ранок (6-12)',
+    afternoon: language === 'en' ? 'Afternoon (12-18)' : 'День (12-18)',
+    evening: language === 'en' ? 'Evening (18-24)' : 'Вечір (18-24)',
+    night: language === 'en' ? 'Night (0-6)' : 'Ніч (0-6)',
+    noStatisticsData: language === 'en' ? 'No statistics data available' : 'Статистичні дані відсутні'
   };
 
   if (isMobile) {
