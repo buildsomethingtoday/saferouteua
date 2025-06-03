@@ -1,14 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, AlertTriangle, BarChart3 } from 'lucide-react';
+import { MapPin, AlertTriangle, BarChart3, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import CityInputForm from './route/CityInputForm';
 import RouteDetails from './route/RouteDetails';
+import RouteStatus from './route/RouteStatus';
 import MobileAlertsDisplay from './mobile/MobileAlertsDisplay';
 import AlertsStatistics from './AlertsStatistics';
 import ManualSyncButton from './ManualSyncButton';
 import { RouteInputTranslations, RouteData } from '@/types/route';
 import { useAlertsData } from '@/hooks/useAlertsData';
+import { useRouteSearch } from '@/hooks/useRouteSearch';
 
 interface RouteInputProps {
   translations: RouteInputTranslations;
@@ -34,12 +37,48 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [activeTab, setActiveTab] = useState('route');
   const [startCity, setStartCity] = useState('');
   const [endCity, setEndCity] = useState('');
+  const [internalRouteData, setInternalRouteData] = useState<RouteData | null>(null);
+  const [internalIsSearching, setInternalIsSearching] = useState(false);
   const { alerts, isLoading, onRefresh } = useAlertsData();
+
+  // Use internal state if external handlers not provided
+  const currentRouteData = routeData || internalRouteData;
+  const currentIsSearching = isSearching || internalIsSearching;
+  const currentSetIsSearching = setIsSearching || setInternalIsSearching;
+  const currentOnRouteRequest = onRouteRequest || setInternalRouteData;
+
+  // Initialize route search hook
+  const { handleRouteSearch } = useRouteSearch({
+    translations,
+    setIsSearching: currentSetIsSearching,
+    onRouteRequest: currentOnRouteRequest
+  });
+
+  // Auto-search when both cities are selected
+  useEffect(() => {
+    if (startCity && endCity && startCity !== endCity) {
+      console.log('🔍 Auto-triggering route search for:', startCity, 'to', endCity);
+      handleRouteSearch(startCity, endCity, 'driving');
+    }
+  }, [startCity, endCity, handleRouteSearch]);
+
+  // Manual search function
+  const handleManualSearch = () => {
+    if (startCity && endCity) {
+      console.log('🔍 Manual route search triggered for:', startCity, 'to', endCity);
+      handleRouteSearch(startCity, endCity, 'driving');
+    }
+  };
 
   const tabTranslations = {
     route: translations?.planRoute || 'Plan Route',
     alerts: translations?.alerts || 'Alerts',
     statistics: translations?.statistics || 'Statistics'
+  };
+
+  const searchButtonText = {
+    en: 'Search Route',
+    ua: 'Знайти маршрут'
   };
 
   return (
@@ -79,8 +118,29 @@ const RouteInput: React.FC<RouteInputProps> = ({
               onStartCityChange={setStartCity}
               onEndCityChange={setEndCity}
             />
-            {routeData && (
-              <RouteDetails routeData={routeData} translations={translations} />
+            
+            {/* Manual search button */}
+            {startCity && endCity && (
+              <Button
+                onClick={handleManualSearch}
+                disabled={currentIsSearching}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                {searchButtonText[language]}
+              </Button>
+            )}
+
+            {/* Route status (loading/error) */}
+            <RouteStatus 
+              isSearching={currentIsSearching}
+              routeData={currentRouteData}
+              translations={translations}
+            />
+
+            {/* Route details */}
+            {currentRouteData && !currentRouteData.error && (
+              <RouteDetails routeData={currentRouteData} translations={translations} />
             )}
           </div>
         </TabsContent>
