@@ -55,7 +55,7 @@ export const useAlertsData = () => {
         alert_type: alert.alert_type,
         location_oblast: alert.location_oblast,
         location_raion: undefined, // This field doesn't exist in the API response
-        notes: alert.notes || undefined
+        notes: undefined // Remove reference to non-existent notes property
       }));
       
       console.log('✅ useAlertsData - Transformed alerts:', transformedAlerts.length);
