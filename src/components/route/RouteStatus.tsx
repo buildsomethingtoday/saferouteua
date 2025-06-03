@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
 interface RouteStatusProps {
@@ -13,7 +14,10 @@ const RouteStatus: React.FC<RouteStatusProps> = ({
   routeData,
   translations
 }) => {
-  if (isSearching) {
+  const isMobile = useIsMobile();
+
+  // Only show loading indicator on mobile
+  if (isSearching && isMobile) {
     return (
       <div className="flex items-center justify-center p-4 bg-blue-600 rounded-xl">
         <div className="flex items-center space-x-3">
