@@ -6,6 +6,7 @@ import CityInputForm from './route/CityInputForm';
 import RouteDetails from './route/RouteDetails';
 import MobileAlertsDisplay from './mobile/MobileAlertsDisplay';
 import AlertsStatistics from './AlertsStatistics';
+import ManualSyncButton from './ManualSyncButton';
 import { RouteInputTranslations, RouteData } from '@/types/route';
 import { useAlertsData } from '@/hooks/useAlertsData';
 
@@ -95,7 +96,13 @@ const RouteInput: React.FC<RouteInputProps> = ({
         </TabsContent>
 
         <TabsContent value="statistics" className="mt-0">
-          <AlertsStatistics translations={translations} />
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">Statistics</h3>
+              <ManualSyncButton />
+            </div>
+            <AlertsStatistics translations={translations} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
