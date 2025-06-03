@@ -1,4 +1,3 @@
-
 export interface RouteInputTranslations {
   from: string;
   to: string;
@@ -31,6 +30,23 @@ export interface RouteInputTranslations {
   allTime: string;
   noData: string;
   loadingStats: string;
+  // New statistics translations
+  statisticsTitle: string;
+  syncData: string;
+  syncing: string;
+  syncCompleted: string;
+  syncFailed: string;
+  syncError: string;
+  totalAlerts: string;
+  activeAlerts: string;
+  averageDaily: string;
+  alertsOverTime: string;
+  attackTiming: string;
+  morning: string;
+  afternoon: string;
+  evening: string;
+  night: string;
+  noStatisticsData: string;
 }
 
 export interface RouteData {

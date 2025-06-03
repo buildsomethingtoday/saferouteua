@@ -34,35 +34,6 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
     }
   };
 
-  const chartLabels = {
-    en: {
-      alertsOverTime: 'Alerts Over Time',
-      totalAlerts: 'Total Alerts',
-      activeAlerts: 'Active Alerts',
-      averageDaily: 'Daily Average',
-      timeRange: 'Time Range',
-      attackTiming: 'Attack Timing Distribution',
-      morning: 'Morning (6AM-12PM)',
-      afternoon: 'Afternoon (12PM-6PM)',
-      evening: 'Evening (6PM-12AM)',
-      night: 'Night (12AM-6AM)'
-    },
-    ua: {
-      alertsOverTime: 'Сповіщення в часі',
-      totalAlerts: 'Всього сповіщень',
-      activeAlerts: 'Активні сповіщення',
-      averageDaily: 'Середньоденне',
-      timeRange: 'Часовий діапазон',
-      attackTiming: 'Розподіл часу атак',
-      morning: 'Ранок (6:00-12:00)',
-      afternoon: 'День (12:00-18:00)',
-      evening: 'Вечір (18:00-00:00)',
-      night: 'Ніч (00:00-6:00)'
-    }
-  };
-
-  const labels = chartLabels[language];
-
   useEffect(() => {
     loadStatistics();
   }, [timeRange]);
@@ -91,7 +62,7 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
     return (
       <div className="text-center text-gray-400 py-8">
         <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <p>No statistics data available</p>
+        <p>{translations.noStatisticsData}</p>
       </div>
     );
   }
@@ -122,7 +93,7 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
             <div className="flex items-center space-x-2">
               <AlertTriangle className="w-4 h-4 text-red-500" />
               <div>
-                <p className="text-xs text-gray-400">{labels.totalAlerts}</p>
+                <p className="text-xs text-gray-400">{translations.totalAlerts}</p>
                 <p className="text-lg font-bold text-white">{statistics.totalAlerts || 0}</p>
               </div>
             </div>
@@ -134,7 +105,7 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
               <div>
-                <p className="text-xs text-gray-400">{labels.activeAlerts}</p>
+                <p className="text-xs text-gray-400">{translations.activeAlerts}</p>
                 <p className="text-lg font-bold text-white">{statistics.activeAlerts || 0}</p>
               </div>
             </div>
@@ -146,7 +117,7 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
             <div className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4 text-blue-500" />
               <div>
-                <p className="text-xs text-gray-400">{labels.averageDaily}</p>
+                <p className="text-xs text-gray-400">{translations.averageDaily}</p>
                 <p className="text-lg font-bold text-white">{statistics.dailyAverage || 0}</p>
               </div>
             </div>
@@ -160,7 +131,7 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
         {statistics.timeData && statistics.timeData.length > 0 && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-white">{labels.alertsOverTime}</CardTitle>
+              <CardTitle className="text-sm text-white">{translations.alertsOverTime}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
@@ -189,25 +160,25 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-white flex items-center">
                 <Clock className="w-4 h-4 mr-2" />
-                {labels.attackTiming}
+                {translations.attackTiming}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3">
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="bg-gray-700 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">{labels.morning}</p>
+                  <p className="text-xs text-gray-400">{translations.morning}</p>
                   <p className="text-lg font-bold text-yellow-400">{statistics.timingData.morning || 0}%</p>
                 </div>
                 <div className="bg-gray-700 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">{labels.afternoon}</p>
+                  <p className="text-xs text-gray-400">{translations.afternoon}</p>
                   <p className="text-lg font-bold text-orange-400">{statistics.timingData.afternoon || 0}%</p>
                 </div>
                 <div className="bg-gray-700 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">{labels.evening}</p>
+                  <p className="text-xs text-gray-400">{translations.evening}</p>
                   <p className="text-lg font-bold text-red-400">{statistics.timingData.evening || 0}%</p>
                 </div>
                 <div className="bg-gray-700 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">{labels.night}</p>
+                  <p className="text-xs text-gray-400">{translations.night}</p>
                   <p className="text-lg font-bold text-blue-400">{statistics.timingData.night || 0}%</p>
                 </div>
               </div>

@@ -150,8 +150,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
         <TabsContent value="statistics" className="mt-0">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">Statistics</h3>
-              <ManualSyncButton />
+              <h3 className="text-lg font-semibold text-white">{translations.statisticsTitle}</h3>
+              <ManualSyncButton translations={translations} />
             </div>
             <AlertsStatistics translations={translations} />
           </div>

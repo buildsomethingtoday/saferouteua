@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { DataSyncService } from '@/services/dataSyncService';
 import { toast } from 'sonner';
+import { RouteInputTranslations } from '@/types/route';
 
 interface ManualSyncButtonProps {
   onSyncComplete?: () => void;
+  translations: RouteInputTranslations;
 }
 
-const ManualSyncButton: React.FC<ManualSyncButtonProps> = ({ onSyncComplete }) => {
+const ManualSyncButton: React.FC<ManualSyncButtonProps> = ({ onSyncComplete, translations }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleManualSync = async () => {
@@ -19,19 +21,19 @@ const ManualSyncButton: React.FC<ManualSyncButtonProps> = ({ onSyncComplete }) =
       const result = await DataSyncService.triggerManualSync();
       
       if (result.success) {
-        toast.success('Data sync completed!', {
+        toast.success(translations.syncCompleted, {
           description: result.message,
           duration: 5000,
         });
         onSyncComplete?.();
       } else {
-        toast.error('Sync failed', {
+        toast.error(translations.syncFailed, {
           description: result.message,
           duration: 5000,
         });
       }
     } catch (error) {
-      toast.error('Sync error', {
+      toast.error(translations.syncError, {
         description: 'An unexpected error occurred',
         duration: 5000,
       });
@@ -53,7 +55,7 @@ const ManualSyncButton: React.FC<ManualSyncButtonProps> = ({ onSyncComplete }) =
       ) : (
         <RefreshCw className="w-4 h-4" />
       )}
-      <span>{isLoading ? 'Syncing...' : 'Sync Data'}</span>
+      <span>{isLoading ? translations.syncing : translations.syncData}</span>
     </Button>
   );
 };
