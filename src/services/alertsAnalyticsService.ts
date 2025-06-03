@@ -52,10 +52,7 @@ export class AlertsAnalyticsService {
     // Time-based data
     const timeData = this.generateTimeData(alerts, days);
     
-    // Type-based data
-    const typeData = this.generateTypeData(alerts);
-    
-    // Attack timing data
+    // Attack timing data (6-hour breakdown)
     const timingData = this.generateTimingData(alerts);
     
     // Region data
@@ -69,7 +66,6 @@ export class AlertsAnalyticsService {
       activeAlerts: activeAlerts.length,
       dailyAverage,
       timeData,
-      typeData,
       timingData,
       regions
     };
@@ -98,46 +94,37 @@ export class AlertsAnalyticsService {
     return data;
   }
 
-  private generateTypeData(alerts: any[]) {
-    const typeCounts: { [key: string]: number } = {};
-    
-    alerts.forEach(alert => {
-      const type = alert.alert_type || 'unknown';
-      typeCounts[type] = (typeCounts[type] || 0) + 1;
-    });
-    
-    return Object.entries(typeCounts)
-      .map(([type, count]) => ({ type, count }))
-      .sort((a, b) => b.count - a.count);
-  }
-
   private generateTimingData(alerts: any[]) {
-    let dayCount = 0;
-    let nightCount = 0;
-    let midnightCount = 0;
+    let morningCount = 0;    // 6AM - 12PM
+    let afternoonCount = 0;  // 12PM - 6PM
+    let eveningCount = 0;    // 6PM - 12AM
+    let nightCount = 0;      // 12AM - 6AM
 
     alerts.forEach(alert => {
       const alertDate = new Date(alert.start_time);
       const hour = alertDate.getHours();
 
-      if (hour >= 6 && hour < 18) {
-        dayCount++;
+      if (hour >= 6 && hour < 12) {
+        morningCount++;
+      } else if (hour >= 12 && hour < 18) {
+        afternoonCount++;
       } else if (hour >= 18 && hour < 24) {
-        nightCount++;
+        eveningCount++;
       } else {
-        midnightCount++;
+        nightCount++;
       }
     });
 
     const total = alerts.length;
     if (total === 0) {
-      return { day: 0, night: 0, midnight: 0 };
+      return { morning: 0, afternoon: 0, evening: 0, night: 0 };
     }
 
     return {
-      day: Math.round((dayCount / total) * 100),
-      night: Math.round((nightCount / total) * 100),
-      midnight: Math.round((midnightCount / total) * 100)
+      morning: Math.round((morningCount / total) * 100),
+      afternoon: Math.round((afternoonCount / total) * 100),
+      evening: Math.round((eveningCount / total) * 100),
+      night: Math.round((nightCount / total) * 100)
     };
   }
 

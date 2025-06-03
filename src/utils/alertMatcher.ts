@@ -33,11 +33,18 @@ export function doesAlertMatchCity(alertLocation: string, alertOblast: string, c
     normalizedCity.replace('kharkiv', 'харків'),
     normalizedCity.replace('lviv', 'львів'),
     normalizedCity.replace('odesa', 'одеса'),
+    normalizedCity.replace('odessa', 'одеса'),
     normalizedCity.replace('zaporizhzhia', 'запоріжжя'),
     normalizedCity.replace('poltava', 'полтава'),
     normalizedCity.replace('sumy', 'суми'),
     normalizedCity.replace('chernihiv', 'чернігів')
   ];
+  
+  // Special handling for Odesa/Odessa variations
+  if (normalizedCity === 'odesa' || normalizedCity === 'odessa') {
+    cityVariations.push('одеса', 'одесса', 'м. одеса', 'м. одесса');
+    console.log('🏙️ Added Odesa variations:', cityVariations);
+  }
   
   for (const variation of cityVariations) {
     if (normalizedAlertLocation.includes(variation)) {
@@ -51,7 +58,8 @@ export function doesAlertMatchCity(alertLocation: string, alertOblast: string, c
     'kyiv': ['київська область', 'kyivska oblast', 'київська', 'kyivska', 'м. київ', 'kyiv'],
     'dnipro': ['дніпропетровська область', 'dnipropetrovska oblast', 'дніпропетровська', 'dnipropetrovska'],
     'kharkiv': ['харківська область', 'kharkivska oblast', 'харківська', 'kharkivska'],
-    'odesa': ['одеська область', 'odeska oblast', 'одеська', 'odeska'],
+    'odesa': ['одеська область', 'odeska oblast', 'одеська', 'odeska', 'одесская область'],
+    'odessa': ['одеська область', 'odeska oblast', 'одеська', 'odeska', 'одесская область'],
     'lviv': ['львівська область', 'lvivska oblast', 'львівська', 'lvivska'],
     'zaporizhzhia': ['запорізька область', 'zaporizka oblast', 'запорізька', 'zaporizka'],
     'poltava': ['полтавська область', 'poltavska oblast', 'полтавська', 'poltavska'],
@@ -111,6 +119,6 @@ export function doesAlertMatchCity(alertLocation: string, alertOblast: string, c
     }
   }
   
-  console.log('❌ No match found');
+  console.log('❌ No match found for:', { normalizedCity, normalizedAlertLocation, normalizedAlertOblast });
   return false;
 }

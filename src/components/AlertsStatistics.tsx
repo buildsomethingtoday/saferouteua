@@ -37,27 +37,27 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
   const chartLabels = {
     en: {
       alertsOverTime: 'Alerts Over Time',
-      alertsByType: 'Alert Types',
       totalAlerts: 'Total Alerts',
       activeAlerts: 'Active Alerts',
       averageDaily: 'Daily Average',
       timeRange: 'Time Range',
-      attackTiming: 'Attack Timing',
-      day: 'Day (6AM-6PM)',
-      night: 'Night (6PM-12AM)',
-      midnight: 'Midnight (12AM-6AM)'
+      attackTiming: 'Attack Timing Distribution',
+      morning: 'Morning (6AM-12PM)',
+      afternoon: 'Afternoon (12PM-6PM)',
+      evening: 'Evening (6PM-12AM)',
+      night: 'Night (12AM-6AM)'
     },
     ua: {
       alertsOverTime: 'Сповіщення в часі',
-      alertsByType: 'Типи сповіщень',
       totalAlerts: 'Всього сповіщень',
       activeAlerts: 'Активні сповіщення',
       averageDaily: 'Середньоденне',
       timeRange: 'Часовий діапазон',
-      attackTiming: 'Час атак',
-      day: 'День (6:00-18:00)',
-      night: 'Вечір (18:00-00:00)',
-      midnight: 'Ніч (00:00-6:00)'
+      attackTiming: 'Розподіл часу атак',
+      morning: 'Ранок (6:00-12:00)',
+      afternoon: 'День (12:00-18:00)',
+      evening: 'Вечір (18:00-00:00)',
+      night: 'Ніч (00:00-6:00)'
     }
   };
 
@@ -183,29 +183,7 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
           </Card>
         )}
 
-        {/* Alert Types - Compact Card */}
-        {statistics.typeData && statistics.typeData.length > 0 && (
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-white">{labels.alertsByType}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-              <div className="flex flex-wrap gap-2">
-                {statistics.typeData.slice(0, 6).map((item: any, index: number) => (
-                  <Badge 
-                    key={item.type} 
-                    variant="outline" 
-                    className="bg-gray-700 border-gray-600 text-white text-xs px-2 py-1"
-                  >
-                    {item.type}: {item.count}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Attack Timing */}
+        {/* Attack Timing - 6 Hour Breakdown */}
         {statistics.timingData && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader className="pb-2">
@@ -215,18 +193,22 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3">
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="bg-gray-700 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">{labels.day}</p>
-                  <p className="text-lg font-bold text-yellow-400">{statistics.timingData.day || 0}%</p>
+                  <p className="text-xs text-gray-400">{labels.morning}</p>
+                  <p className="text-lg font-bold text-yellow-400">{statistics.timingData.morning || 0}%</p>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-2">
+                  <p className="text-xs text-gray-400">{labels.afternoon}</p>
+                  <p className="text-lg font-bold text-orange-400">{statistics.timingData.afternoon || 0}%</p>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-2">
+                  <p className="text-xs text-gray-400">{labels.evening}</p>
+                  <p className="text-lg font-bold text-red-400">{statistics.timingData.evening || 0}%</p>
                 </div>
                 <div className="bg-gray-700 rounded-lg p-2">
                   <p className="text-xs text-gray-400">{labels.night}</p>
-                  <p className="text-lg font-bold text-orange-400">{statistics.timingData.night || 0}%</p>
-                </div>
-                <div className="bg-gray-700 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">{labels.midnight}</p>
-                  <p className="text-lg font-bold text-blue-400">{statistics.timingData.midnight || 0}%</p>
+                  <p className="text-lg font-bold text-blue-400">{statistics.timingData.night || 0}%</p>
                 </div>
               </div>
             </CardContent>
