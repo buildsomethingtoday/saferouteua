@@ -46,7 +46,16 @@ export class AlertsService {
       const processedAlerts = AlertsDataProcessor.processAlertsData(alertsArray);
       console.log('✅ AlertsService - Processed alerts:', processedAlerts.length);
       
-      return processedAlerts;
+      // Sort alerts by start_time in descending order (most recent first)
+      const sortedAlerts = processedAlerts.sort((a, b) => {
+        const dateA = new Date(a.start_time);
+        const dateB = new Date(b.start_time);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      console.log('📅 AlertsService - Sorted alerts by most recent first');
+      
+      return sortedAlerts;
     } catch (error) {
       console.error('❌ Error in getActiveAlerts:', error);
       return [];
@@ -158,8 +167,15 @@ export class AlertsService {
       return matches;
     });
     
-    console.log('📊 AlertsService - Final route-specific alerts found:', routeAlerts.length);
-    console.log('📋 AlertsService - Final alerts details:', routeAlerts.map(alert => ({
+    // Sort route alerts by most recent first
+    const sortedRouteAlerts = routeAlerts.sort((a, b) => {
+      const dateA = new Date(a.start_time);
+      const dateB = new Date(b.start_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    console.log('📊 AlertsService - Final route-specific alerts found:', sortedRouteAlerts.length);
+    console.log('📋 AlertsService - Final alerts details:', sortedRouteAlerts.map(alert => ({
       id: alert.id,
       location: alert.location_name,
       oblast: alert.location_oblast,
@@ -167,7 +183,7 @@ export class AlertsService {
       severity: alert.severity
     })));
     
-    return routeAlerts;
+    return sortedRouteAlerts;
   }
 
   calculateRouteSafetyScore(alerts: AlertData[]): number {

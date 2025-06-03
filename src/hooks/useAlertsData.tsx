@@ -45,20 +45,26 @@ export const useAlertsData = () => {
       
       console.log('📊 useAlertsData - Recent active alerts (72h):', recentActiveAlerts.length);
       
-      // Transform to match the expected format
-      const transformedAlerts: AlertItem[] = recentActiveAlerts.map(alert => ({
-        id: parseInt(alert.id),
-        location_title: alert.location_name,
-        location_type: 'alert', // Use a more generic type since alerts can be for different location types
-        started_at: alert.start_time,
-        finished_at: alert.end_time || undefined,
-        alert_type: alert.alert_type,
-        location_oblast: alert.location_oblast,
-        location_raion: undefined, // This field doesn't exist in the API response
-        notes: undefined // Remove reference to non-existent notes property
-      }));
+      // Transform to match the expected format and sort by most recent
+      const transformedAlerts: AlertItem[] = recentActiveAlerts
+        .map(alert => ({
+          id: parseInt(alert.id),
+          location_title: alert.location_name,
+          location_type: 'alert', // Use a more generic type since alerts can be for different location types
+          started_at: alert.start_time,
+          finished_at: alert.end_time || undefined,
+          alert_type: alert.alert_type,
+          location_oblast: alert.location_oblast,
+          location_raion: undefined, // This field doesn't exist in the API response
+          notes: undefined // Remove reference to non-existent notes property
+        }))
+        .sort((a, b) => {
+          const dateA = new Date(a.started_at);
+          const dateB = new Date(b.started_at);
+          return dateB.getTime() - dateA.getTime();
+        });
       
-      console.log('✅ useAlertsData - Transformed alerts:', transformedAlerts.length);
+      console.log('✅ useAlertsData - Transformed and sorted alerts:', transformedAlerts.length);
       setAlerts(transformedAlerts);
     } catch (error) {
       console.error('❌ useAlertsData - Failed to fetch alerts:', error);
