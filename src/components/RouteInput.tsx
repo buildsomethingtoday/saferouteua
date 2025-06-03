@@ -11,6 +11,7 @@ import ManualSyncButton from './ManualSyncButton';
 import { RouteInputTranslations, RouteData } from '@/types/route';
 import { useAlertsData } from '@/hooks/useAlertsData';
 import { useRouteSearch } from '@/hooks/useRouteSearch';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RouteInputProps {
   translations: RouteInputTranslations;
@@ -39,6 +40,7 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [internalRouteData, setInternalRouteData] = useState<RouteData | null>(null);
   const [internalIsSearching, setInternalIsSearching] = useState(false);
   const { alerts, isLoading, onRefresh } = useAlertsData();
+  const isMobile = useIsMobile();
   
   // Use ref to track if we've already searched for this city combination
   const lastSearchedRoute = useRef<string>('');
@@ -85,6 +87,16 @@ const RouteInput: React.FC<RouteInputProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto p-4 bg-gray-900 rounded-xl shadow-lg">
+      {/* Mobile route searching loading indicator */}
+      {currentIsSearching && isMobile && (
+        <div className="flex items-center justify-center p-4 bg-blue-600 rounded-xl mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium text-white">{translations.searching}</span>
+          </div>
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-4 bg-gray-800">
           <TabsTrigger 
