@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, MapPin, AlertTriangle, TrendingUp, Filter } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Calendar, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,6 @@ interface AlertsStatisticsProps {
 
 const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => {
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedRegion, setSelectedRegion] = useState('all');
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState<any>(null);
 
@@ -38,42 +37,40 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
   const chartLabels = {
     en: {
       alertsOverTime: 'Alerts Over Time',
-      alertsByType: 'Alerts by Type',
-      alertsByRegion: 'Alerts by Region',
-      alertsSeverity: 'Alerts by Severity',
+      alertsByType: 'Alert Types',
       totalAlerts: 'Total Alerts',
       activeAlerts: 'Active Alerts',
       averageDaily: 'Daily Average',
       timeRange: 'Time Range',
-      region: 'Region',
-      allRegions: 'All Regions'
+      attackTiming: 'Attack Timing',
+      day: 'Day (6AM-6PM)',
+      night: 'Night (6PM-12AM)',
+      midnight: 'Midnight (12AM-6AM)'
     },
     ua: {
       alertsOverTime: 'Сповіщення в часі',
-      alertsByType: 'Сповіщення за типом',
-      alertsByRegion: 'Сповіщення за регіонами',
-      alertsSeverity: 'Сповіщення за рівнем',
+      alertsByType: 'Типи сповіщень',
       totalAlerts: 'Всього сповіщень',
       activeAlerts: 'Активні сповіщення',
       averageDaily: 'Середньоденне',
       timeRange: 'Часовий діапазон',
-      region: 'Регіон',
-      allRegions: 'Всі регіони'
+      attackTiming: 'Час атак',
+      day: 'День (6:00-18:00)',
+      night: 'Вечір (18:00-00:00)',
+      midnight: 'Ніч (00:00-6:00)'
     }
   };
 
   const labels = chartLabels[language];
 
-  const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
-
   useEffect(() => {
     loadStatistics();
-  }, [timeRange, selectedRegion]);
+  }, [timeRange]);
 
   const loadStatistics = async () => {
     setLoading(true);
     try {
-      const data = await alertsAnalyticsService.getStatistics(timeRange, selectedRegion);
+      const data = await alertsAnalyticsService.getStatistics(timeRange, 'all');
       setStatistics(data);
     } catch (error) {
       console.error('Error loading statistics:', error);
@@ -101,8 +98,8 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Time Range Filter */}
+      <div className="flex">
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="flex-1 bg-gray-800 border-gray-700 text-white">
             <Calendar className="w-4 h-4 mr-2" />
@@ -112,23 +109,6 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
             {Object.entries(timeRangeOptions[language]).map(([value, label]) => (
               <SelectItem key={value} value={value} className="text-white hover:bg-gray-700">
                 {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-          <SelectTrigger className="flex-1 bg-gray-800 border-gray-700 text-white">
-            <MapPin className="w-4 h-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-700">
-            <SelectItem value="all" className="text-white hover:bg-gray-700">
-              {labels.allRegions}
-            </SelectItem>
-            {statistics.regions?.map((region: string) => (
-              <SelectItem key={region} value={region} className="text-white hover:bg-gray-700">
-                {region}
               </SelectItem>
             ))}
           </SelectContent>
@@ -203,65 +183,52 @@ const AlertsStatistics: React.FC<AlertsStatisticsProps> = ({ translations }) => 
           </Card>
         )}
 
-        {/* Alerts by Type */}
+        {/* Alert Types - Compact Card */}
         {statistics.typeData && statistics.typeData.length > 0 && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-white">{labels.alertsByType}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={statistics.typeData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="type" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#ffffff'
-                    }} 
-                  />
-                  <Bar dataKey="count" fill="#ef4444" />
-                </BarChart>
-              </ResponsiveContainer>
+            <CardContent className="p-3">
+              <div className="flex flex-wrap gap-2">
+                {statistics.typeData.slice(0, 6).map((item: any, index: number) => (
+                  <Badge 
+                    key={item.type} 
+                    variant="outline" 
+                    className="bg-gray-700 border-gray-600 text-white text-xs px-2 py-1"
+                  >
+                    {item.type}: {item.count}
+                  </Badge>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Alerts by Severity */}
-        {statistics.severityData && statistics.severityData.length > 0 && (
+        {/* Attack Timing */}
+        {statistics.timingData && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-white">{labels.alertsSeverity}</CardTitle>
+              <CardTitle className="text-sm text-white flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                {labels.attackTiming}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={statistics.severityData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {statistics.severityData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1f2937', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#ffffff'
-                    }} 
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <CardContent className="p-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-gray-700 rounded-lg p-2">
+                  <p className="text-xs text-gray-400">{labels.day}</p>
+                  <p className="text-lg font-bold text-yellow-400">{statistics.timingData.day || 0}%</p>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-2">
+                  <p className="text-xs text-gray-400">{labels.night}</p>
+                  <p className="text-lg font-bold text-orange-400">{statistics.timingData.night || 0}%</p>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-2">
+                  <p className="text-xs text-gray-400">{labels.midnight}</p>
+                  <p className="text-lg font-bold text-blue-400">{statistics.timingData.midnight || 0}%</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}

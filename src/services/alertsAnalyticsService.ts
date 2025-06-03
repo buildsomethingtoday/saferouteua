@@ -55,8 +55,8 @@ export class AlertsAnalyticsService {
     // Type-based data
     const typeData = this.generateTypeData(alerts);
     
-    // Severity-based data
-    const severityData = this.generateSeverityData(alerts);
+    // Attack timing data
+    const timingData = this.generateTimingData(alerts);
     
     // Region data
     const regions = [...new Set(alerts.map(alert => alert.location_oblast))].sort();
@@ -70,7 +70,7 @@ export class AlertsAnalyticsService {
       dailyAverage,
       timeData,
       typeData,
-      severityData,
+      timingData,
       regions
     };
   }
@@ -111,17 +111,34 @@ export class AlertsAnalyticsService {
       .sort((a, b) => b.count - a.count);
   }
 
-  private generateSeverityData(alerts: any[]) {
-    const severityCounts: { [key: string]: number } = {};
-    
+  private generateTimingData(alerts: any[]) {
+    let dayCount = 0;
+    let nightCount = 0;
+    let midnightCount = 0;
+
     alerts.forEach(alert => {
-      const severity = alert.severity || 'unknown';
-      severityCounts[severity] = (severityCounts[severity] || 0) + 1;
+      const alertDate = new Date(alert.start_time);
+      const hour = alertDate.getHours();
+
+      if (hour >= 6 && hour < 18) {
+        dayCount++;
+      } else if (hour >= 18 && hour < 24) {
+        nightCount++;
+      } else {
+        midnightCount++;
+      }
     });
-    
-    return Object.entries(severityCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+
+    const total = alerts.length;
+    if (total === 0) {
+      return { day: 0, night: 0, midnight: 0 };
+    }
+
+    return {
+      day: Math.round((dayCount / total) * 100),
+      night: Math.round((nightCount / total) * 100),
+      midnight: Math.round((midnightCount / total) * 100)
+    };
   }
 
   async syncAlertsData() {

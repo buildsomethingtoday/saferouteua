@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, AlertTriangle, BarChart3, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MapPin, AlertTriangle, BarChart3 } from 'lucide-react';
 import CityInputForm from './route/CityInputForm';
 import RouteDetails from './route/RouteDetails';
 import RouteStatus from './route/RouteStatus';
@@ -78,28 +77,10 @@ const RouteInput: React.FC<RouteInputProps> = ({
     }
   }, [startCity, endCity]);
 
-  // Manual search function with preventDefault to avoid form submission
-  const handleManualSearch = (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    if (startCity && endCity && !currentIsSearching) {
-      console.log('🔍 Manual route search triggered for:', startCity, 'to', endCity);
-      const routeKey = `${startCity}-${endCity}`;
-      lastSearchedRoute.current = routeKey;
-      handleRouteSearch(startCity, endCity, 'driving');
-    }
-  };
-
   const tabTranslations = {
     route: translations?.planRoute || 'Plan Route',
     alerts: translations?.alerts || 'Alerts',
     statistics: translations?.statistics || 'Statistics'
-  };
-
-  const searchButtonText = {
-    en: 'Search Route',
-    ua: 'Знайти маршрут'
   };
 
   return (
@@ -139,28 +120,6 @@ const RouteInput: React.FC<RouteInputProps> = ({
               onStartCityChange={setStartCity}
               onEndCityChange={setEndCity}
             />
-            
-            {/* Manual search button - prevent form submission */}
-            {startCity && endCity && (
-              <Button
-                type="button"
-                onClick={handleManualSearch}
-                disabled={currentIsSearching}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
-              >
-                {currentIsSearching ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    {translations.searching}
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    {searchButtonText[language]}
-                  </>
-                )}
-              </Button>
-            )}
 
             {/* Route status (only show errors, not loading) */}
             {currentRouteData?.error && !currentIsSearching && (
