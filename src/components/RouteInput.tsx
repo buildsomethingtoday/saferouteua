@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, AlertTriangle, BarChart3, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,9 @@ const RouteInput: React.FC<RouteInputProps> = ({
   const [internalRouteData, setInternalRouteData] = useState<RouteData | null>(null);
   const [internalIsSearching, setInternalIsSearching] = useState(false);
   const { alerts, isLoading, onRefresh } = useAlertsData();
+  
+  // Use ref to track if we've already searched for this city combination
+  const lastSearchedRoute = useRef<string>('');
 
   // Use internal state if external handlers not provided
   const currentRouteData = routeData || internalRouteData;
@@ -54,21 +57,36 @@ const RouteInput: React.FC<RouteInputProps> = ({
     onRouteRequest: currentOnRouteRequest
   });
 
-  // Auto-search when both cities are selected
+  // Auto-search when both cities are selected (with proper dependency management)
   useEffect(() => {
-    if (startCity && endCity && startCity !== endCity) {
-      console.log('🔍 Auto-triggering route search for:', startCity, 'to', endCity);
-      handleRouteSearch(startCity, endCity, 'driving');
+    if (startCity && endCity && startCity !== endCity && !currentIsSearching) {
+      const routeKey = `${startCity}-${endCity}`;
+      
+      // Only search if this is a new route combination
+      if (lastSearchedRoute.current !== routeKey) {
+        console.log('🔍 Auto-triggering route search for:', startCity, 'to', endCity);
+        lastSearchedRoute.current = routeKey;
+        handleRouteSearch(startCity, endCity, 'driving');
+      }
     }
-  }, [startCity, endCity, handleRouteSearch]);
+  }, [startCity, endCity, currentIsSearching]); // Remove handleRouteSearch from dependencies to prevent loops
+
+  // Reset the last searched route when cities change
+  useEffect(() => {
+    if (!startCity || !endCity) {
+      lastSearchedRoute.current = '';
+    }
+  }, [startCity, endCity]);
 
   // Manual search function with preventDefault to avoid form submission
   const handleManualSearch = (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
     }
-    if (startCity && endCity) {
+    if (startCity && endCity && !currentIsSearching) {
       console.log('🔍 Manual route search triggered for:', startCity, 'to', endCity);
+      const routeKey = `${startCity}-${endCity}`;
+      lastSearchedRoute.current = routeKey;
       handleRouteSearch(startCity, endCity, 'driving');
     }
   };
