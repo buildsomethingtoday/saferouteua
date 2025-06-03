@@ -62,8 +62,11 @@ const RouteInput: React.FC<RouteInputProps> = ({
     }
   }, [startCity, endCity, handleRouteSearch]);
 
-  // Manual search function
-  const handleManualSearch = () => {
+  // Manual search function with preventDefault to avoid form submission
+  const handleManualSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     if (startCity && endCity) {
       console.log('🔍 Manual route search triggered for:', startCity, 'to', endCity);
       handleRouteSearch(startCity, endCity, 'driving');
@@ -119,24 +122,36 @@ const RouteInput: React.FC<RouteInputProps> = ({
               onEndCityChange={setEndCity}
             />
             
-            {/* Manual search button */}
+            {/* Manual search button - prevent form submission */}
             {startCity && endCity && (
               <Button
+                type="button"
                 onClick={handleManualSearch}
                 disabled={currentIsSearching}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
               >
-                <Search className="w-4 h-4 mr-2" />
-                {searchButtonText[language]}
+                {currentIsSearching ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    {translations.searching}
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-2" />
+                    {searchButtonText[language]}
+                  </>
+                )}
               </Button>
             )}
 
-            {/* Route status (loading/error) */}
-            <RouteStatus 
-              isSearching={currentIsSearching}
-              routeData={currentRouteData}
-              translations={translations}
-            />
+            {/* Route status (only show errors, not loading) */}
+            {currentRouteData?.error && !currentIsSearching && (
+              <RouteStatus 
+                isSearching={false}
+                routeData={currentRouteData}
+                translations={translations}
+              />
+            )}
 
             {/* Route details */}
             {currentRouteData && !currentRouteData.error && (
