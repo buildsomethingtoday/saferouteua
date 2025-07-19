@@ -6,58 +6,42 @@ export const useLanguageDetection = () => {
 
   useEffect(() => {
     const detectLanguage = () => {
-      // Check browser language settings
+      // Check browser language settings for Ukrainian specifically
       const browserLanguage = navigator.language || navigator.languages?.[0] || '';
       const lowercaseLang = browserLanguage.toLowerCase();
       
-      // Check for Ukrainian or Russian in browser settings
-      if (lowercaseLang.includes('uk') || lowercaseLang.includes('ua') || lowercaseLang.includes('ru')) {
+      // Only detect Ukrainian for Ukrainian language or Ukrainian timezone
+      if (lowercaseLang.includes('uk') || lowercaseLang.includes('ua')) {
         setDetectedLanguage('ua');
         return;
       }
 
-      // Try to detect location based on timezone (approximate)
+      // Try to detect location based on timezone - ONLY Ukraine timezones
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const centralEuropeanTimezones = [
+      const ukrainianTimezones = [
         'Europe/Kiev', // Ukraine
         'Europe/Kyiv', // Ukraine (new name)
-        'Europe/Moscow', // Russia
-        'Europe/Warsaw', // Poland
-        'Europe/Prague', // Czech Republic
-        'Europe/Budapest', // Hungary
-        'Europe/Bratislava', // Slovakia
-        'Europe/Vienna', // Austria
-        'Europe/Ljubljana', // Slovenia
-        'Europe/Zagreb', // Croatia
-        'Europe/Belgrade', // Serbia
-        'Europe/Bucharest', // Romania
-        'Europe/Sofia', // Bulgaria
-        'Europe/Minsk', // Belarus
-        'Europe/Vilnius', // Lithuania
-        'Europe/Riga', // Latvia
-        'Europe/Tallinn', // Estonia
       ];
 
-      if (centralEuropeanTimezones.some(tz => timezone.includes(tz))) {
+      if (ukrainianTimezones.some(tz => timezone.includes(tz))) {
         setDetectedLanguage('ua');
         return;
       }
 
-      // Check browser's accept-language header patterns
+      // Check browser's accept-language header patterns for Ukrainian only
       if (navigator.languages) {
-        const hasUkrainianOrRussian = navigator.languages.some(lang => 
+        const hasUkrainian = navigator.languages.some(lang => 
           lang.toLowerCase().includes('uk') || 
-          lang.toLowerCase().includes('ua') || 
-          lang.toLowerCase().includes('ru')
+          lang.toLowerCase().includes('ua')
         );
         
-        if (hasUkrainianOrRussian) {
+        if (hasUkrainian) {
           setDetectedLanguage('ua');
           return;
         }
       }
 
-      // Default to English
+      // Default to English for all other cases
       setDetectedLanguage('en');
     };
 
