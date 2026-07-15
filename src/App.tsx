@@ -7,10 +7,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AlertsExplorer from "./pages/AlertsExplorer";
 import NotFound from "./pages/NotFound";
+import { useVisitTracking } from "./hooks/useVisitTracking";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useVisitTracking();
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -25,6 +29,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
