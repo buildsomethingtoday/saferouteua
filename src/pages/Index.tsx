@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Drawer } from 'vaul';
 import InteractiveMap from '../components/InteractiveMap';
 import RouteInput from '../components/RouteInput';
 import LanguageToggle from '../components/LanguageToggle';
@@ -7,6 +8,7 @@ import MobileNavBar from '../components/MobileNavBar';
 import { useLanguageDetection } from '../hooks/useLanguageDetection';
 import { useIsMobile } from '../hooks/use-mobile';
 import { RouteInputTranslations } from '@/types/route';
+import { getRouteInputTranslations } from '@/data/translations';
 
 const Index = () => {
   const detectedLanguage = useLanguageDetection();
@@ -15,6 +17,8 @@ const Index = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [focusAlert, setFocusAlert] = useState<any>(null);
+  // Mobile bottom sheet position (fractions of viewport height)
+  const [sheetSnap, setSheetSnap] = useState<number | string | null>(0.38);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -27,78 +31,54 @@ const Index = () => {
   };
 
   // Create translations object based on current language
-  const translations: RouteInputTranslations = {
-    from: language === 'en' ? 'From' : 'Звідки',
-    to: language === 'en' ? 'To' : 'Куди',
-    startCity: language === 'en' ? 'From' : 'Звідки',
-    endCity: language === 'en' ? 'To' : 'Куди',
-    startPlaceholder: language === 'en' ? 'Enter starting city...' : 'Введіть місто відправлення...',
-    endPlaceholder: language === 'en' ? 'Enter destination city...' : 'Введіть місто призначення...',
-    planRoute: language === 'en' ? 'Plan Route' : 'Планувати маршрут',
-    alerts: language === 'en' ? 'Alerts' : 'Сповіщення',
-    statistics: language === 'en' ? 'Statistics' : 'Статистика',
-    searchPlaceholder: language === 'en' ? 'Search cities...' : 'Пошук міст...',
-    searching: language === 'en' ? 'Searching route...' : 'Пошук маршруту...',
-    distance: language === 'en' ? 'Distance' : 'Відстань',
-    duration: language === 'en' ? 'Duration' : 'Тривалість',
-    routeInformation: language === 'en' ? 'Route Information' : 'Інформація про маршрут',
-    safetyAlerts: language === 'en' ? 'Safety Alerts' : 'Сповіщення безпеки',
-    alertsCount: language === 'en' ? 'alerts' : 'сповіщень',
-    live: language === 'en' ? 'Live' : 'Прямий ефір',
-    estimated: language === 'en' ? 'Estimated' : 'Приблизно',
-    weather: language === 'en' ? 'Weather' : 'Погода',
-    weatherConditions: {
-      clear: language === 'en' ? 'Clear' : 'Ясно',
-      cloudy: language === 'en' ? 'Cloudy' : 'Хмарно',
-      rainy: language === 'en' ? 'Rainy' : 'Дощ',
-      snowy: language === 'en' ? 'Snowy' : 'Сніг'
-    },
-    alertsByType: language === 'en' ? 'Alerts by Type' : 'Сповіщення за типом',
-    alertsByRegion: language === 'en' ? 'Alerts by Region' : 'Сповіщення за регіоном',
-    timeFilter: language === 'en' ? 'Time Period' : 'Період часу',
-    last7Days: language === 'en' ? 'Last 7 Days' : 'Останні 7 днів',
-    last30Days: language === 'en' ? 'Last 30 Days' : 'Останні 30 днів',
-    last90Days: language === 'en' ? 'Last 90 Days' : 'Останні 90 днів',
-    allTime: language === 'en' ? 'All Time' : 'Весь час',
-    noData: language === 'en' ? 'No data available' : 'Дані відсутні',
-    loadingStats: language === 'en' ? 'Loading statistics...' : 'Завантаження статистики...',
-    // New statistics translations
-    statisticsTitle: language === 'en' ? 'Statistics' : 'Статистика',
-    syncData: language === 'en' ? 'Sync Data' : 'Синхронізувати дані',
-    syncing: language === 'en' ? 'Syncing...' : 'Синхронізація...',
-    syncCompleted: language === 'en' ? 'Sync Completed' : 'Синхронізація завершена',
-    syncFailed: language === 'en' ? 'Sync Failed' : 'Помилка синхронізації',
-    syncError: language === 'en' ? 'Sync Error' : 'Помилка синхронізації',
-    totalAlerts: language === 'en' ? 'Total Alerts' : 'Всього сповіщень',
-    activeAlerts: language === 'en' ? 'Active Alerts' : 'Активні сповіщення',
-    averageDaily: language === 'en' ? 'Daily Average' : 'Щоденне середнє',
-    alertsOverTime: language === 'en' ? 'Alerts Over Time' : 'Сповіщення за часом',
-    attackTiming: language === 'en' ? 'Attack Timing' : 'Час атак',
-    morning: language === 'en' ? 'Morning (6-12)' : 'Ранок (6-12)',
-    afternoon: language === 'en' ? 'Afternoon (12-18)' : 'День (12-18)',
-    evening: language === 'en' ? 'Evening (18-24)' : 'Вечір (18-24)',
-    night: language === 'en' ? 'Night (0-6)' : 'Ніч (0-6)',
-    noStatisticsData: language === 'en' ? 'No statistics data available' : 'Статистичні дані відсутні'
-  };
+  const translations: RouteInputTranslations = getRouteInputTranslations(language);
 
   if (isMobile) {
+    // Google Maps-style mobile experience: full-screen map with a
+    // draggable bottom sheet hosting search, route details, and alerts.
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="h-[100dvh] relative overflow-hidden">
+        <InteractiveMap
+          language={language}
+          routeData={routeData}
+          isSearching={isSearching}
+          onRegionSelect={setSelectedRegion}
+          focusAlert={focusAlert}
+        />
+
         <MobileNavBar language={language} onLanguageChange={setLanguage} />
-        
-        {/* Mobile Layout - Full screen route input with top padding for navbar */}
-        <div className="pt-16 p-4 min-h-screen">
-          <RouteInput 
-            translations={translations}
-            language={language}
-            onRouteRequest={setRouteData}
-            isSearching={isSearching}
-            setIsSearching={setIsSearching}
-            routeData={routeData}
-            selectedRegion={selectedRegion}
-            onAlertClick={handleAlertClick}
-          />
-        </div>
+
+        <Drawer.Root
+          open
+          modal={false}
+          dismissible={false}
+          snapPoints={[0.38, 0.93]}
+          activeSnapPoint={sheetSnap}
+          setActiveSnapPoint={setSheetSnap}
+        >
+          <Drawer.Portal>
+            <Drawer.Content
+              aria-describedby={undefined}
+              className="fixed inset-x-0 bottom-0 z-40 flex h-full max-h-[93dvh] flex-col rounded-t-3xl border-t border-white/15 bg-slate-950/85 backdrop-blur-2xl outline-none shadow-[0_-12px_40px_rgba(0,0,0,0.5)]"
+            >
+              <Drawer.Title className="sr-only">SafeRoute UA</Drawer.Title>
+              <div className="mx-auto mt-2.5 mb-1.5 h-1.5 w-10 flex-shrink-0 rounded-full bg-white/25" />
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-10">
+                <RouteInput
+                  embedded
+                  translations={translations}
+                  language={language}
+                  onRouteRequest={setRouteData}
+                  isSearching={isSearching}
+                  setIsSearching={setIsSearching}
+                  routeData={routeData}
+                  selectedRegion={selectedRegion}
+                  onAlertClick={handleAlertClick}
+                />
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
       </div>
     );
   }

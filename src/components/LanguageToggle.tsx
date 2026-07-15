@@ -9,27 +9,27 @@ interface LanguageToggleProps {
 
 const LanguageToggle: React.FC<LanguageToggleProps> = ({ language, onLanguageChange }) => {
   return (
-    <div className="flex items-center space-x-1 bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-1 shadow-sm">
+    <div className="flex items-center gap-0.5 bg-black/30 backdrop-blur-2xl border border-white/15 rounded-full p-1 shadow-lg shadow-black/30">
       <Button
-        variant={language === 'en' ? 'default' : 'ghost'}
+        variant="ghost"
         size="sm"
         onClick={() => onLanguageChange('en')}
-        className={`px-3 py-1 text-xs h-8 font-medium ${
-          language === 'en' 
-            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-            : 'text-gray-300 hover:text-white hover:bg-gray-700'
+        className={`px-4 py-1 text-xs h-8 font-semibold rounded-full transition-all duration-300 ${
+          language === 'en'
+            ? 'bg-white text-slate-900 hover:bg-white hover:text-slate-900 shadow-md'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
         }`}
       >
         EN
       </Button>
       <Button
-        variant={language === 'ua' ? 'default' : 'ghost'}
+        variant="ghost"
         size="sm"
         onClick={() => onLanguageChange('ua')}
-        className={`px-3 py-1 text-xs h-8 font-medium ${
-          language === 'ua' 
-            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-            : 'text-gray-300 hover:text-white hover:bg-gray-700'
+        className={`px-4 py-1 text-xs h-8 font-semibold rounded-full transition-all duration-300 ${
+          language === 'ua'
+            ? 'bg-white text-slate-900 hover:bg-white hover:text-slate-900 shadow-md'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
         }`}
       >
         УА

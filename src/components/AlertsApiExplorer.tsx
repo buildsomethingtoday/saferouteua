@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { localizeLocation, localizeOblast } from '@/utils/localizeLocation';
 interface AlertsApiExplorerProps {
   language: 'en' | 'ua';
   selectedRegion?: string | null;
@@ -50,6 +51,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         artillery_shelling: 'Artillery Attack',
         urban_fights: 'Urban Combat',
         chemical: 'Chemical Threat',
+        chemical_threat: 'Chemical Threat',
+        missile_threat: 'Missile Threat',
         nuclear: 'Nuclear Threat'
       },
       timeAgo: {
@@ -65,7 +68,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       timeFormat: {
         active: 'Active for',
         since: 'Since'
-      }
+      },
+      showingOf: 'Showing {shown} of {total} alerts',
+      unknownError: 'Unknown error'
     },
     ua: {
       title: compact ? 'Сповіщення безпеки' : 'Сповіщення безпеки України',
@@ -85,6 +90,8 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         artillery_shelling: 'Артилерійський обстріл',
         urban_fights: 'Вуличні бої',
         chemical: 'Хімічна загроза',
+        chemical_threat: 'Хімічна загроза',
+        missile_threat: 'Ракетна загроза',
         nuclear: 'Ядерна загроза'
       },
       timeAgo: {
@@ -100,7 +107,9 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       timeFormat: {
         active: 'Активне протягом',
         since: 'З'
-      }
+      },
+      showingOf: 'Показано {shown} з {total} сповіщень',
+      unknownError: 'Невідома помилка'
     }
   };
   const t = translations[language];
@@ -126,7 +135,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       setApiData(data);
     } catch (err) {
       console.error('❌ Request error:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t.unknownError);
     } finally {
       setIsLoading(false);
     }
@@ -229,7 +238,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-semibold text-white text-base leading-tight">
-                      {alert.location_title}
+                      {localizeLocation(alert.location_title, language)}
                     </h4>
                     <div className="text-right flex-shrink-0 ml-3">
                       <div className="flex items-center text-sm text-gray-400 mb-1">
@@ -240,7 +249,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
                   </div>
                   
                   <p className="text-gray-400 text-sm mb-3 leading-relaxed">
-                    {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
+                    {alert.location_raion && `${localizeLocation(alert.location_raion, language)}, `}{localizeOblast(alert.location_oblast, language)}
                   </p>
                   
                   <div className="flex items-center justify-between">
@@ -264,12 +273,12 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
         
         {filteredAlerts.length > alertsToShow && <div className="text-center py-4 border-t border-gray-800/50">
             <p className="text-sm text-gray-500 font-medium">
-              Showing {alertsToShow} of {filteredAlerts.length} alerts
+              {t.showingOf.replace('{shown}', String(alertsToShow)).replace('{total}', String(filteredAlerts.length))}
             </p>
           </div>}
       </div>;
   };
-  return <Card className="w-full bg-gray-900 border border-gray-700 shadow-xl text-white">
+  return <Card className="w-full glass-panel border-white/10 bg-slate-900/60 text-white">
       <CardHeader className={compact ? "pb-4" : "pb-4"}>
         <CardTitle className={`flex items-center justify-between ${compact ? 'text-lg' : 'text-xl'} text-white`}>
           <div className="flex items-center space-x-3">

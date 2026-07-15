@@ -1,6 +1,21 @@
 export interface RouteInputTranslations {
   from: string;
   to: string;
+  route: string;
+  routeError: string;
+  errorTips: string[];
+  errorMapboxInit: string;
+  errorCityNotFound: string;
+  errorNoCityResults: string;
+  errorDirections: string;
+  errorNoRoutes: string;
+  errorSearchFailed: string;
+  unexpectedError: string;
+  loading: string;
+  dataSources: string;
+  severity: {
+    [key: string]: string;
+  };
   startCity: string;
   endCity: string;
   startPlaceholder: string;

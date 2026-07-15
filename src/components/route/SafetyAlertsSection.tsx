@@ -2,16 +2,17 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AlertData, RouteInputTranslations } from '@/types/route';
+import { localizeLocation } from '@/utils/localizeLocation';
 interface SafetyAlertsSectionProps {
   relevantAlerts: AlertData[];
   translations: RouteInputTranslations;
+  language: 'en' | 'ua';
 }
 const SafetyAlertsSection: React.FC<SafetyAlertsSectionProps> = ({
   relevantAlerts,
-  translations
+  translations,
+  language
 }) => {
-  // Extract language from translations to determine which language to use
-  const language = translations.live === 'Live' ? 'en' : 'ua';
   const highAlertActivityText = {
     en: 'High alert activity detected on this route',
     ua: 'Виявлено високу активність сповіщень на цьому маршруті'
@@ -32,27 +33,27 @@ const SafetyAlertsSection: React.FC<SafetyAlertsSectionProps> = ({
   if (relevantAlerts.length === 0) {
     return null;
   }
-  return <div className="mb-4 p-4 bg-red-900/30 border-2 border-red-600 rounded-xl px-[6px] py-[6px]">
+  return <div className="mb-4 glass-danger px-[6px] py-[6px]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <AlertTriangle className="w-5 h-5 text-red-400" />
-          <span className="text-sm font-medium text-red-400">
-            {translations.safetyAlerts || 'Safety Alerts'}
+          <AlertTriangle className="w-4 h-4 text-red-400" />
+          <span className="hud-label !text-red-300/90">
+            {translations.safetyAlerts}
           </span>
         </div>
-        <Badge className="bg-red-600 text-white text-xs border-none px-3 py-1">
-          {relevantAlerts.length} {translations.alertsCount || 'alerts'}
+        <Badge variant="outline" className="border-red-400/40 bg-red-500/15 text-red-300 text-xs px-3 py-1">
+          <span className="hud-value mr-1">{relevantAlerts.length}</span> {translations.alertsCount}
         </Badge>
       </div>
       
       {/* Show ALL alerts */}
       <div className="space-y-2">
-        {relevantAlerts.map((alert, index) => <div key={alert.id || index} className="flex items-center justify-between text-xs py-2 px-3 bg-red-900/20 rounded-lg border border-red-700/50">
+        {relevantAlerts.map((alert, index) => <div key={alert.id || index} className="flex items-center justify-between text-xs py-2 px-3 bg-red-500/10 backdrop-blur-sm rounded-lg border border-red-500/30">
             <span className="text-gray-200 flex-1 truncate pr-2">
-              {alert.location_name}
+              {localizeLocation(alert.location_name, language)}
             </span>
             <Badge className={`text-xs ${getSeverityBadgeStyle(alert.severity)}`}>
-              {alert.severity}
+              {translations.severity[alert.severity] || alert.severity}
             </Badge>
           </div>)}
       </div>

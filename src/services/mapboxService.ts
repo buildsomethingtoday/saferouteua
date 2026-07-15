@@ -207,20 +207,29 @@ class MapboxService {
     return degrees * (Math.PI / 180);
   }
 
-  async geocodeForward(query: string, proximity?: [number, number]): Promise<GeocodingResponse> {
+  async geocodeForward(
+    query: string,
+    proximity?: [number, number],
+    options?: { language?: string; disableProximityBias?: boolean }
+  ): Promise<GeocodingResponse> {
     // Enhance query for Ukrainian cities to prioritize Ukraine results
     const enhancedQuery = this.enhanceUkrainianCityQuery(query);
-    
+
+    // No country restriction — destinations outside Ukraine (Poland, Moldova, ...)
+    // are allowed; the Ukraine-centered proximity below still ranks local results first.
     const params = new URLSearchParams({
       access_token: this.accessToken,
       limit: '5',
-      types: 'place,locality,neighborhood,address',
-      country: 'ua' // Prioritize Ukrainian results
+      types: 'place,locality,neighborhood,address'
     });
+
+    if (options?.language) {
+      params.append('language', options.language);
+    }
 
     if (proximity) {
       params.append('proximity', proximity.join(','));
-    } else {
+    } else if (!options?.disableProximityBias) {
       // Default proximity to Ukraine center
       params.append('proximity', '31.1656,48.3794');
     }
@@ -280,17 +289,9 @@ class MapboxService {
       'Харків': 'Харків Україна'
     };
 
-    // Check if the query is a known Ukrainian city
-    const enhancedQuery = ukrainianCityMappings[query] || query;
-    
-    // If it doesn't already contain "Ukraine" or "Україна", and it's likely a Ukrainian city
-    if (!enhancedQuery.toLowerCase().includes('ukraine') && 
-        !enhancedQuery.toLowerCase().includes('україна') &&
-        enhancedQuery === query) {
-      return `${query} Ukraine`;
-    }
-    
-    return enhancedQuery;
+    // Disambiguate only well-known Ukrainian city names; leave every other
+    // query untouched so foreign destinations (Kraków, Warsaw, ...) geocode correctly.
+    return ukrainianCityMappings[query] || query;
   }
 
   async geocodeReverse(coordinates: [number, number]): Promise<GeocodingResponse> {

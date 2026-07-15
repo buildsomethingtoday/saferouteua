@@ -8,11 +8,13 @@ import RouteStatusInfo from './RouteStatusInfo';
 interface RouteDetailsProps {
   routeData: RouteData;
   translations: RouteInputTranslations;
+  language: 'en' | 'ua';
 }
 
 const RouteDetails: React.FC<RouteDetailsProps> = ({
   routeData,
-  translations
+  translations,
+  language
 }) => {
   console.log('🎯 RouteDetails - Starting threat analysis:', {
     startCity: routeData.startCity,
@@ -43,26 +45,34 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     }))
   });
 
+  const hourUnit = language === 'en' ? 'H' : 'год';
+  const minuteUnit = language === 'en' ? 'M' : 'хв';
+  const kmUnit = language === 'en' ? 'km' : 'км';
+
   // Format duration from hours to hours and minutes
   const formatDuration = (duration: number) => {
     const hours = Math.floor(duration);
     const minutes = Math.round((duration - hours) * 60);
-    
+
     if (hours === 0) {
-      return `${minutes}M`;
+      return `${minutes}${minuteUnit}`;
     } else if (minutes === 0) {
-      return `${hours}H`;
+      return `${hours}${hourUnit}`;
     } else {
-      return `${hours}H ${minutes}M`;
+      return `${hours}${hourUnit} ${minutes}${minuteUnit}`;
     }
   };
 
-  const distance = routeData.distanceFormatted || `${routeData.distance} km`;
-  const duration = routeData.durationFormatted || formatDuration(routeData.duration || 0);
+  // Service-formatted strings arrive with English units ("489.6 km", "6h 7m") — localize them for ua
+  const localizeUnits = (value: string) =>
+    language === 'ua'
+      ? value.replace(/\bkm\b/g, 'км').replace(/(\d)h\b/g, '$1год').replace(/(\d)m\b/g, '$1хв')
+      : value;
 
-  // Extract language from translations to determine which language to use
-  const language = translations.live === 'Live' ? 'en' : 'ua';
-  
+  const distance = localizeUnits(routeData.distanceFormatted || `${routeData.distance} ${kmUnit}`);
+  const duration = localizeUnits(routeData.durationFormatted || formatDuration(routeData.duration || 0));
+
+
   const travelInfoText = {
     en: 'Travel Information',
     ua: 'Інформація про подорож'
@@ -74,26 +84,29 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   };
 
   return (
-    <div className="mt-4 pt-4 border-t border-gray-700">
-      <RouteDetailsHeader routeData={routeData} translations={translations} />
-      
+    <div className="mt-4 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out">
+      <RouteDetailsHeader routeData={routeData} translations={translations} language={language} />
+
       {/* Travel Info - Weather Style */}
-      <div className="mb-4 p-4 bg-gray-800/60 rounded-xl border border-gray-600">
-        <div className="text-sm text-gray-400 mb-2">{travelInfoText[language]}</div>
-        <div className="text-lg font-semibold text-white">
-          {distance} {willTakeText[language]} {duration}
+      <div className="mb-4 p-4 glass-card transition-colors duration-200 hover:bg-white/[0.07]">
+        <div className="hud-label mb-2">{travelInfoText[language]}</div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-semibold text-white hud-value">{distance}</span>
+          <span className="text-sm text-white/40">{willTakeText[language]}</span>
+          <span className="text-2xl font-semibold text-white hud-value">{duration}</span>
         </div>
       </div>
 
       {/* Active Threats Status - Show BEFORE Safety Alerts */}
-      <RouteStatusInfo 
-        routeData={routeData} 
-        translations={translations} 
-        hasActiveThreats={hasActiveThreats} 
+      <RouteStatusInfo
+        routeData={routeData}
+        translations={translations}
+        hasActiveThreats={hasActiveThreats}
+        language={language}
       />
 
       {/* Safety Alerts Section - Show AFTER Active Threats */}
-      <SafetyAlertsSection relevantAlerts={relevantAlerts} translations={translations} />
+      <SafetyAlertsSection relevantAlerts={relevantAlerts} translations={translations} language={language} />
     </div>
   );
 };

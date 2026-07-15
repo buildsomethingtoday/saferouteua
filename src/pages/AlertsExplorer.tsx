@@ -7,7 +7,7 @@ const AlertsExplorer = () => {
   const language = useLanguageDetection();
 
   return (
-    <div className="min-h-screen bg-gray-950 p-4">
+    <div className="min-h-screen glass-backdrop p-4">
       <div className="max-w-6xl mx-auto">
         <AlertsApiExplorer language={language} />
       </div>

@@ -7,9 +7,10 @@ import { RouteData, RouteInputTranslations } from '@/types/route';
 interface RouteDetailsHeaderProps {
   routeData: RouteData;
   translations: RouteInputTranslations;
+  language: 'en' | 'ua';
 }
 
-const RouteDetailsHeader: React.FC<RouteDetailsHeaderProps> = ({ routeData, translations }) => {
+const RouteDetailsHeader: React.FC<RouteDetailsHeaderProps> = ({ routeData, translations, language }) => {
   const routeInfoText = {
     en: 'Route Information',
     ua: 'Інформація про маршрут'
@@ -20,26 +21,26 @@ const RouteDetailsHeader: React.FC<RouteDetailsHeaderProps> = ({ routeData, tran
     ua: 'Прямий ефір'
   };
 
-  // Extract language from translations to determine which language to use
-  const language = translations.live === 'Live' ? 'en' : 'ua';
-
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center space-x-2">
-        <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
-          <MapPin className="w-3 h-3 text-white" />
-        </div>
-        <span className="text-sm font-medium text-gray-300 mr-2">{routeInfoText[language]}</span>
+        <MapPin className="w-3.5 h-3.5 text-white/70" />
+        <span className="hud-label">{routeInfoText[language]}</span>
       </div>
-      <Badge variant={routeData.realRoute ? "default" : "secondary"} className={`text-xs px-3 py-1 relative ${routeData.realRoute ? 'bg-green-600' : 'bg-blue-600'} text-white border-none`}>
-        <div className={`w-2 h-2 rounded-full mr-2 ${routeData.realRoute ? 'bg-green-400' : 'bg-orange-400'}`}>
+      <Badge
+        variant="outline"
+        className={`text-[11px] uppercase tracking-[0.12em] px-3 py-1 relative border ${
+          routeData.realRoute
+            ? 'border-white/25 bg-white/10 text-white'
+            : 'border-white/15 bg-white/5 text-white/70'
+        }`}
+      >
+        <span className={`relative flex w-1.5 h-1.5 mr-2 ${routeData.realRoute ? '' : 'opacity-60'}`}>
           {routeData.realRoute && (
-            <>
-              <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75"></div>
-              <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            </>
+            <span className="absolute inline-flex h-full w-full rounded-full bg-white animate-ping opacity-75" />
           )}
-        </div>
+          <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${routeData.realRoute ? 'bg-white' : 'bg-white/50'}`} />
+        </span>
         {routeData.realRoute ? liveDataText[language] : translations.estimated}
       </Badge>
     </div>

@@ -34,7 +34,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         console.log('✅ Mapbox service obtained successfully');
       } catch (mapboxError) {
         console.error('❌ Failed to get Mapbox service:', mapboxError);
-        throw new Error(`Mapbox service initialization failed: ${mapboxError instanceof Error ? mapboxError.message : 'Unknown error'}`);
+        throw new Error(translations.errorMapboxInit);
       }
       
       // Step 2: Geocode start city with detailed error handling
@@ -49,12 +49,12 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         });
       } catch (geocodeError) {
         console.error('❌ Start city geocoding failed:', geocodeError);
-        throw new Error(`Could not find start city "${startCity}": ${geocodeError instanceof Error ? geocodeError.message : 'Geocoding service error'}`);
+        throw new Error(translations.errorCityNotFound.replace('{city}', startCity));
       }
-      
+
       if (!startGeocode?.features?.length) {
         console.error('❌ No results for start city:', startCity);
-        throw new Error(`No results found for start city: ${startCity}. Please try a more specific location.`);
+        throw new Error(translations.errorNoCityResults.replace('{city}', startCity));
       }
       
       // Step 3: Geocode end city with detailed error handling
@@ -69,12 +69,12 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         });
       } catch (geocodeError) {
         console.error('❌ End city geocoding failed:', geocodeError);
-        throw new Error(`Could not find end city "${endCity}": ${geocodeError instanceof Error ? geocodeError.message : 'Geocoding service error'}`);
+        throw new Error(translations.errorCityNotFound.replace('{city}', endCity));
       }
-      
+
       if (!endGeocode?.features?.length) {
         console.error('❌ No results for end city:', endCity);
-        throw new Error(`No results found for end city: ${endCity}. Please try a more specific location.`);
+        throw new Error(translations.errorNoCityResults.replace('{city}', endCity));
       }
       
       const startCoords: [number, number] = startGeocode.features[0].center;
@@ -105,12 +105,12 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         });
       } catch (directionsError) {
         console.error('❌ Directions API failed:', directionsError);
-        throw new Error(`Could not get route directions: ${directionsError instanceof Error ? directionsError.message : 'Directions service error'}`);
+        throw new Error(translations.errorDirections);
       }
-      
+
       if (!directions?.routes?.length) {
         console.error('❌ No routes found in directions response');
-        throw new Error('No routes found between the selected cities. Please try different locations.');
+        throw new Error(translations.errorNoRoutes);
       }
       
       const route = directions.routes[0];
@@ -353,7 +353,7 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
       console.error('❌ Route search failed at some step:', error);
       
       // Create detailed error message
-      let errorMessage = 'Route search failed';
+      let errorMessage = translations.errorSearchFailed;
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'string') {

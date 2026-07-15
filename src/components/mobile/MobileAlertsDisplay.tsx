@@ -3,6 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Shield, Clock, Plane, Zap, Swords, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { localizeLocation, localizeOblast } from '@/utils/localizeLocation';
 
 interface AlertItem {
   id: number;
@@ -33,6 +34,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
 }) => {
   const translations = {
     en: {
+      loading: 'Loading...',
       noAlerts: 'No active alerts',
       last72Hours: 'Active alerts from last 72 hours',
       alertTypes: {
@@ -40,6 +42,8 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
         artillery_shelling: 'Artillery Attack',
         urban_fights: 'Urban Combat',
         chemical: 'Chemical Threat',
+        chemical_threat: 'Chemical Threat',
+        missile_threat: 'Missile Threat',
         nuclear: 'Nuclear Threat'
       },
       timeAgo: {
@@ -49,6 +53,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
       }
     },
     ua: {
+      loading: 'Завантаження...',
       noAlerts: 'Немає активних сповіщень',
       last72Hours: 'Активні сповіщення за останні 72 години',
       alertTypes: {
@@ -56,6 +61,8 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
         artillery_shelling: 'Артилерійський обстріл',
         urban_fights: 'Вуличні бої',
         chemical: 'Хімічна загроза',
+        chemical_threat: 'Хімічна загроза',
+        missile_threat: 'Ракетна загроза',
         nuclear: 'Ядерна загроза'
       },
       timeAgo: {
@@ -125,7 +132,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
     return (
       <div className="flex items-center justify-center h-32">
         <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <span className="ml-3 text-gray-300">Loading...</span>
+        <span className="ml-3 text-gray-300">{t.loading}</span>
       </div>
     );
   }
@@ -157,13 +164,13 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
         </Button>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-280px)]">
+      <ScrollArea className="h-auto max-h-[55dvh]">
         <div className="space-y-3">
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className="group p-4 bg-gray-800/30 rounded-lg border border-gray-700/50 
-                       hover:bg-gray-800/50 transition-all duration-200 cursor-pointer
+              className="group p-4 bg-white/5 backdrop-blur-md rounded-xl border border-white/10
+                       hover:bg-white/10 transition-all duration-200 cursor-pointer
                        active:scale-[0.98] transform"
               onClick={() => onAlertClick(alert)}
             >
@@ -176,7 +183,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-semibold text-white text-base leading-tight">
-                      {alert.location_title}
+                      {localizeLocation(alert.location_title, language)}
                     </h4>
                     <div className="text-right flex-shrink-0 ml-2">
                       <div className="flex items-center text-sm text-gray-400">
@@ -187,7 +194,7 @@ const MobileAlertsDisplay: React.FC<MobileAlertsDisplayProps> = ({
                   </div>
                   
                   <p className="text-gray-400 text-sm mb-3">
-                    {alert.location_raion && `${alert.location_raion}, `}{alert.location_oblast}
+                    {alert.location_raion && `${localizeLocation(alert.location_raion, language)}, `}{localizeOblast(alert.location_oblast, language)}
                   </p>
                   
                   <div className="flex items-center justify-between">

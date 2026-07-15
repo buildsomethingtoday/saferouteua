@@ -34,7 +34,7 @@ const ManualSyncButton: React.FC<ManualSyncButtonProps> = ({ onSyncComplete, tra
       }
     } catch (error) {
       toast.error(translations.syncError, {
-        description: 'An unexpected error occurred',
+        description: translations.unexpectedError,
         duration: 5000,
       });
     } finally {

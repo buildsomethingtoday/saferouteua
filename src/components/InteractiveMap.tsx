@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { alertsMapService } from '@/services/alertsMapService';
+import { localizeLocation, localizeOblast } from '@/utils/localizeLocation';
 
 interface InteractiveMapProps {
   language: 'en' | 'ua';
@@ -36,40 +37,62 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const translations = {
     en: {
       loadingMap: 'Loading map...',
-      mapError: 'Unable to load map'
+      mapError: 'Unable to load map',
+      mapErrorDetails: 'Map configuration issue. Please try again later.',
+      findingRoute: 'Finding route...',
+      activeAlertsLabel: 'Active Alerts:',
+      typesLabel: 'Types:',
+      latestLabel: 'Latest:',
+      oblastLabel: 'Oblast:',
+      startLabel: 'Start:',
+      destinationLabel: 'Destination:',
+      alertTypes: {
+        air_raid: 'Air Raid',
+        artillery_shelling: 'Artillery',
+        urban_fights: 'Urban Fights',
+        missile_threat: 'Missile',
+        chemical_threat: 'Chemical'
+      } as { [key: string]: string }
     },
     ua: {
       loadingMap: 'Завантаження карти...',
-      mapError: 'Неможливо завантажити карту'
+      mapError: 'Неможливо завантажити карту',
+      mapErrorDetails: 'Проблема з налаштуванням карти. Спробуйте пізніше.',
+      findingRoute: 'Пошук маршруту...',
+      activeAlertsLabel: 'Активні сповіщення:',
+      typesLabel: 'Типи:',
+      latestLabel: 'Останнє:',
+      oblastLabel: 'Область:',
+      startLabel: 'Початок:',
+      destinationLabel: 'Призначення:',
+      alertTypes: {
+        air_raid: 'Повітряна тривога',
+        artillery_shelling: 'Артобстріл',
+        urban_fights: 'Вуличні бої',
+        missile_threat: 'Ракетна загроза',
+        chemical_threat: 'Хімічна загроза'
+      } as { [key: string]: string }
     }
   };
 
   const t = translations[language];
 
-  // Helper function to get unique alert types and format them as tags
-  const formatAlertTypesAsTags = (alertTypes: string[]) => {
-    const uniqueTypes = [...new Set(alertTypes)];
-    return uniqueTypes.map(type => {
-      const typeMap = {
-        'air_raid': 'Air Raid',
-        'artillery_shelling': 'Artillery',
-        'urban_fights': 'Urban Fights',
-        'missile_threat': 'Missile',
-        'chemical_threat': 'Chemical'
-      };
-      return typeMap[type] || type.replace(/_/g, ' ');
-    });
-  };
+  // Map event handlers are registered once, so they read the language
+  // through a ref to avoid rendering popups with a stale language.
+  const languageRef = useRef(language);
+  languageRef.current = language;
+  const currentT = () => translations[languageRef.current];
+  const dateLocale = () => (languageRef.current === 'ua' ? 'uk-UA' : 'en-US');
 
-  // Helper function to get alert type color
+  // Harmonized threat palette: a tight red/amber family, no stray hues
   const getAlertTypeColor = (type: string) => {
     switch (type) {
-      case 'air_raid': return '#DC2626'; // Red
-      case 'artillery_shelling': return '#EA580C'; // Orange
-      case 'urban_fights': return '#9333EA'; // Purple
-      case 'missile_threat': return '#B91C1C'; // Dark red
-      case 'chemical_threat': return '#7C2D12'; // Brown
-      default: return '#6B7280'; // Gray
+      case 'air_raid': return '#ff453a';
+      case 'artillery_shelling': return '#ff9f0a';
+      case 'urban_fights': return '#ff375f';
+      case 'missile_threat': return '#ff6961';
+      case 'chemical_threat': return '#ffd60a';
+      default: return '#8e8e93';
     }
   };
 
@@ -238,6 +261,56 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
+      if (import.meta.env.DEV) {
+        (window as any).__map = map.current;
+      }
+
+      // Outline Ukraine's national border as soon as the style is ready
+      // ('style.load' fires well before 'load', which waits for all tiles).
+      map.current.on('style.load', () => {
+        if (map.current!.getSource('country-boundaries')) return;
+
+        map.current!.addSource('country-boundaries', {
+          type: 'vector',
+          url: 'mapbox://mapbox.country-boundaries-v1'
+        });
+
+        // worldview is a comma-separated list (e.g. "AR,CN,...,US") or "all" —
+        // equality against "US" matches nothing, so use a substring check.
+        const ukraineFilter: any = [
+          'all',
+          ['==', ['get', 'iso_3166_1'], 'UA'],
+          ['any', ['==', ['get', 'worldview'], 'all'], ['in', 'US', ['string', ['get', 'worldview']]]]
+        ];
+
+        map.current!.addLayer({
+          id: 'ukraine-outline-glow',
+          type: 'line',
+          source: 'country-boundaries',
+          'source-layer': 'country_boundaries',
+          filter: ukraineFilter,
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 6,
+            'line-opacity': 0.08,
+            'line-blur': 4
+          }
+        });
+
+        map.current!.addLayer({
+          id: 'ukraine-outline',
+          type: 'line',
+          source: 'country-boundaries',
+          'source-layer': 'country_boundaries',
+          filter: ukraineFilter,
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 1.2,
+            'line-opacity': 0.4
+          }
+        });
+      });
+
       map.current.on('load', () => {
         console.log('🗺️ Map loaded successfully');
         setIsMapLoaded(true);
@@ -269,183 +342,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     alertMarkers.current = [];
   };
 
-  // Add region coloring based on alert types
-  const addRegionColoring = () => {
-    if (!map.current || !alertsData || !isMapLoaded) {
-      console.log('⚠️ Cannot add region coloring: map not loaded or no alerts data');
-      return;
-    }
-
-    console.log('🎨 Adding region coloring for', alertsData.length, 'alerts');
-
-    // Create a region alert mapping
-    const regionAlerts = {};
-    alertsData.forEach((alert: any) => {
-      const oblast = alert.location_oblast;
-      if (!regionAlerts[oblast]) {
-        regionAlerts[oblast] = [];
-      }
-      regionAlerts[oblast].push(alert);
-    });
-
-    // Add region polygons with color coding
-    Object.entries(regionAlerts).forEach(([oblast, alerts]: [string, any[]]) => {
-      const hasAirRaid = alerts.some(alert => alert.alert_type === 'air_raid');
-      const hasArtillery = alerts.some(alert => alert.alert_type === 'artillery_shelling');
-      const hasUrbanFights = alerts.some(alert => alert.alert_type === 'urban_fights');
-
-      let fillColor = '#10B981'; // Green for safe
-      let fillOpacity = 0.1;
-
-      if (hasAirRaid) {
-        fillColor = '#DC2626'; // Red for air raids
-        fillOpacity = 0.3;
-      } else if (hasArtillery) {
-        fillColor = '#EA580C'; // Orange for artillery
-        fillOpacity = 0.25;
-      } else if (hasUrbanFights) {
-        fillColor = '#9333EA'; // Purple for urban fights
-        fillOpacity = 0.2;
-      }
-
-      // Get oblast center coordinates
-      const oblastCenters = {
-        'Київська область': [30.5234, 50.4501],
-        'Харківська область': [36.2310, 49.9935],
-        'Дніпропетровська область': [35.0462, 48.4647],
-        'Луганська область': [38.5045, 48.5740],
-        'Донецька область': [37.8036, 48.0159],
-        'Запорізька область': [35.1396, 47.8388],
-        'Херсонська область': [32.6178, 46.6554],
-        'Миколаївська область': [31.9946, 46.9750],
-        'Одеська область': [30.7326, 46.4825],
-        'Вінницька область': [28.4682, 49.2331],
-        'Житомирська область': [28.6587, 50.2547],
-        'Закарпатська область': [22.7183, 48.6208],
-        'Івано-Франківська область': [24.7111, 48.9226],
-        'Кіровоградська область': [32.2623, 48.5132],
-        'Львівська область': [24.0232, 49.8397],
-        'Полтавська область': [34.5514, 49.5883],
-        'Рівненська область': [26.2518, 50.6199],
-        'Сумська область': [34.8000, 50.9077],
-        'Тернопільська область': [25.5948, 49.5535],
-        'Хмельницька область': [26.9871, 49.4229],
-        'Черкаська область': [32.0617, 49.4444],
-        'Чернівецька область': [25.9358, 48.2920],
-        'Чернігівська область': [31.2893, 51.4982],
-        'Автономна Республіка Крим': [34.1018, 44.9480],
-      };
-
-      const center = oblastCenters[oblast];
-      if (center) {
-        // Create a circle to represent the region
-        const radius = 0.6;
-        const circle: GeoJSON.Feature<GeoJSON.Polygon> = {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [createCircle(center, radius)]
-          },
-          properties: {
-            oblast: oblast,
-            alertCount: alerts.length,
-            fillColor: fillColor,
-            alertTypes: alerts.map(a => a.alert_type),
-            latestAlert: alerts.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0]
-          }
-        };
-
-        const sourceId = `region-${oblast.replace(/\s+/g, '-')}`;
-        const layerId = `region-layer-${oblast.replace(/\s+/g, '-')}`;
-
-        if (!map.current.getSource(sourceId)) {
-          map.current.addSource(sourceId, {
-            type: 'geojson',
-            data: circle
-          });
-
-          map.current.addLayer({
-            id: layerId,
-            type: 'fill',
-            source: sourceId,
-            paint: {
-              'fill-color': fillColor,
-              'fill-opacity': fillOpacity,
-              'fill-outline-color': fillColor
-            }
-          });
-
-          // Add hover effects and popup with improved management
-          map.current.on('mouseenter', layerId, (e) => {
-            map.current!.getCanvas().style.cursor = 'pointer';
-            
-            // Clean up any existing popup first
-            cleanupCurrentPopup();
-            
-            if (e.features && e.features[0] && e.features[0].properties) {
-              const properties = e.features[0].properties;
-              const alertTypes = JSON.parse(properties.alertTypes || '[]');
-              const latestAlert = JSON.parse(properties.latestAlert || '{}');
-              
-              // Get unique alert types and format as tags
-              const uniqueAlertTypes = formatAlertTypesAsTags(alertTypes);
-              const tagsHtml = uniqueAlertTypes.map(type => {
-                const originalType = alertTypes.find(t => 
-                  formatAlertTypesAsTags([t])[0] === type
-                );
-                const color = getAlertTypeColor(originalType);
-                return `<span class="inline-block px-2 py-1 text-xs rounded-full text-white mr-1 mb-1" style="background-color: ${color}">${type}</span>`;
-              }).join('');
-              
-              currentPopup.current = new mapboxgl.Popup({
-                closeButton: false,
-                closeOnClick: false
-              })
-              .setLngLat(e.lngLat)
-              .setHTML(`
-                <div class="p-3 bg-gray-900 text-white rounded-lg min-w-48">
-                  <div class="flex items-center space-x-2 mb-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: ${properties.fillColor}"></div>
-                    <strong class="text-sm">${properties.oblast}</strong>
-                  </div>
-                  <div class="text-xs text-gray-300 mb-2">
-                    <strong>Active Alerts:</strong> ${properties.alertCount}
-                  </div>
-                  <div class="text-xs text-gray-300 mb-2">
-                    <strong>Types:</strong>
-                    <div class="mt-1">${tagsHtml}</div>
-                  </div>
-                  <div class="text-xs text-gray-400">
-                    <strong>Latest:</strong> ${new Date(latestAlert.started_at).toLocaleString()}
-                  </div>
-                </div>
-              `)
-              .addTo(map.current!);
-            }
-          });
-
-          map.current.on('mouseleave', layerId, () => {
-            map.current!.getCanvas().style.cursor = '';
-            cleanupCurrentPopup();
-          });
-        }
-      }
-    });
-  };
-
-  // Helper function to create a perfect circle polygon
-  const createCircle = (center: [number, number], radius: number) => {
-    const points = 64;
-    const coordinates = [];
-    for (let i = 0; i < points; i++) {
-      const angle = (i / points) * 2 * Math.PI;
-      const x = center[0] + radius * Math.cos(angle);
-      const y = center[1] + radius * Math.sin(angle);
-      coordinates.push([x, y]);
-    }
-    coordinates.push(coordinates[0]); // Close the polygon
-    return coordinates;
-  };
 
   // Add Ukraine regions and alert overlays
   const addUkraineRegions = () => {
@@ -469,7 +365,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           onRegionSelect?.(regionName);
           
           // Visual feedback - add a temporary marker but don't allow pin dropping
-          const clickMarker = new mapboxgl.Marker({ color: '#3B82F6', scale: 0.8 })
+          const clickMarker = new mapboxgl.Marker({ color: '#ffffff', scale: 0.8 })
             .setLngLat([e.lngLat.lng, e.lngLat.lat])
             .addTo(map.current!);
           
@@ -483,10 +379,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     });
 
-    // Add alert markers and regions when map loads and alerts are available
+    // Add alert markers when map loads and alerts are available
     if (alertsData) {
       updateAlertMarkers();
-      addRegionColoring();
     }
   };
 
@@ -501,37 +396,78 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     console.log('📍 Adding alert markers for', alertsData.length, 'alerts');
 
+    // Threat priority for picking a cluster's representative alert
+    const threatPriority: { [key: string]: number } = {
+      air_raid: 5,
+      missile_threat: 4,
+      artillery_shelling: 3,
+      urban_fights: 2,
+      chemical_threat: 1
+    };
+
+    // Cluster alerts on a ~0.25° grid (~25km) so stacked locations render one ping
+    const clusters = new Map<string, any[]>();
     alertsData.forEach((alert: any) => {
       if (!alert.coordinates) {
         console.log('⚠️ Alert missing coordinates:', alert.location_title);
         return;
       }
+      const key = `${Math.round(alert.coordinates[0] / 0.25)}:${Math.round(alert.coordinates[1] / 0.25)}`;
+      const bucket = clusters.get(key);
+      if (bucket) {
+        bucket.push(alert);
+      } else {
+        clusters.set(key, [alert]);
+      }
+    });
 
-      const alertColor = alertsMapService.getAlertColor(alert.alert_type);
-      
-      // Get recent alerts for this location for hover info
-      const recentAlerts = alertsMapService.getRecentAlertsForLocation(allAlertsData || [], alert.coordinates);
-      
-      const marker = new mapboxgl.Marker({ 
-        color: alertColor,
-        scale: 0.9
-      })
-        .setLngLat(alert.coordinates)
+    clusters.forEach((clusterAlerts) => {
+      // Representative: most severe threat, latest first within the same severity
+      const rep = [...clusterAlerts].sort((a, b) =>
+        (threatPriority[b.alert_type] || 0) - (threatPriority[a.alert_type] || 0) ||
+        new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+      )[0];
+
+      const count = clusterAlerts.length;
+      const alertColor = getAlertTypeColor(rep.alert_type);
+
+      // Marker sits at the cluster's center of mass
+      const centerLng = clusterAlerts.reduce((s, a) => s + a.coordinates[0], 0) / count;
+      const centerLat = clusterAlerts.reduce((s, a) => s + a.coordinates[1], 0) / count;
+
+      // Sonar ping: core dot with expanding radar rings (see .sonar-marker in index.css)
+      const sonarEl = document.createElement('div');
+      sonarEl.className = 'sonar-marker';
+      sonarEl.style.setProperty('--sonar-color', alertColor);
+      const size = Math.min(22, 14 + (count - 1) * 2);
+      sonarEl.style.width = `${size}px`;
+      sonarEl.style.height = `${size}px`;
+      sonarEl.innerHTML =
+        '<span class="sonar-ring"></span><span class="sonar-ring"></span><span class="sonar-core"></span>' +
+        (count > 1 ? `<span class="sonar-count">${count}</span>` : '');
+
+      const locationsList = clusterAlerts
+        .slice(0, 4)
+        .map((a) => localizeLocation(a.location_title, languageRef.current))
+        .join('<br/>') + (count > 4 ? '<br/>…' : '');
+
+      const marker = new mapboxgl.Marker({ element: sonarEl })
+        .setLngLat([centerLng, centerLat])
         .setPopup(
           new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div class="p-3 bg-gray-900 text-white rounded-lg max-w-xs">
+            <div class="p-3 text-white max-w-xs">
               <div class="flex items-center space-x-2 mb-2">
                 <div class="w-3 h-3 rounded-full" style="background-color: ${alertColor}"></div>
-                <strong class="text-sm">${alert.location_title}</strong>
+                <strong class="text-sm">${count > 1 ? locationsList : localizeLocation(rep.location_title, languageRef.current)}</strong>
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Oblast:</strong> ${alert.location_oblast}
+                <strong>${currentT().oblastLabel}</strong> ${localizeOblast(rep.location_oblast, languageRef.current)}
               </div>
               <div class="text-xs text-gray-300 mb-1">
-                <strong>Active Alerts:</strong> ${recentAlerts.length}
+                <strong>${currentT().activeAlertsLabel}</strong> ${count}
               </div>
               <div class="text-xs text-gray-400">
-                <strong>Latest:</strong> ${new Date(alert.started_at).toLocaleString()}
+                <strong>${currentT().latestLabel}</strong> ${new Date(rep.started_at).toLocaleString(dateLocale())}
               </div>
             </div>
           `)
@@ -564,9 +500,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Add start marker
     if (routeData.startCoords) {
-      startMarker.current = new mapboxgl.Marker({ color: '#10B981' })
+      startMarker.current = new mapboxgl.Marker({ color: '#ffffff' })
         .setLngLat(routeData.startCoords)
-        .setPopup(new mapboxgl.Popup().setHTML(`<strong>Start:</strong> ${routeData.startCity}`))
+        .setPopup(new mapboxgl.Popup().setHTML(`<strong>${currentT().startLabel}</strong> ${routeData.startCity}`))
         .addTo(map.current);
     }
 
@@ -574,7 +510,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (routeData.endCoords) {
       endMarker.current = new mapboxgl.Marker({ color: '#EF4444' })
         .setLngLat(routeData.endCoords)
-        .setPopup(new mapboxgl.Popup().setHTML(`<strong>Destination:</strong> ${routeData.endCity}`))
+        .setPopup(new mapboxgl.Popup().setHTML(`<strong>${currentT().destinationLabel}</strong> ${routeData.endCity}`))
         .addTo(map.current);
     }
 
@@ -611,7 +547,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           'line-cap': 'round'
         },
         paint: {
-          'line-color': '#3B82F6',
+          'line-color': '#ffffff',
           'line-width': 4,
           'line-opacity': 0.8
         }
@@ -652,16 +588,15 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (map.current && alertsData && isMapLoaded) {
       console.log('🔄 Alert data changed, updating markers...');
       updateAlertMarkers();
-      addRegionColoring();
     }
-  }, [alertsData, allAlertsData, isMapLoaded]);
+  }, [alertsData, allAlertsData, isMapLoaded, language]);
 
   if (isLoadingToken) {
     return (
-      <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <div className="absolute inset-0 glass-backdrop flex items-center justify-center">
+        <div className="glass-panel p-6">
           <div className="flex items-center space-x-3">
-            <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span className="text-sm font-medium text-white">{t.loadingMap}</span>
           </div>
         </div>
@@ -671,10 +606,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   if (tokenError || !mapboxToken) {
     return (
-      <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md mx-4">
+      <div className="absolute inset-0 glass-backdrop flex items-center justify-center">
+        <div className="glass-panel p-6 max-w-md mx-4">
           <h3 className="text-lg font-semibold mb-4 text-red-400">{t.mapError}</h3>
-          <p className="text-sm text-gray-300">Mapbox token configuration issue. Please check the console for more details.</p>
+          <p className="text-sm text-gray-300">{t.mapErrorDetails}</p>
         </div>
       </div>
     );
@@ -686,11 +621,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       
       {/* Loading overlay for search */}
       {isSearching && (
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-4 shadow-lg">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-panel p-4">
             <div className="flex items-center space-x-3">
-              <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm font-medium text-white">Finding route...</span>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm font-medium text-white">{t.findingRoute}</span>
             </div>
           </div>
         </div>

@@ -33,6 +33,12 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
       fastestRoute: 'Fastest route now due to traffic conditions',
       realTimeData: 'Real-time Data',
       fallbackData: 'Estimated Data',
+      liveBadge: 'Live',
+      estimatedBadge: 'Est.',
+      dueToTraffic: 'Due to traffic conditions',
+      minutesUnit: 'min',
+      kmUnit: 'km',
+      hoursUnit: 'h',
       transportModes: {
         driving: 'Driving',
         bus: 'Bus'
@@ -72,6 +78,12 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
       fastestRoute: 'Найшвидший маршрут зараз через умови руху',
       realTimeData: 'Дані в реальному часі',
       fallbackData: 'Оціночні дані',
+      liveBadge: 'Наживо',
+      estimatedBadge: 'Оцінка',
+      dueToTraffic: 'Через дорожній рух',
+      minutesUnit: 'хв',
+      kmUnit: 'км',
+      hoursUnit: 'год',
       transportModes: {
         driving: 'Автомобіль',
         bus: 'Автобус'
@@ -156,7 +168,7 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
             </div>
             <Badge variant={routeData.realRoute ? "default" : "secondary"} className="px-2 py-1 text-xs bg-green-500 text-white border-none">
               <div className={`w-1.5 h-1.5 rounded-full mr-1 bg-white`} />
-              {routeData.realRoute ? 'Live' : 'Est.'}
+              {routeData.realRoute ? t.liveBadge : t.estimatedBadge}
             </Badge>
           </div>
 
@@ -170,7 +182,7 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
                 <div className="text-xs font-medium text-blue-600">{t.distance}</div>
               </div>
               <div className="text-lg font-bold text-blue-600">
-                {routeData.distanceFormatted || `${routeData.distance} km`}
+                {routeData.distanceFormatted || `${routeData.distance} ${t.kmUnit}`}
               </div>
             </div>
             
@@ -182,7 +194,7 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
                 <div className="text-xs font-medium text-blue-600">{t.duration}</div>
               </div>
               <div className="text-lg font-bold text-blue-600">
-                {routeData.durationFormatted || `${routeData.duration}h`}
+                {routeData.durationFormatted || `${routeData.duration}${t.hoursUnit}`}
               </div>
             </div>
           </div>
@@ -275,9 +287,9 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-orange-800">
-                    {t.estimatedDelay}: +{routeData.estimatedDelay} min
+                    {t.estimatedDelay}: +{routeData.estimatedDelay} {t.minutesUnit}
                   </span>
-                  <div className="text-xs text-orange-700">Due to traffic conditions</div>
+                  <div className="text-xs text-orange-700">{t.dueToTraffic}</div>
                 </div>
               </div>
             </div>

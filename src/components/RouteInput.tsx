@@ -22,9 +22,11 @@ interface RouteInputProps {
   routeData?: RouteData | null;
   selectedRegion?: string | null;
   onAlertClick?: (alert: any) => void;
+  /** true when hosted inside the mobile bottom sheet — drops the panel chrome */
+  embedded?: boolean;
 }
 
-const RouteInput: React.FC<RouteInputProps> = ({ 
+const RouteInput: React.FC<RouteInputProps> = ({
   translations,
   language = 'en',
   onRouteRequest,
@@ -32,7 +34,8 @@ const RouteInput: React.FC<RouteInputProps> = ({
   setIsSearching,
   routeData,
   selectedRegion,
-  onAlertClick
+  onAlertClick,
+  embedded = false
 }) => {
   const [activeTab, setActiveTab] = useState('route');
   const [startCity, setStartCity] = useState('');
@@ -80,16 +83,19 @@ const RouteInput: React.FC<RouteInputProps> = ({
   }, [startCity, endCity]);
 
   const tabTranslations = {
-    route: translations?.planRoute?.replace('Plan ', '') || 'Route',
-    alerts: translations?.alerts || 'Alerts',
-    statistics: translations?.statistics || 'Statistics'
+    route: translations.route,
+    alerts: translations.alerts,
+    statistics: translations.statistics
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-4 bg-gray-900 rounded-xl shadow-lg">
+    <div className={embedded
+      ? "w-full"
+      : "w-full max-w-md mx-auto p-4 glass-panel animate-in fade-in slide-in-from-top-4 duration-500 ease-out max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain"
+    }>
       {/* Mobile route searching loading indicator */}
       {currentIsSearching && isMobile && (
-        <div className="flex items-center justify-center p-4 bg-blue-600 rounded-xl mb-4">
+        <div className="flex items-center justify-center p-4 bg-white/10 backdrop-blur-md border border-white/25 rounded-xl mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span className="text-sm font-medium text-white">{translations.searching}</span>
@@ -98,31 +104,31 @@ const RouteInput: React.FC<RouteInputProps> = ({
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4 bg-gray-800">
-          <TabsTrigger 
-            value="route" 
-            className="flex items-center space-x-2 text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+        <TabsList className="grid w-full grid-cols-3 mb-4 h-10 rounded-full p-1 bg-black/25 border border-white/10 backdrop-blur-md">
+          <TabsTrigger
+            value="route"
+            className="flex items-center space-x-2 text-xs md:text-sm rounded-full text-white/60 transition-all duration-300 ease-out active:scale-95 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-black/20 data-[state=active]:backdrop-blur-xl data-[state=active]:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
           >
             <MapPin className="w-4 h-4" />
             <span className="hidden sm:inline">{tabTranslations.route}</span>
           </TabsTrigger>
-          <TabsTrigger 
-            value="alerts" 
-            className="flex items-center space-x-2 text-xs md:text-sm data-[state=active]:bg-red-600 data-[state=active]:text-white"
+          <TabsTrigger
+            value="alerts"
+            className="flex items-center space-x-2 text-xs md:text-sm rounded-full text-white/60 transition-all duration-300 ease-out active:scale-95 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-black/20 data-[state=active]:backdrop-blur-xl data-[state=active]:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
           >
             <AlertTriangle className="w-4 h-4" />
             <span className="hidden sm:inline">{tabTranslations.alerts}</span>
           </TabsTrigger>
-          <TabsTrigger 
-            value="statistics" 
-            className="flex items-center space-x-2 text-xs md:text-sm data-[state=active]:bg-green-600 data-[state=active]:text-white"
+          <TabsTrigger
+            value="statistics"
+            className="flex items-center space-x-2 text-xs md:text-sm rounded-full text-white/60 transition-all duration-300 ease-out active:scale-95 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-black/20 data-[state=active]:backdrop-blur-xl data-[state=active]:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
           >
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">{tabTranslations.statistics}</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="route" className="mt-0">
+        <TabsContent value="route" className="mt-0 animate-in fade-in slide-in-from-bottom-1 duration-300">
           <div className="space-y-4">
             <CityInputForm 
               startCity={startCity}
@@ -144,12 +150,12 @@ const RouteInput: React.FC<RouteInputProps> = ({
 
             {/* Route details */}
             {currentRouteData && !currentRouteData.error && (
-              <RouteDetails routeData={currentRouteData} translations={translations} />
+              <RouteDetails routeData={currentRouteData} translations={translations} language={language} />
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="alerts" className="mt-0">
+        <TabsContent value="alerts" className="mt-0 animate-in fade-in slide-in-from-bottom-1 duration-300">
           <MobileAlertsDisplay 
             alerts={alerts}
             language={language}
@@ -159,16 +165,21 @@ const RouteInput: React.FC<RouteInputProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="statistics" className="mt-0">
+        <TabsContent value="statistics" className="mt-0 animate-in fade-in slide-in-from-bottom-1 duration-300">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">{translations.statisticsTitle}</h3>
+              <h3 className="text-lg font-semibold tracking-tight text-white">{translations.statisticsTitle}</h3>
               <ManualSyncButton translations={translations} />
             </div>
-            <AlertsStatistics translations={translations} />
+            <AlertsStatistics translations={translations} language={language} />
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Data source attribution */}
+      <p className="mt-3 pt-2 border-t border-white/5 text-center text-[10px] tracking-wide text-white/30">
+        {translations.dataSources}
+      </p>
     </div>
   );
 };
