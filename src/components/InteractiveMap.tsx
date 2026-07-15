@@ -253,11 +253,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         style: 'mapbox://styles/mapbox/dark-v11',
         center: [31.1656, 48.3794],
         zoom: 6,
-        doubleClickZoom: false,
         dragRotate: false,
-        pitchWithRotate: false,
-        touchZoomRotate: false
+        pitchWithRotate: false
       });
+
+      // Pinch/double-tap zoom stays on for touch devices; rotation stays
+      // locked so the map is always north-up.
+      map.current.touchZoomRotate.disableRotation();
 
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
