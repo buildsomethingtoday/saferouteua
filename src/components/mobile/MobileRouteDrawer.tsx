@@ -2,7 +2,7 @@
 import React from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Navigation, Gauge, Cloud, AlertTriangle, Zap, Shield, Car, Bus } from 'lucide-react';
+import { Clock, MapPin, Navigation, Gauge, AlertTriangle, Zap, Shield, Car, Bus } from 'lucide-react';
 import { RouteData } from '@/types/route';
 
 interface MobileRouteDrawerProps {
@@ -243,24 +243,6 @@ const MobileRouteDrawer: React.FC<MobileRouteDrawerProps> = ({
                 </Badge>
               </div>
             )}
-
-            {/* Weather */}
-            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                  <Cloud className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-sm font-medium text-gray-800">{t.weather}</span>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-800">
-                  {t.weatherConditions[routeData.weatherCondition]}
-                </div>
-                {routeData.temperature && (
-                  <div className="text-xs text-gray-600">{routeData.temperature}°C</div>
-                )}
-              </div>
-            </div>
 
             {/* Road Quality */}
             {routeData.roadQuality && (

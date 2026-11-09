@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
 import { getMapboxService } from '../services/mapboxService';
-import { getWeatherService } from '../services/weatherService';
 import { getAlertsService } from '../services/alertsService';
 import { RouteData, RouteInputTranslations } from '@/types/route';
 
@@ -181,27 +180,6 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         // Continue with default values
       }
       
-      // Step 6: Fetch weather data with fallback
-      console.log('🌤️ Step 6: Fetching weather data...');
-      let weatherCondition: 'clear' | 'cloudy' | 'light_rain' = 'clear';
-      let temperature: number | undefined;
-      
-      try {
-        const weatherService = await getWeatherService();
-        console.log('🌤️ Weather service obtained, fetching data for:', startCoords);
-        const weatherData = await weatherService.getCurrentWeather(startCoords[1], startCoords[0]);
-        weatherCondition = weatherService.mapWeatherCondition(weatherData.weather[0].main);
-        temperature = Math.round(weatherData.main.temp);
-        console.log('✅ Weather data retrieved:', {
-          condition: weatherCondition,
-          temperature: temperature + '°C',
-          rawCondition: weatherData.weather[0].main
-        });
-      } catch (weatherError) {
-        console.warn('⚠️ Weather API failed, using defaults:', weatherError);
-        // Continue with default weather values
-      }
-      
       // Step 7: Calculate route metrics combining traffic and safety
       console.log('📊 Step 7: Calculating route metrics...');
       let trafficSafetyScore: number;
@@ -322,8 +300,6 @@ export const useRouteSearch = ({ translations, setIsSearching, onRouteRequest }:
         trafficLevel: ensureValidTrafficLevel(String(routeQuality.trafficLevel)),
         roadQuality: ensureValidRoadQuality(String(routeQuality.roadQuality)),
         estimatedDelay: Number(routeQuality.estimatedDelay),
-        weatherCondition,
-        temperature: temperature !== undefined ? Number(temperature) : undefined,
         conflictRisk: combinedSafetyScore > 80 ? 'low' : combinedSafetyScore > 60 ? 'moderate' : 'high',
         alternativeRoutes: directions.routes.slice(1, 3).map(r => ({
           distance: Number(r.distance),

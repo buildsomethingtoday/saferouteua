@@ -40,7 +40,7 @@ export const getRouteInputTranslations = (language: Language): RouteInputTransla
   errorSearchFailed: language === 'en' ? 'Route search failed' : 'Не вдалося знайти маршрут',
   unexpectedError: language === 'en' ? 'An unexpected error occurred' : 'Сталася неочікувана помилка',
   loading: language === 'en' ? 'Loading...' : 'Завантаження...',
-  dataSources: language === 'en' ? 'Data: alerts.in.ua · Mapbox © OSM · OpenWeather' : 'Дані: alerts.in.ua · Mapbox © OSM · OpenWeather',
+  dataSources: language === 'en' ? 'Data: alerts.in.ua · Mapbox © OSM' : 'Дані: alerts.in.ua · Mapbox © OSM',
   severity: {
     low: language === 'en' ? 'Low' : 'Низька',
     moderate: language === 'en' ? 'Moderate' : 'Помірна',

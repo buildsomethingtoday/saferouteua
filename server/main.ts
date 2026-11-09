@@ -3,14 +3,13 @@
 // Routes (all JSON, CORS open like the old functions):
 //   POST /fn/explore-alerts-api  { endpoint }        proxy to alerts.in.ua (key stays server side)
 //   POST /fn/get-mapbox-token                         { token }
-//   POST /fn/get-weather-key                          { key }
 //   POST /fn/sync-alerts-data                         pulls active alerts into Postgres (Cloud Scheduler + manual button)
 //   GET  /alerts?since=<ISO>&region=<oblast>          rows for the analytics page (was supabase.from('alerts'))
 //   POST /visits { path, language }                   one anonymous visit row (was supabase.from('site_visits'))
 //   GET  /healthz
 //
 // Env: DATABASE_URL (postgres://…; on Cloud Run the host is the Cloud SQL socket dir /cloudsql/<instance>),
-//      ALERTS_IN_UA_API_KEY, MAPBOX_ACCESS_TOKEN, OPENWEATHER_API_KEY, ALLOWED_ORIGINS (comma list, optional).
+//      ALERTS_IN_UA_API_KEY, MAPBOX_ACCESS_TOKEN, ALLOWED_ORIGINS (comma list, optional).
 
 import postgres from "npm:postgres@3.4.5";
 
@@ -191,8 +190,6 @@ export async function handler(req: Request): Promise<Response> {
         return await exploreAlertsApi(req);
       case "POST /fn/get-mapbox-token":
         return keyResponse(req, "MAPBOX_ACCESS_TOKEN", "token", "Mapbox token");
-      case "POST /fn/get-weather-key":
-        return keyResponse(req, "OPENWEATHER_API_KEY", "key", "OpenWeather API key");
       case "POST /fn/sync-alerts-data":
         return await syncAlertsData(req);
       case "GET /alerts":

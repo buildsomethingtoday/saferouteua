@@ -16,9 +16,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ language = 'en' }) => {
   const [routeData, setRouteData] = useState<RouteData>({
     startCity: '',
     endCity: '',
-    realRoute: false,
-    weatherCondition: 'clear',
-    temperature: 20
+    realRoute: false
   });
   const [relevantAlerts, setRelevantAlerts] = useState([]);
   const [hasActiveThreats, setHasActiveThreats] = useState(false);
