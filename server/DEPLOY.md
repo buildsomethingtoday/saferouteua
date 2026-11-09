@@ -2,7 +2,7 @@
 
 Replaces Supabase project `qiupznnfixzimxmovuei` (4 Edge Functions plus the `alerts` and `site_visits` tables).
 Target: project "Emerge Labs Apps" (`project-c53b682b-4b03-43a3-91e`, AXR's project), region `us-west1`, Cloud SQL
-instance `axr-db` (database `saferoute`, its own login), Cloud Run service `saferoute-api`.
+instance `emerge-apps-db` (database `saferoute`, its own login), Cloud Run service `saferoute-api`.
 
 The site stays on Vercel. Its only change is the `VITE_API_URL` env.
 
@@ -18,13 +18,13 @@ The site stays on Vercel. Its only change is the `VITE_API_URL` env.
 - The built site's Statistics tab rendered from the new API.
 
 ## Steps (P = project-c53b682b-4b03-43a3-91e)
-1. Make sure the database server is running: `gcloud sql instances patch axr-db --activation-policy ALWAYS --project P`.
-2. Create a database and login: `gcloud sql databases create saferoute --instance axr-db`, plus user `saferoute_api` with a generated password stored in Secret Manager as `saferoute-database-url`.
+1. Make sure the database server is running: `gcloud sql instances patch emerge-apps-db --activation-policy ALWAYS --project P`.
+2. Create a database and login: `gcloud sql databases create saferoute --instance emerge-apps-db`, plus user `saferoute_api` with a generated password stored in Secret Manager as `saferoute-database-url`.
 3. Create the secrets `saferoute-alerts-key`, `saferoute-mapbox-token` and `saferoute-openweather-key`. Imran enters the values himself:
    `printf %s "<value>" | gcloud secrets create <name> --data-file=-`
 4. Create a service account `saferoute-api@P.iam.gserviceaccount.com` with Cloud SQL Client and Secret Accessor on those 4 secrets only. Imran runs the IAM commands.
 5. Deploy:
-   `gcloud run deploy saferoute-api --source server --region us-west1 --service-account saferoute-api@… --add-cloudsql-instances P:us-west1:axr-db --set-secrets DATABASE_URL=saferoute-database-url:latest,ALERTS_IN_UA_API_KEY=saferoute-alerts-key:latest,MAPBOX_ACCESS_TOKEN=saferoute-mapbox-token:latest,OPENWEATHER_API_KEY=saferoute-openweather-key:latest --set-env-vars ALLOWED_ORIGINS=https://saferouteua.vercel.app,https://saferouteua.sheikhimran.com --max-instances 1 --allow-unauthenticated --labels app=saferoute`
+   `gcloud run deploy saferoute-api --source server --region us-west1 --service-account saferoute-api@… --add-cloudsql-instances P:us-west1:emerge-apps-db --set-secrets DATABASE_URL=saferoute-database-url:latest,ALERTS_IN_UA_API_KEY=saferoute-alerts-key:latest,MAPBOX_ACCESS_TOKEN=saferoute-mapbox-token:latest,OPENWEATHER_API_KEY=saferoute-openweather-key:latest --set-env-vars ALLOWED_ORIGINS=https://saferouteua.vercel.app,https://saferouteua.sheikhimran.com --max-instances 1 --allow-unauthenticated --labels app=saferoute`
 6. Load the data: take a fresh `supabase db dump --data-only` and run `load-backup.ts --truncate` through the Cloud SQL Auth Proxy.
 7. Schedule the hourly sync, matching Supabase's on-the-hour job:
    `gcloud scheduler jobs create http saferoute-sync --schedule "0 * * * *" --uri <url>/fn/sync-alerts-data --http-method POST --location us-west1`.
