@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { invoke } from '@/integrations/api';
 import { findOblastForCity, doesAlertMatchCity } from '@/utils/cityOblastMapping';
 import { AlertData, RegionData } from '@/types/alerts';
 import { AlertsDataProcessor } from '@/utils/alertsProcessing';
@@ -8,7 +8,7 @@ import { AlertsCalculator } from '@/utils/alertsCalculations';
 export class AlertsService {
   async getRegions(): Promise<RegionData[]> {
     try {
-      const { data, error } = await supabase.functions.invoke('explore-alerts-api', {
+      const { data, error } = await invoke('explore-alerts-api', {
         body: { endpoint: 'regions' }
       });
 
@@ -28,7 +28,7 @@ export class AlertsService {
     try {
       console.log('🔄 AlertsService - Fetching active alerts from API...');
       
-      const { data, error } = await supabase.functions.invoke('explore-alerts-api', {
+      const { data, error } = await invoke('explore-alerts-api', {
         body: { endpoint: 'alerts' }
       });
 

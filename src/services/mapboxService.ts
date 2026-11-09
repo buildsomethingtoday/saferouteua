@@ -406,8 +406,8 @@ export const getMapboxService = async (): Promise<MapboxService> => {
   if (!mapboxService) {
     try {
       console.log('🔄 Fetching Mapbox token from Supabase...');
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      const { invoke } = await import('@/integrations/api');
+      const { data, error } = await invoke('get-mapbox-token');
       
       if (error) {
         console.error('❌ Supabase function error:', error);

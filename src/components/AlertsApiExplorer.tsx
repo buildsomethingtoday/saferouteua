@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Shield, MapPin, Clock, Zap, Plane, Swords, X, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { invoke } from '@/integrations/api';
 import { localizeLocation, localizeOblast } from '@/utils/localizeLocation';
 interface AlertsApiExplorerProps {
   language: 'en' | 'ua';
@@ -121,7 +121,7 @@ const AlertsApiExplorer: React.FC<AlertsApiExplorerProps> = ({
       const {
         data,
         error: functionError
-      } = await supabase.functions.invoke('explore-alerts-api', {
+      } = await invoke('explore-alerts-api', {
         body: {
           endpoint: 'alerts'
         }
