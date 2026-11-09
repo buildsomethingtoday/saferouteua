@@ -8,12 +8,22 @@
 //   POST /visits { path, language }                   one anonymous visit row (was supabase.from('site_visits'))
 //   GET  /healthz
 //
-// Env: DATABASE_URL (postgres://…; on Cloud Run the host is the Cloud SQL socket dir /cloudsql/<instance>),
+// Env: DATABASE_URL (postgres://user:pw@localhost/db?host=/cloudsql/<instance> on Cloud Run),
 //      ALERTS_IN_UA_API_KEY, MAPBOX_ACCESS_TOKEN, ALLOWED_ORIGINS (comma list, optional).
 
 import postgres from "npm:postgres@3.4.5";
 
-const sql = postgres(Deno.env.get("DATABASE_URL") ?? "", { max: 3, idle_timeout: 20, prepare: false });
+// postgres.js ignores libpq's ?host=/socket/dir, so pull it out and pass it as the host option (Cloud SQL socket).
+function dbConfig(raw: string): [string, { host?: string }] {
+  if (!raw) return ["", {}];
+  const u = new URL(raw);
+  const socket = u.searchParams.get("host");
+  if (!socket) return [raw, {}];
+  u.searchParams.delete("host");
+  return [u.toString(), { host: socket }];
+}
+const [dbUrl, dbOpts] = dbConfig(Deno.env.get("DATABASE_URL") ?? "");
+const sql = postgres(dbUrl, { ...dbOpts, max: 3, idle_timeout: 20, prepare: false });
 
 const ALLOWED = (Deno.env.get("ALLOWED_ORIGINS") ?? "*").split(",").map((s) => s.trim()).filter(Boolean);
 
