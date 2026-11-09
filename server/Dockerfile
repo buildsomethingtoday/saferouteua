@@ -5,4 +5,4 @@ RUN deno cache main.ts
 USER deno
 ENV PORT=8080
 EXPOSE 8080
-CMD ["run", "--allow-net", "--allow-env", "--allow-read", "main.ts"]
+CMD ["run", "--allow-net", "--allow-env", "--allow-read", "--allow-write=/cloudsql", "main.ts"]

@@ -6,7 +6,7 @@
 //   POST /fn/sync-alerts-data                         pulls active alerts into Postgres (Cloud Scheduler + manual button)
 //   GET  /alerts?since=<ISO>&region=<oblast>          rows for the analytics page (was supabase.from('alerts'))
 //   POST /visits { path, language }                   one anonymous visit row (was supabase.from('site_visits'))
-//   GET  /healthz
+//   GET  /health   (/healthz is reserved by Cloud Run)
 //
 // Env: DATABASE_URL (postgres://user:pw@localhost/db?host=/cloudsql/<instance> on Cloud Run),
 //      ALERTS_IN_UA_API_KEY, MAPBOX_ACCESS_TOKEN, ALLOWED_ORIGINS (comma list, optional).
@@ -194,6 +194,7 @@ export async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   try {
     switch (`${req.method} ${url.pathname}`) {
+      case "GET /health":
       case "GET /healthz":
         return json(req, { ok: true });
       case "POST /fn/explore-alerts-api":
