@@ -1,12 +1,12 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { invoke } from '@/integrations/api';
 
 export class DataSyncService {
   static async triggerManualSync(): Promise<{ success: boolean; message: string; data?: any }> {
     try {
       console.log('🔄 Triggering manual alerts data sync...');
       
-      const { data, error } = await supabase.functions.invoke('sync-alerts-data', {
+      const { data, error } = await invoke('sync-alerts-data', {
         body: { manual: true }
       });
 

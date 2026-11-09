@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { getAlerts } from '@/integrations/api';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 
 export class AlertsAnalyticsService {
@@ -9,18 +9,7 @@ export class AlertsAnalyticsService {
     const startDate = subDays(endDate, days);
 
     try {
-      // Build base query
-      let query = supabase
-        .from('alerts')
-        .select('*')
-        .gte('start_time', startDate.toISOString());
-
-      // Add region filter if specified
-      if (region !== 'all') {
-        query = query.eq('location_oblast', region);
-      }
-
-      const { data: alerts, error } = await query;
+      const { data: alerts, error } = await getAlerts(startDate, region);
 
       if (error) {
         console.error('Error fetching alerts for statistics:', error);

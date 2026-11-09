@@ -74,8 +74,8 @@ export class WeatherService {
 export const getWeatherService = async (): Promise<WeatherService> => {
   try {
     console.log('🔄 Fetching OpenWeather API key from Supabase...');
-    const { supabase } = await import('@/integrations/supabase/client');
-    const { data, error } = await supabase.functions.invoke('get-weather-key');
+    const { invoke } = await import('@/integrations/api');
+    const { data, error } = await invoke('get-weather-key');
     
     if (error || !data?.key) {
       console.warn('⚠️ Could not fetch OpenWeather API key from Supabase, error:', error);

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { supabase } from '@/integrations/supabase/client';
+import { invoke } from '@/integrations/api';
 import { alertsMapService } from '@/services/alertsMapService';
 import { localizeLocation, localizeOblast } from '@/utils/localizeLocation';
 
@@ -109,7 +109,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     const fetchMapboxToken = async () => {
       try {
         console.log('Fetching Mapbox token from Supabase...');
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        const { data, error } = await invoke('get-mapbox-token');
         
         if (error) {
           console.error('Error fetching Mapbox token:', error);
@@ -142,7 +142,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     const fetchAlertsData = async () => {
       try {
         console.log('🔄 Fetching alerts data immediately for map...');
-        const { data, error } = await supabase.functions.invoke('explore-alerts-api', {
+        const { data, error } = await invoke('explore-alerts-api', {
           body: { endpoint: 'alerts' }
         });
         
